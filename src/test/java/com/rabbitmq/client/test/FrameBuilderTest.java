@@ -28,11 +28,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  *
@@ -52,10 +49,10 @@ public class FrameBuilderTest {
         buffer = ByteBuffer.wrap(new byte[] { 1, 0, 0, 0, 0, 0, 3, 1, 2, 3, end() });
         builder = new FrameBuilder(channel, buffer);
         Frame frame = builder.readFrame();
-        assertThat(frame, notNullValue());
-        assertThat(frame.getType(), is(1));
-        assertThat(frame.getChannel(), is(0));
-        assertThat(frame.getPayload().length, is(3));
+        assertThat(frame).isNotNull();
+        assertThat(frame.getType()).isEqualTo(1);
+        assertThat(frame.getChannel()).isEqualTo(0);
+        assertThat(frame.getPayload()).hasSize(3);
     }
 
     @Test
@@ -73,13 +70,13 @@ public class FrameBuilderTest {
         int frameCount = 0;
         Frame frame;
         while ((frame = builder.readFrame()) != null) {
-            assertThat(frame, notNullValue());
-            assertThat(frame.getType(), is(1));
-            assertThat(frame.getChannel(), is(0));
-            assertThat(frame.getPayload().length, is(3));
+            assertThat(frame).isNotNull();
+            assertThat(frame.getType()).isEqualTo(1);
+            assertThat(frame.getChannel()).isEqualTo(0);
+            assertThat(frame.getPayload()).hasSize(3);
             frameCount++;
         }
-        assertThat(frameCount, is(nbFrames));
+        assertThat(frameCount).isEqualTo(nbFrames);
     }
 
     @Test
@@ -87,17 +84,17 @@ public class FrameBuilderTest {
         buffer = ByteBuffer.wrap(new byte[] { 1, 0, 0, 0, 0, 0, 3, 1, 2 });
         builder = new FrameBuilder(channel, buffer);
         Frame frame = builder.readFrame();
-        assertThat(frame, nullValue());
+        assertThat(frame).isNull();
 
         buffer.clear();
         buffer.put(b(3)).put(end());
         buffer.flip();
 
         frame = builder.readFrame();
-        assertThat(frame, notNullValue());
-        assertThat(frame.getType(), is(1));
-        assertThat(frame.getChannel(), is(0));
-        assertThat(frame.getPayload().length, is(3));
+        assertThat(frame).isNotNull();
+        assertThat(frame.getType()).isEqualTo(1);
+        assertThat(frame.getChannel()).isEqualTo(0);
+        assertThat(frame.getPayload()).hasSize(3);
     }
 
     @Test
@@ -127,7 +124,7 @@ public class FrameBuilderTest {
                 builder.readFrame();
                 fail("protocol header not correct, exception should have been thrown");
             } catch (MalformedFrameException e) {
-                assertThat(e.getMessage(), is(messages[i]));
+                assertThat(e.getMessage()).isEqualTo(messages[i]);
             }
         }
     }

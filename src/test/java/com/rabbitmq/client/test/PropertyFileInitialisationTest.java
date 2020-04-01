@@ -30,11 +30,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.rabbitmq.client.impl.AMQConnection.defaultClientProperties;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
@@ -84,24 +80,24 @@ public class PropertyFileInitialisationTest {
     @Test public void propertyInitialisationUri() {
         cf.load(Collections.singletonMap("rabbitmq.uri", "amqp://foo:bar@127.0.0.1:5673/dummy"));
 
-        assertThat(cf.getUsername(), is("foo"));
-        assertThat(cf.getPassword(), is("bar"));
-        assertThat(cf.getVirtualHost(), is("dummy"));
-        assertThat(cf.getHost(), is("127.0.0.1"));
-        assertThat(cf.getPort(), is(5673));
+        assertThat(cf.getUsername()).isEqualTo("foo");
+        assertThat(cf.getPassword()).isEqualTo("bar");
+        assertThat(cf.getVirtualHost()).isEqualTo("dummy");
+        assertThat(cf.getHost()).isEqualTo("127.0.0.1");
+        assertThat(cf.getPort()).isEqualTo(5673);
     }
 
     @Test public void propertyInitialisationIncludeDefaultClientPropertiesByDefault() {
-        cf.load(new HashMap<String, String>());
-        assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size()));
+        cf.load(new HashMap<>());
+        assertThat(cf.getClientProperties().entrySet()).hasSize(defaultClientProperties().size());
     }
 
     @Test public void propertyInitialisationAddCustomClientProperty() {
         cf.load(new HashMap<String, String>() {{
             put("rabbitmq.client.properties.foo", "bar");
         }});
-        assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size() + 1));
-        assertThat(cf.getClientProperties().get("foo").toString(), is("bar"));
+        assertThat(cf.getClientProperties().entrySet()).hasSize(defaultClientProperties().size() + 1);
+        assertThat(cf.getClientProperties()).extracting("foo").isEqualTo("bar");
     }
 
     @Test public void propertyInitialisationGetRidOfDefaultClientPropertyWithEmptyValue() {
@@ -109,7 +105,7 @@ public class PropertyFileInitialisationTest {
         cf.load(new HashMap<String, String>() {{
             put("rabbitmq.client.properties." + key, "");
         }});
-        assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size() - 1));
+        assertThat(cf.getClientProperties().entrySet()).hasSize(defaultClientProperties().size() - 1);
     }
 
     @Test public void propertyInitialisationOverrideDefaultClientProperty() {
@@ -117,8 +113,8 @@ public class PropertyFileInitialisationTest {
         cf.load(new HashMap<String, String>() {{
             put("rabbitmq.client.properties." + key, "whatever");
         }});
-        assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size()));
-        assertThat(cf.getClientProperties().get(key).toString(), is("whatever"));
+        assertThat(cf.getClientProperties().entrySet()).hasSize(defaultClientProperties().size());
+        assertThat(cf.getClientProperties()).extracting(key).isEqualTo("whatever");
     }
 
     @Test public void propertyInitialisationDoNotUseNio() throws Exception {
@@ -126,37 +122,37 @@ public class PropertyFileInitialisationTest {
             put("rabbitmq.use.nio", "false");
             put("rabbitmq.nio.nb.io.threads", "2");
         }});
-        assertThat(cf.getNioParams().getNbIoThreads(), not(2));
+        assertThat(cf.getNioParams().getNbIoThreads()).isNotEqualTo(2);
     }
 
     private void checkConnectionFactory() {
-        assertThat(cf.getUsername(), is("foo"));
-        assertThat(cf.getPassword(), is("bar"));
-        assertThat(cf.getVirtualHost(), is("dummy"));
-        assertThat(cf.getHost(), is("127.0.0.1"));
-        assertThat(cf.getPort(), is(5673));
+        assertThat(cf.getUsername()).isEqualTo("foo");
+        assertThat(cf.getPassword()).isEqualTo("bar");
+        assertThat(cf.getVirtualHost()).isEqualTo("dummy");
+        assertThat(cf.getHost()).isEqualTo("127.0.0.1");
+        assertThat(cf.getPort()).isEqualTo(5673);
 
-        assertThat(cf.getRequestedChannelMax(), is(1));
-        assertThat(cf.getRequestedFrameMax(), is(2));
-        assertThat(cf.getRequestedHeartbeat(), is(10));
-        assertThat(cf.getConnectionTimeout(), is(10000));
-        assertThat(cf.getHandshakeTimeout(), is(5000));
+        assertThat(cf.getRequestedChannelMax()).isEqualTo(1);
+        assertThat(cf.getRequestedFrameMax()).isEqualTo(2);
+        assertThat(cf.getRequestedHeartbeat()).isEqualTo(10);
+        assertThat(cf.getConnectionTimeout()).isEqualTo(10000);
+        assertThat(cf.getHandshakeTimeout()).isEqualTo(5000);
 
-        assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size() + 1));
-        assertThat(cf.getClientProperties().get("foo").toString(), is("bar"));
+        assertThat(cf.getClientProperties().entrySet()).hasSize(defaultClientProperties().size() + 1);
+        assertThat(cf.getClientProperties()).extracting("foo").isEqualTo("bar");
 
-        assertThat(cf.isAutomaticRecoveryEnabled(), is(false));
-        assertThat(cf.isTopologyRecoveryEnabled(), is(false));
-        assertThat(cf.getNetworkRecoveryInterval(), is(10000l));
-        assertThat(cf.getChannelRpcTimeout(), is(10000));
-        assertThat(cf.isChannelShouldCheckRpcResponseType(), is(true));
+        assertThat(cf.isAutomaticRecoveryEnabled()).isFalse();
+        assertThat(cf.isTopologyRecoveryEnabled()).isFalse();
+        assertThat(cf.getNetworkRecoveryInterval()).isEqualTo(10000l);
+        assertThat(cf.getChannelRpcTimeout()).isEqualTo(10000);
+        assertThat(cf.isChannelShouldCheckRpcResponseType()).isTrue();
 
-        assertThat(cf.getNioParams(), notNullValue());
-        assertThat(cf.getNioParams().getReadByteBufferSize(), is(32000));
-        assertThat(cf.getNioParams().getWriteByteBufferSize(), is(32000));
-        assertThat(cf.getNioParams().getNbIoThreads(), is(2));
-        assertThat(cf.getNioParams().getWriteEnqueuingTimeoutInMs(), is(5000));
-        assertThat(cf.getNioParams().getWriteQueueCapacity(), is(1000));
+        assertThat(cf.getNioParams()).isNotNull();
+        assertThat(cf.getNioParams().getReadByteBufferSize()).isEqualTo(32000);
+        assertThat(cf.getNioParams().getWriteByteBufferSize()).isEqualTo(32000);
+        assertThat(cf.getNioParams().getNbIoThreads()).isEqualTo(2);
+        assertThat(cf.getNioParams().getWriteEnqueuingTimeoutInMs()).isEqualTo(5000);
+        assertThat(cf.getNioParams().getWriteQueueCapacity()).isEqualTo(1000);
     }
 
     private Properties getPropertiesWitPrefix(String prefix) throws IOException {

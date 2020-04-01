@@ -18,15 +18,13 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.impl.ClientVersion;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ClientVersionTest {
 
     @Test
     public void clientVersion() {
-        assertThat(ClientVersion.VERSION, notNullValue());
-        assertThat(ClientVersion.VERSION, not("0.0.0"));
+        assertThat(ClientVersion.VERSION).isNotNull();
+        assertThat(ClientVersion.VERSION).isNotEqualTo("0.0.0");
     }
 }

@@ -28,8 +28,7 @@ import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -70,16 +69,16 @@ public class MetricsCollectorTest {
         metrics.consumedMessage(channel, 6, false);
 
         metrics.basicAck(channel, 6, false);
-        assertThat(acknowledgedMessages(metrics), is(1L));
+        assertThat(acknowledgedMessages(metrics)).isEqualTo(1L);
 
         metrics.basicAck(channel, 3, true);
-        assertThat(acknowledgedMessages(metrics), is(1L+2L));
+        assertThat(acknowledgedMessages(metrics)).isEqualTo(1L+2L);
 
         metrics.basicAck(channel, 6, true);
-        assertThat(acknowledgedMessages(metrics), is(1L+2L+1L));
+        assertThat(acknowledgedMessages(metrics)).isEqualTo(1L+2L+1L);
 
         metrics.basicAck(channel, 10, true);
-        assertThat(acknowledgedMessages(metrics), is(1L+2L+1L));
+        assertThat(acknowledgedMessages(metrics)).isEqualTo(1L+2L+1L);
     }
 
     @Test public void basicConsumeAndAck() {
@@ -99,8 +98,8 @@ public class MetricsCollectorTest {
         metrics.basicConsume(channel, consumerTagWithManualAck, false);
 
         metrics.consumedMessage(channel, 1, consumerTagWithAutoAck);
-        assertThat(consumedMessages(metrics), is(1L));
-        assertThat(acknowledgedMessages(metrics), is(0L));
+        assertThat(consumedMessages(metrics)).isEqualTo(1L);
+        assertThat(acknowledgedMessages(metrics)).isEqualTo(0L);
 
         metrics.consumedMessage(channel, 2, consumerTagWithManualAck);
         metrics.consumedMessage(channel, 3, consumerTagWithManualAck);
@@ -109,44 +108,44 @@ public class MetricsCollectorTest {
         metrics.consumedMessage(channel, 6, consumerTagWithManualAck);
 
         metrics.basicAck(channel, 6, false);
-        assertThat(acknowledgedMessages(metrics), is(1L));
+        assertThat(acknowledgedMessages(metrics)).isEqualTo(1L);
 
         metrics.basicAck(channel, 3, true);
-        assertThat(acknowledgedMessages(metrics), is(1L+2L));
+        assertThat(acknowledgedMessages(metrics)).isEqualTo(1L+2L);
 
         metrics.basicAck(channel, 6, true);
-        assertThat(acknowledgedMessages(metrics), is(1L+2L+1L));
+        assertThat(acknowledgedMessages(metrics)).isEqualTo(1L+2L+1L);
 
         metrics.basicAck(channel, 10, true);
-        assertThat(acknowledgedMessages(metrics), is(1L+2L+1L));
+        assertThat(acknowledgedMessages(metrics)).isEqualTo(1L+2L+1L);
     }
 
     @Test public void publishingAndPublishingFailures() {
         AbstractMetricsCollector metrics = factory.create();
         Channel channel = mock(Channel.class);
 
-        assertThat(failedToPublishMessages(metrics), is(0L));
-        assertThat(publishedMessages(metrics), is(0L));
+        assertThat(failedToPublishMessages(metrics)).isEqualTo(0L);
+        assertThat(publishedMessages(metrics)).isEqualTo(0L);
 
         metrics.basicPublishFailure(channel, new IOException());
-        assertThat(failedToPublishMessages(metrics), is(1L));
-        assertThat(publishedMessages(metrics), is(0L));
+        assertThat(failedToPublishMessages(metrics)).isEqualTo(1L);
+        assertThat(publishedMessages(metrics)).isEqualTo(0L);
 
         metrics.basicPublish(channel, 0L);
-        assertThat(failedToPublishMessages(metrics), is(1L));
-        assertThat(publishedMessages(metrics), is(1L));
+        assertThat(failedToPublishMessages(metrics)).isEqualTo(1L);
+        assertThat(publishedMessages(metrics)).isEqualTo(1L);
 
         metrics.basicPublishFailure(channel, new IOException());
-        assertThat(failedToPublishMessages(metrics), is(2L));
-        assertThat(publishedMessages(metrics), is(1L));
+        assertThat(failedToPublishMessages(metrics)).isEqualTo(2L);
+        assertThat(publishedMessages(metrics)).isEqualTo(1L);
 
         metrics.basicPublish(channel, 0L);
-        assertThat(failedToPublishMessages(metrics), is(2L));
-        assertThat(publishedMessages(metrics), is(2L));
+        assertThat(failedToPublishMessages(metrics)).isEqualTo(2L);
+        assertThat(publishedMessages(metrics)).isEqualTo(2L);
 
         metrics.cleanStaleState();
-        assertThat(failedToPublishMessages(metrics), is(2L));
-        assertThat(publishedMessages(metrics), is(2L));
+        assertThat(failedToPublishMessages(metrics)).isEqualTo(2L);
+        assertThat(publishedMessages(metrics)).isEqualTo(2L);
     }
 
     @Test public void publishingAcknowledgements() {
@@ -161,19 +160,19 @@ public class MetricsCollectorTest {
         metrics.newChannel(channel);
 
         // begins with no messages acknowledged
-        assertThat(publishAck(metrics), is(0L));
+        assertThat(publishAck(metrics)).isEqualTo(0L);
         // first acknowledgement gets tracked
         metrics.basicPublish(channel, 1);
         metrics.basicPublishAck(channel, 1, false);
-        assertThat(publishAck(metrics), is(1L));
+        assertThat(publishAck(metrics)).isEqualTo(1L);
         // second acknowledgement gets tracked
         metrics.basicPublish(channel, 2);
         metrics.basicPublishAck(channel, 2, false);
-        assertThat(publishAck(metrics), is(2L));
+        assertThat(publishAck(metrics)).isEqualTo(2L);
 
         // this is idempotent
         metrics.basicPublishAck(channel, 2, false);
-        assertThat(publishAck(metrics), is(2L));
+        assertThat(publishAck(metrics)).isEqualTo(2L);
 
         // multi-ack
         metrics.basicPublish(channel, 3);
@@ -181,18 +180,18 @@ public class MetricsCollectorTest {
         metrics.basicPublish(channel, 5);
         // ack-ing in the middle
         metrics.basicPublishAck(channel, 4, false);
-        assertThat(publishAck(metrics), is(3L));
+        assertThat(publishAck(metrics)).isEqualTo(3L);
         // ack-ing several at once
         metrics.basicPublishAck(channel, 5, true);
-        assertThat(publishAck(metrics), is(5L));
+        assertThat(publishAck(metrics)).isEqualTo(5L);
 
         // ack-ing non existent doesn't affect metrics
         metrics.basicPublishAck(channel, 123, true);
-        assertThat(publishAck(metrics), is(5L));
+        assertThat(publishAck(metrics)).isEqualTo(5L);
 
         // cleaning stale state doesn't affect the metric
         metrics.cleanStaleState();
-        assertThat(publishAck(metrics), is(5L));
+        assertThat(publishAck(metrics)).isEqualTo(5L);
     }
 
     @Test public void publishingNotAcknowledgements() {
@@ -206,15 +205,15 @@ public class MetricsCollectorTest {
         metrics.newConnection(connection);
         metrics.newChannel(channel);
         // begins with no messages not-acknowledged
-        assertThat(publishNack(metrics), is(0L));
+        assertThat(publishNack(metrics)).isEqualTo(0L);
         // first not-acknowledgement gets tracked
         metrics.basicPublish(channel, 1);
         metrics.basicPublishNack(channel, 1, false);
-        assertThat(publishNack(metrics), is(1L));
+        assertThat(publishNack(metrics)).isEqualTo(1L);
         // second not-acknowledgement gets tracked
         metrics.basicPublish(channel, 2);
         metrics.basicPublishNack(channel, 2, false);
-        assertThat(publishNack(metrics), is(2L));
+        assertThat(publishNack(metrics)).isEqualTo(2L);
 
         // multi-nack
         metrics.basicPublish(channel, 3);
@@ -222,34 +221,34 @@ public class MetricsCollectorTest {
         metrics.basicPublish(channel, 5);
         // ack-ing in the middle
         metrics.basicPublishNack(channel, 4, false);
-        assertThat(publishNack(metrics), is(3L));
+        assertThat(publishNack(metrics)).isEqualTo(3L);
         // ack-ing several at once
         metrics.basicPublishNack(channel, 5, true);
-        assertThat(publishNack(metrics), is(5L));
+        assertThat(publishNack(metrics)).isEqualTo(5L);
 
         // ack-ing non existent doesn't affect metrics
         metrics.basicPublishNack(channel, 123, true);
-        assertThat(publishNack(metrics), is(5L));
+        assertThat(publishNack(metrics)).isEqualTo(5L);
 
         // cleaning stale state doesn't affect the metric
         metrics.cleanStaleState();
-        assertThat(publishNack(metrics), is(5L));
+        assertThat(publishNack(metrics)).isEqualTo(5L);
     }
 
     @Test public void publishingUnrouted() {
         AbstractMetricsCollector metrics = factory.create();
         Channel channel = mock(Channel.class);
         // begins with no messages not-acknowledged
-        assertThat(publishUnrouted(metrics), is(0L));
+        assertThat(publishUnrouted(metrics)).isEqualTo(0L);
         // first unrouted gets tracked
         metrics.basicPublishUnrouted(channel);
-        assertThat(publishUnrouted(metrics), is(1L));
+        assertThat(publishUnrouted(metrics)).isEqualTo(1L);
         // second unrouted gets tracked
         metrics.basicPublishUnrouted(channel);
-        assertThat(publishUnrouted(metrics), is(2L));
+        assertThat(publishUnrouted(metrics)).isEqualTo(2L);
         // cleaning stale state doesn't affect the metric
         metrics.cleanStaleState();
-        assertThat(publishUnrouted(metrics), is(2L));
+        assertThat(publishUnrouted(metrics)).isEqualTo(2L);
     }
 
     @Test public void cleanStaleState() {
@@ -283,13 +282,13 @@ public class MetricsCollectorTest {
         metrics.newChannel(closedChannel);
         metrics.newChannel(openChannelInClosedConnection);
 
-        assertThat(connections(metrics), is(2L));
-        assertThat(channels(metrics), is(2L+1L));
+        assertThat(connections(metrics)).isEqualTo(2L);
+        assertThat(channels(metrics)).isEqualTo(2L+1L);
 
         metrics.cleanStaleState();
 
-        assertThat(connections(metrics), is(1L));
-        assertThat(channels(metrics), is(1L));
+        assertThat(connections(metrics)).isEqualTo(1L);
+        assertThat(channels(metrics)).isEqualTo(1L);
     }
 
 
