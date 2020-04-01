@@ -27,8 +27,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeoutException;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 public class ChannelRpcTimeoutIntegrationTest {
 
@@ -73,9 +73,9 @@ public class ChannelRpcTimeoutIntegrationTest {
                 fail("Should time out and throw an exception");
             } catch(ChannelContinuationTimeoutException e) {
                 // OK
-                assertThat((Channel) e.getChannel(), is(channel));
-                assertThat(e.getChannelNumber(), is(channel.getChannelNumber()));
-                assertThat(e.getMethod(), instanceOf(AMQP.Queue.Declare.class));
+                assertThat((Channel) e.getChannel()).isEqualTo(channel);
+                assertThat(e.getChannelNumber()).isEqualTo(channel.getChannelNumber());
+                assertThat(e.getMethod()).isInstanceOf(AMQP.Queue.Declare.class);
             }
         } finally {
             connection.close();

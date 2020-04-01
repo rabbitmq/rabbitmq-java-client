@@ -38,10 +38,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.awaitility.Awaitility.waitAtMost;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static com.rabbitmq.client.test.TestUtils.waitAtMost;
+import static org.junit.Assert.*;
 
 public class RpcTest {
 
@@ -300,7 +298,7 @@ public class RpcTest {
 
         serverThread.interrupt();
 
-        waitAtMost(Duration.ofSeconds(1)).until(() -> !serverThread.isAlive()) ;
+        waitAtMost(Duration.ofSeconds(1), () -> !serverThread.isAlive());
 
         client.close();
     }

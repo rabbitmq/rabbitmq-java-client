@@ -17,8 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
@@ -72,7 +71,7 @@ public class FrameTest {
         for (byte[] chunk : channel.chunks) {
             totalWritten += chunk.length;
         }
-        assertThat(totalWritten, equalTo(totalFrameSize));
+        assertThat(totalWritten).isEqualTo(totalFrameSize);
     }
 
     private static class AccumulatorWritableByteChannel implements WritableByteChannel {

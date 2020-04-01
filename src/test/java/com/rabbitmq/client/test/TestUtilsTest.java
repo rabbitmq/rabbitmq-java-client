@@ -16,13 +16,12 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Connection;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,13 +34,13 @@ public class TestUtilsTest {
         when(connection.getServerProperties()).thenReturn(serverProperties);
 
         serverProperties.put("version", "3.7.0+rc.1.4.gedc5d96");
-        assertThat(TestUtils.isVersion37orLater(connection), is(true));
+        Assertions.assertThat(TestUtils.isVersion37orLater(connection)).isTrue();
 
         serverProperties.put("version", "3.7.0~alpha.449-1");
-        assertThat(TestUtils.isVersion37orLater(connection), is(true));
+        Assertions.assertThat(TestUtils.isVersion37orLater(connection)).isTrue();
 
         serverProperties.put("version", "3.7.1-alpha.40");
-        assertThat(TestUtils.isVersion37orLater(connection), is(true));
+        Assertions.assertThat(TestUtils.isVersion37orLater(connection)).isTrue();
     }
 
     @Test
@@ -51,15 +50,15 @@ public class TestUtilsTest {
         when(connection.getServerProperties()).thenReturn(serverProperties);
 
         serverProperties.put("version", "3.7.0+rc.1.4.gedc5d96");
-        assertThat(TestUtils.isVersion38orLater(connection), is(false));
+        Assertions.assertThat(TestUtils.isVersion38orLater(connection)).isFalse();
 
         serverProperties.put("version", "3.7.0~alpha.449-1");
-        assertThat(TestUtils.isVersion38orLater(connection), is(false));
+        Assertions.assertThat(TestUtils.isVersion38orLater(connection)).isFalse();
 
         serverProperties.put("version", "3.7.1-alpha.40");
-        assertThat(TestUtils.isVersion38orLater(connection), is(false));
+        Assertions.assertThat(TestUtils.isVersion38orLater(connection)).isFalse();
 
         serverProperties.put("version", "3.8.0+beta.4.38.g33a7f97");
-        assertThat(TestUtils.isVersion38orLater(connection), is(true));
+        Assertions.assertThat(TestUtils.isVersion38orLater(connection)).isTrue();
     }
 }
