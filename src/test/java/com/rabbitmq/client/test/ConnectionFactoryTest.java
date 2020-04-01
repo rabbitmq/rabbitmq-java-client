@@ -124,7 +124,7 @@ public class ConnectionFactoryTest {
         doNothing().when(connection).start();
         connectionFactory.newConnection();
 
-        assertThat(addressResolver.get()).isNotNull().isInstanceOf(ListAddressResolver.class);
+        assertThat(addressResolver.get()).isNotNull().isInstanceOf(DnsRecordIpAddressResolver.class);
     }
 
     @Test
