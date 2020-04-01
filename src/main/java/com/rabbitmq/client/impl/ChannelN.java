@@ -15,29 +15,23 @@
 
 package com.rabbitmq.client.impl;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.*;
-
-import com.rabbitmq.client.ConfirmCallback;
 import com.rabbitmq.client.*;
-import com.rabbitmq.client.AMQP.BasicProperties;
+import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Method;
-import com.rabbitmq.client.impl.AMQImpl.Basic;
+import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
-import com.rabbitmq.client.impl.AMQImpl.Confirm;
-import com.rabbitmq.client.impl.AMQImpl.Exchange;
 import com.rabbitmq.client.impl.AMQImpl.Queue;
-import com.rabbitmq.client.impl.AMQImpl.Tx;
+import com.rabbitmq.client.impl.AMQImpl.*;
 import com.rabbitmq.utility.Utility;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Main interface to AMQP protocol functionality. Public API -
@@ -50,6 +44,7 @@ import org.slf4j.LoggerFactory;
  * </pre>
  */
 public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel {
+    private static final int MAX_UNSIGNED_SHORT = 65535;
     private static final String UNSPECIFIED_OUT_OF_BAND = "";
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelN.class);
 
@@ -647,7 +642,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void basicQos(int prefetchSize, int prefetchCount, boolean global)
 	throws IOException
     {
-	exnWrappingRpc(new Basic.Qos(prefetchSize, prefetchCount, global));
+        if (prefetchCount < 0 || prefetchCount > MAX_UNSIGNED_SHORT) {
+            throw new IllegalArgumentException("Prefetch count must be between 0 and " + MAX_UNSIGNED_SHORT);
+        }
+	    exnWrappingRpc(new Basic.Qos(prefetchSize, prefetchCount, global));
     }
 
     /** Public API - {@inheritDoc} */
