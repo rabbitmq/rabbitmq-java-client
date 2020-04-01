@@ -173,8 +173,7 @@ public class Host {
 
     public static String nodenameA()
     {
-//        return System.getProperty("test-broker.A.nodename");
-        return "rabbit@acogoluegnes-inspiron";
+        return System.getProperty("test-broker.A.nodename");
     }
 
     public static String node_portA()
