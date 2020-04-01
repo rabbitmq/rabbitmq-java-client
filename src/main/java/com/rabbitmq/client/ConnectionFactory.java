@@ -61,6 +61,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 public class ConnectionFactory implements Cloneable {
 
+    private static final int MAX_UNSIGNED_SHORT = 65535;
+
     /** Default user name */
     public static final String DEFAULT_USER = "guest";
     /** Default password */
@@ -402,10 +404,16 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Set the requested maximum channel number
+     * Set the requested maximum channel number.
+     * <p>
+     * Note the value must be between 0 and 65535 (unsigned short in AMQP 0-9-1).
+     *
      * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
      */
     public void setRequestedChannelMax(int requestedChannelMax) {
+        if (requestedChannelMax < 0 || requestedChannelMax > MAX_UNSIGNED_SHORT) {
+            throw new IllegalArgumentException("Requested channel max must be between 0 and " + MAX_UNSIGNED_SHORT);
+        }
         this.requestedChannelMax = requestedChannelMax;
     }
 
@@ -495,10 +503,16 @@ public class ConnectionFactory implements Cloneable {
      * Set the requested heartbeat timeout. Heartbeat frames will be sent at about 1/2 the timeout interval.
      * If server heartbeat timeout is configured to a non-zero value, this method can only be used
      * to lower the value; otherwise any value provided by the client will be used.
+     * <p>
+     * Note the value must be between 0 and 65535 (unsigned short in AMQP 0-9-1).
+     *
      * @param requestedHeartbeat the initially requested heartbeat timeout, in seconds; zero for none
      * @see <a href="https://rabbitmq.com/heartbeats.html">RabbitMQ Heartbeats Guide</a>
      */
     public void setRequestedHeartbeat(int requestedHeartbeat) {
+        if (requestedHeartbeat < 0 || requestedHeartbeat > MAX_UNSIGNED_SHORT) {
+            throw new IllegalArgumentException("Requested heartbeat must be between 0 and " + MAX_UNSIGNED_SHORT);
+        }
         this.requestedHeartbeat = requestedHeartbeat;
     }
 
