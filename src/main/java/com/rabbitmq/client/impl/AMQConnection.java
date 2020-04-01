@@ -15,13 +15,12 @@
 
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.*;
 import com.rabbitmq.client.Method;
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +45,8 @@ final class Copyright {
  * for an example.
  */
 public class AMQConnection extends ShutdownNotifierComponent implements Connection, NetworkConnection {
+
+    private static final int MAX_UNSIGNED_SHORT = 65535;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AMQConnection.class);
     // we want socket write and channel shutdown timeouts to kick in after
@@ -402,6 +403,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             int channelMax =
                 negotiateChannelMax(this.requestedChannelMax,
                                     connTune.getChannelMax());
+
+            if (!checkUnsignedShort(channelMax)) {
+                throw new IllegalArgumentException("Negotiated channel max must be between 0 and " + MAX_UNSIGNED_SHORT + ": " + channelMax);
+            }
+
             _channelManager = instantiateChannelManager(channelMax, threadFactory);
 
             int frameMax =
@@ -412,6 +418,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             int heartbeat =
                 negotiatedMaxValue(this.requestedHeartbeat,
                                    connTune.getHeartbeat());
+
+            if (!checkUnsignedShort(heartbeat)) {
+                throw new IllegalArgumentException("Negotiated heartbeat must be between 0 and " + MAX_UNSIGNED_SHORT + ": " + heartbeat);
+            }
 
             setHeartbeat(heartbeat);
 
@@ -627,6 +637,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return (clientValue == 0 || serverValue == 0) ?
             Math.max(clientValue, serverValue) :
             Math.min(clientValue, serverValue);
+    }
+
+    private static boolean checkUnsignedShort(int value) {
+        return value >= 0 && value <= MAX_UNSIGNED_SHORT;
     }
 
     private class MainLoop implements Runnable {
