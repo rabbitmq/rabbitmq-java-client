@@ -19,6 +19,7 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.tools.Host;
+import org.assertj.core.api.Assertions;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -29,6 +30,7 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +38,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BooleanSupplier;
 
 import static org.junit.Assert.assertTrue;
 
@@ -51,6 +54,28 @@ public class TestUtils {
             connectionFactory.useBlockingIo();
         }
         return connectionFactory;
+    }
+
+    public static void waitAtMost(Duration timeout, BooleanSupplier condition) {
+        if (condition.getAsBoolean()) {
+            return;
+        }
+        int waitTime = 100;
+        int waitedTime = 0;
+        long timeoutInMs = timeout.toMillis();
+        while (waitedTime <= timeoutInMs) {
+            try {
+                Thread.sleep(waitTime);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+            if (condition.getAsBoolean()) {
+                return;
+            }
+            waitedTime += waitTime;
+        }
+        Assertions.fail("Waited " + timeout.getSeconds() + " second(s), condition never got true");
     }
 
     public static void close(Connection connection) {

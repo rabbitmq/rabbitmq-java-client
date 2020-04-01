@@ -33,8 +33,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
 public class AMQChannelTest {
@@ -69,10 +69,10 @@ public class AMQChannelTest {
             fail("Should time out and throw an exception");
         } catch(ChannelContinuationTimeoutException e) {
             // OK
-            assertThat((DummyAmqChannel) e.getChannel(), is(channel));
-            assertThat(e.getChannelNumber(), is(channel.getChannelNumber()));
-            assertThat(e.getMethod(), is(method));
-            assertNull("outstanding RPC should have been cleaned", channel.nextOutstandingRpc());
+            assertThat((DummyAmqChannel) e.getChannel()).isEqualTo(channel);
+            assertThat(e.getChannelNumber()).isEqualTo(channel.getChannelNumber());
+            assertThat(e.getMethod()).isEqualTo(method);
+            assertThat(channel.nextOutstandingRpc()).as("outstanding RPC should have been cleaned").isNull();
         }
     }
 
@@ -105,7 +105,7 @@ public class AMQChannelTest {
         }, (long) (rpcTimeout / 2.0), TimeUnit.MILLISECONDS);
 
         AMQCommand rpcResponse = channel.rpc(method);
-        assertThat(rpcResponse.getMethod(), is(response));
+        assertThat(rpcResponse.getMethod()).isEqualTo(response);
     }
 
     @Test
@@ -130,10 +130,10 @@ public class AMQChannelTest {
             fail("Should time out and throw an exception");
         } catch(final ChannelContinuationTimeoutException e) {
             // OK
-            assertThat((DummyAmqChannel) e.getChannel(), is(channel));
-            assertThat(e.getChannelNumber(), is(channel.getChannelNumber()));
-            assertThat(e.getMethod(), is(method));
-            assertNull("outstanding RPC should have been cleaned", channel.nextOutstandingRpc());
+            assertThat((DummyAmqChannel) e.getChannel()).isEqualTo(channel);
+            assertThat(e.getChannelNumber()).isEqualTo(channel.getChannelNumber());
+            assertThat(e.getMethod()).isEqualTo(method);
+            assertThat(channel.nextOutstandingRpc()).as("outstanding RPC should have been cleaned").isNull();
         }
 
         // now do a basic.consume request and have the queue.declareok returned instead
@@ -151,18 +151,15 @@ public class AMQChannelTest {
         final Method response2 = new AMQImpl.Basic.ConsumeOk.Builder()
             .consumerTag("456").build();
 
-        scheduler.schedule(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                channel.handleCompleteInboundCommand(new AMQCommand(response1));
-                Thread.sleep(10);
-                channel.handleCompleteInboundCommand(new AMQCommand(response2));
-                return null;
-            }
+        scheduler.schedule((Callable<Void>) () -> {
+            channel.handleCompleteInboundCommand(new AMQCommand(response1));
+            Thread.sleep(10);
+            channel.handleCompleteInboundCommand(new AMQCommand(response2));
+            return null;
         }, (long) (rpcTimeout / 2.0), TimeUnit.MILLISECONDS);
 
         AMQCommand rpcResponse = channel.rpc(method);
-        assertThat(rpcResponse.getMethod(), is(response2));
+        assertThat(rpcResponse.getMethod()).isEqualTo(response2);
     }
 
     static class DummyAmqChannel extends AMQChannel {

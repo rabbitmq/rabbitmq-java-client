@@ -32,17 +32,13 @@ import com.rabbitmq.client.test.TestUtils;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.rabbitmq.client.test.TestUtils.closeAndWaitForRecovery;
-import static com.rabbitmq.client.test.TestUtils.exchangeExists;
-import static com.rabbitmq.client.test.TestUtils.queueExists;
-import static com.rabbitmq.client.test.TestUtils.sendAndConsumeMessage;
-import static org.awaitility.Awaitility.waitAtMost;
-import static org.hamcrest.Matchers.is;
+import static com.rabbitmq.client.test.TestUtils.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -147,7 +143,7 @@ public class TopologyRecoveryFiltering extends BrokerTestCase {
             }
         });
         ch.basicPublish("topology.recovery.exchange", "recovered.consumer", null, "".getBytes());
-        waitAtMost(5, TimeUnit.SECONDS).untilAtomic(recoveredConsumerMessageCount, is(1));
+        waitAtMost(Duration.ofSeconds(5), () -> recoveredConsumerMessageCount.get() == 1);
 
         final AtomicInteger filteredConsumerMessageCount = new AtomicInteger(0);
         final CountDownLatch filteredConsumerLatch = new CountDownLatch(2);
@@ -160,13 +156,13 @@ public class TopologyRecoveryFiltering extends BrokerTestCase {
             }
         });
         ch.basicPublish("topology.recovery.exchange", "filtered.consumer", null, "".getBytes());
-        waitAtMost(5, TimeUnit.SECONDS).untilAtomic(filteredConsumerMessageCount, is(1));
+        waitAtMost(Duration.ofSeconds(5), () -> filteredConsumerMessageCount.get() == 1);
 
         closeAndWaitForRecovery((RecoverableConnection) c);
 
         int initialCount = recoveredConsumerMessageCount.get();
         ch.basicPublish("topology.recovery.exchange", "recovered.consumer", null, "".getBytes());
-        waitAtMost(5, TimeUnit.SECONDS).untilAtomic(recoveredConsumerMessageCount, is(initialCount + 1));
+        waitAtMost(Duration.ofSeconds(5), () -> recoveredConsumerMessageCount.get() == initialCount + 1);
 
         ch.basicPublish("topology.recovery.exchange", "filtered.consumer", null, "".getBytes());
         assertFalse("Consumer shouldn't recover, no extra messages should have been received",
