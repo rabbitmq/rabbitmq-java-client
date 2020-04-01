@@ -1,4 +1,4 @@
-// Copyright (c) 2007-Present Pivotal Software, Inc.  All rights reserved.
+// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 1.1 ("MPL"), the GNU General Public License version 2
@@ -15,7 +15,7 @@
 
 /*
    Copyright (c) 2006-2007 Frank Carver
-   Copyright (c) 2007-2016 Pivotal Software, Inc. All Rights Reserved
+   Copyright (c) 2007-2020 VMware, Inc. or its affiliates. All Rights Reserved
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
