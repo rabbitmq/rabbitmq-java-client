@@ -17,6 +17,7 @@
 package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.test.AbstractRMQTestSuite;
+import com.rabbitmq.client.test.SslContextFactoryTest;
 import org.junit.runner.RunWith;
 import org.junit.runner.Runner;
 import org.junit.runners.Suite;
@@ -34,7 +35,8 @@ import java.util.List;
 	ConnectionFactoryDefaultTlsVersion.class,
 	NioTlsUnverifiedConnection.class,
 	HostnameVerification.class,
-	TlsConnectionLogging.class
+	TlsConnectionLogging.class,
+	SslContextFactoryTest.class
 })
 public class SSLTests {
 

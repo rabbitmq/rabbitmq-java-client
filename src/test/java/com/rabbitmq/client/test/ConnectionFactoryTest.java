@@ -15,19 +15,8 @@
 
 package com.rabbitmq.client.test;
 
-import com.rabbitmq.client.Address;
-import com.rabbitmq.client.AddressResolver;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DnsRecordIpAddressResolver;
-import com.rabbitmq.client.ListAddressResolver;
-import com.rabbitmq.client.MetricsCollector;
-import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ConnectionParams;
-import com.rabbitmq.client.impl.CredentialsProvider;
-import com.rabbitmq.client.impl.FrameHandler;
-import com.rabbitmq.client.impl.FrameHandlerFactory;
-import org.junit.AfterClass;
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.impl.*;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -37,17 +26,18 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 public class ConnectionFactoryTest {
 
     // see https://github.com/rabbitmq/rabbitmq-java-client/issues/262
-    @Test public void tryNextAddressIfTimeoutExceptionNoAutoRecovery() throws IOException, TimeoutException {
+    @Test
+    public void tryNextAddressIfTimeoutExceptionNoAutoRecovery() throws IOException, TimeoutException {
         final AMQConnection connectionThatThrowsTimeout = mock(AMQConnection.class);
         final AMQConnection connectionThatSucceeds = mock(AMQConnection.class);
         final Queue<AMQConnection> connections = new ArrayBlockingQueue<AMQConnection>(10);
@@ -69,22 +59,23 @@ public class ConnectionFactoryTest {
         doThrow(TimeoutException.class).when(connectionThatThrowsTimeout).start();
         doNothing().when(connectionThatSucceeds).start();
         Connection returnedConnection = connectionFactory.newConnection(
-            new Address[] { new Address("host1"), new Address("host2") }
+                new Address[]{new Address("host1"), new Address("host2")}
         );
-        assertSame(connectionThatSucceeds, returnedConnection);
+        assertThat(returnedConnection).isSameAs(connectionThatSucceeds);
     }
-    
+
     // see https://github.com/rabbitmq/rabbitmq-java-client/pull/350
-    @Test public void customizeCredentialsProvider() throws Exception {
+    @Test
+    public void customizeCredentialsProvider() throws Exception {
         final CredentialsProvider provider = mock(CredentialsProvider.class);
         final AMQConnection connection = mock(AMQConnection.class);
         final AtomicBoolean createCalled = new AtomicBoolean(false);
-        
+
         ConnectionFactory connectionFactory = new ConnectionFactory() {
             @Override
             protected AMQConnection createConnection(ConnectionParams params, FrameHandler frameHandler,
-                    MetricsCollector metricsCollector) {
-                assertSame(provider, params.getCredentialsProvider());
+                                                     MetricsCollector metricsCollector) {
+                assertThat(provider).isSameAs(params.getCredentialsProvider());
                 createCalled.set(true);
                 return connection;
             }
@@ -96,22 +87,23 @@ public class ConnectionFactoryTest {
         };
         connectionFactory.setCredentialsProvider(provider);
         connectionFactory.setAutomaticRecoveryEnabled(false);
-        
+
         doNothing().when(connection).start();
-        
+
         Connection returnedConnection = connectionFactory.newConnection();
-        assertSame(returnedConnection, connection);
-        assertTrue(createCalled.get());
+        assertThat(returnedConnection).isSameAs(connection);
+        assertThat(createCalled).isTrue();
     }
 
-    @Test public void shouldNotUseDnsResolutionWhenOneAddressAndNoTls() throws Exception {
+    @Test
+    public void shouldNotUseDnsResolutionWhenOneAddressAndNoTls() throws Exception {
         AMQConnection connection = mock(AMQConnection.class);
         AtomicReference<AddressResolver> addressResolver = new AtomicReference<>();
 
         ConnectionFactory connectionFactory = new ConnectionFactory() {
             @Override
             protected AMQConnection createConnection(ConnectionParams params, FrameHandler frameHandler,
-                MetricsCollector metricsCollector) {
+                                                     MetricsCollector metricsCollector) {
                 return connection;
             }
 
@@ -131,18 +123,18 @@ public class ConnectionFactoryTest {
 
         doNothing().when(connection).start();
         connectionFactory.newConnection();
-
-        assertThat(addressResolver.get(), allOf(notNullValue(), instanceOf(ListAddressResolver.class)));
+        assertThat(addressResolver.get()).isNotNull().isInstanceOf(ListAddressResolver.class);
     }
 
-    @Test public void shouldNotUseDnsResolutionWhenOneAddressAndTls() throws Exception {
+    @Test
+    public void shouldNotUseDnsResolutionWhenOneAddressAndTls() throws Exception {
         AMQConnection connection = mock(AMQConnection.class);
         AtomicReference<AddressResolver> addressResolver = new AtomicReference<>();
 
         ConnectionFactory connectionFactory = new ConnectionFactory() {
             @Override
             protected AMQConnection createConnection(ConnectionParams params, FrameHandler frameHandler,
-                MetricsCollector metricsCollector) {
+                                                     MetricsCollector metricsCollector) {
                 return connection;
             }
 
@@ -164,7 +156,42 @@ public class ConnectionFactoryTest {
         connectionFactory.useSslProtocol();
         connectionFactory.newConnection();
 
-        assertThat(addressResolver.get(), allOf(notNullValue(), instanceOf(ListAddressResolver.class)));
+        assertThat(addressResolver.get()).isNotNull().isInstanceOf(ListAddressResolver.class);
+    }
+
+    @Test
+    public void heartbeatAndChannelMaxMustBeUnsignedShorts() {
+        class TestConfig {
+            int value;
+            Consumer<Integer> call;
+            boolean expectException;
+
+            public TestConfig(int value, Consumer<Integer> call, boolean expectException) {
+                this.value = value;
+                this.call = call;
+                this.expectException = expectException;
+            }
+        }
+
+        ConnectionFactory cf = new ConnectionFactory();
+        Consumer<Integer> setHeartbeat = cf::setRequestedHeartbeat;
+        Consumer<Integer> setChannelMax = cf::setRequestedChannelMax;
+
+        Stream.of(
+                new TestConfig(0, setHeartbeat, false),
+                new TestConfig(10, setHeartbeat, false),
+                new TestConfig(65535, setHeartbeat, false),
+                new TestConfig(-1, setHeartbeat, true),
+                new TestConfig(65536, setHeartbeat, true))
+                .flatMap(config -> Stream.of(config, new TestConfig(config.value, setChannelMax, config.expectException)))
+                .forEach(config -> {
+                    if (config.expectException) {
+                        assertThatThrownBy(() -> config.call.accept(config.value)).isInstanceOf(IllegalArgumentException.class);
+                    } else {
+                        config.call.accept(config.value);
+                    }
+                });
+
     }
 
 }

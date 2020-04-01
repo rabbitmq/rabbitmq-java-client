@@ -52,7 +52,6 @@ import org.junit.runners.Suite;
     ConnectionFactoryTest.class,
     RecoveryAwareAMQConnectionFactoryTest.class,
     RpcTest.class,
-    SslContextFactoryTest.class,
     LambdaCallbackTest.class,
     ChannelAsyncCompletableFutureTest.class,
     RecoveryDelayHandlerTest.class,
