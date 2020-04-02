@@ -21,6 +21,8 @@ import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -46,6 +48,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  * and will apply to all connections produced by this factory.
  */
 public class ConnectionFactory implements Cloneable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionFactory.class);
 
     private static final int MAX_UNSIGNED_SHORT = 65535;
 
@@ -393,10 +397,11 @@ public class ConnectionFactory implements Cloneable {
      * @param requestedChannelMax initially requested maximum channel number; zero for unlimited
      */
     public void setRequestedChannelMax(int requestedChannelMax) {
-        if (requestedChannelMax < 0 || requestedChannelMax > MAX_UNSIGNED_SHORT) {
-            throw new IllegalArgumentException("Requested channel max must be between 0 and " + MAX_UNSIGNED_SHORT);
+        this.requestedChannelMax = ensureUnsignedShort(requestedChannelMax);
+        if (this.requestedChannelMax != requestedChannelMax) {
+            LOGGER.warn("Requested channel max must be between 0 and {}, value has been set to {} instead of {}",
+                    MAX_UNSIGNED_SHORT, this.requestedChannelMax, requestedChannelMax);
         }
-        this.requestedChannelMax = requestedChannelMax;
     }
 
     /**
@@ -492,10 +497,11 @@ public class ConnectionFactory implements Cloneable {
      * @see <a href="https://rabbitmq.com/heartbeats.html">RabbitMQ Heartbeats Guide</a>
      */
     public void setRequestedHeartbeat(int requestedHeartbeat) {
-        if (requestedHeartbeat < 0 || requestedHeartbeat > MAX_UNSIGNED_SHORT) {
-            throw new IllegalArgumentException("Requested heartbeat must be between 0 and " + MAX_UNSIGNED_SHORT);
+        this.requestedHeartbeat = ensureUnsignedShort(requestedHeartbeat);
+        if (this.requestedHeartbeat != requestedHeartbeat) {
+            LOGGER.warn("Requested heartbeat must be between 0 and {}, value has been set to {} instead of {}",
+                    MAX_UNSIGNED_SHORT, this.requestedHeartbeat, requestedHeartbeat);
         }
-        this.requestedHeartbeat = requestedHeartbeat;
     }
 
     /**
@@ -1573,5 +1579,15 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setTrafficListener(TrafficListener trafficListener) {
         this.trafficListener = trafficListener;
+    }
+
+    public static int ensureUnsignedShort(int value) {
+        if (value < 0) {
+            return 0;
+        } else if (value > MAX_UNSIGNED_SHORT) {
+            return MAX_UNSIGNED_SHORT;
+        } else {
+            return value;
+        }
     }
 }
