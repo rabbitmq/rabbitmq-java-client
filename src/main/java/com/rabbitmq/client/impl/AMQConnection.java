@@ -386,12 +386,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
 
         try {
-            int channelMax =
+            int negotiatedChannelMax =
                 negotiateChannelMax(this.requestedChannelMax,
                                     connTune.getChannelMax());
 
-            if (!checkUnsignedShort(channelMax)) {
-                throw new IllegalArgumentException("Negotiated channel max must be between 0 and " + MAX_UNSIGNED_SHORT + ": " + channelMax);
+            int channelMax = ConnectionFactory.ensureUnsignedShort(negotiatedChannelMax);
+
+            if (channelMax != negotiatedChannelMax) {
+                LOGGER.warn("Channel max must be between 0 and {}, value has been set to {} instead of {}",
+                        MAX_UNSIGNED_SHORT, channelMax, negotiatedChannelMax);
             }
 
             _channelManager = instantiateChannelManager(channelMax, threadFactory);
@@ -401,12 +404,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                    connTune.getFrameMax());
             this._frameMax = frameMax;
 
-            int heartbeat =
+            int negotiatedHeartbeat =
                 negotiatedMaxValue(this.requestedHeartbeat,
                                    connTune.getHeartbeat());
 
-            if (!checkUnsignedShort(heartbeat)) {
-                throw new IllegalArgumentException("Negotiated heartbeat must be between 0 and " + MAX_UNSIGNED_SHORT + ": " + heartbeat);
+            int heartbeat = ConnectionFactory.ensureUnsignedShort(negotiatedHeartbeat);
+
+            if (heartbeat != negotiatedHeartbeat) {
+                LOGGER.warn("Heartbeat must be between 0 and {}, value has been set to {} instead of {}",
+                        MAX_UNSIGNED_SHORT, heartbeat, negotiatedHeartbeat);
             }
 
             setHeartbeat(heartbeat);
