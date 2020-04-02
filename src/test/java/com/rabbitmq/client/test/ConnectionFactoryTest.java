@@ -27,10 +27,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 public class ConnectionFactoryTest {
@@ -164,33 +164,34 @@ public class ConnectionFactoryTest {
     public void heartbeatAndChannelMaxMustBeUnsignedShorts() {
         class TestConfig {
             int value;
-            Consumer<Integer> call;
-            boolean expectException;
+            Supplier<Integer> getCall;
+            Consumer<Integer> setCall;
+            int expected;
 
-            public TestConfig(int value, Consumer<Integer> call, boolean expectException) {
+            public TestConfig(int value, Supplier<Integer> getCall, Consumer<Integer> setCall, int expected) {
                 this.value = value;
-                this.call = call;
-                this.expectException = expectException;
+                this.getCall = getCall;
+                this.setCall = setCall;
+                this.expected = expected;
             }
         }
 
         ConnectionFactory cf = new ConnectionFactory();
+        Supplier<Integer> getHeartbeart = () -> cf.getRequestedHeartbeat();
         Consumer<Integer> setHeartbeat = cf::setRequestedHeartbeat;
+        Supplier<Integer> getChannelMax = () -> cf.getRequestedChannelMax();
         Consumer<Integer> setChannelMax = cf::setRequestedChannelMax;
 
         Stream.of(
-                new TestConfig(0, setHeartbeat, false),
-                new TestConfig(10, setHeartbeat, false),
-                new TestConfig(65535, setHeartbeat, false),
-                new TestConfig(-1, setHeartbeat, true),
-                new TestConfig(65536, setHeartbeat, true))
-                .flatMap(config -> Stream.of(config, new TestConfig(config.value, setChannelMax, config.expectException)))
+                new TestConfig(0, getHeartbeart, setHeartbeat, 0),
+                new TestConfig(10, getHeartbeart, setHeartbeat, 10),
+                new TestConfig(65535, getHeartbeart, setHeartbeat, 65535),
+                new TestConfig(-1, getHeartbeart, setHeartbeat, 0),
+                new TestConfig(65536, getHeartbeart, setHeartbeat, 65535))
+                .flatMap(config -> Stream.of(config, new TestConfig(config.value, getChannelMax, setChannelMax, config.expected)))
                 .forEach(config -> {
-                    if (config.expectException) {
-                        assertThatThrownBy(() -> config.call.accept(config.value)).isInstanceOf(IllegalArgumentException.class);
-                    } else {
-                        config.call.accept(config.value);
-                    }
+                    config.setCall.accept(config.value);
+                    assertThat(config.getCall.get()).isEqualTo(config.expected);
                 });
 
     }

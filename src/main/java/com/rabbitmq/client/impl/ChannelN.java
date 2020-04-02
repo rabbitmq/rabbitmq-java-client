@@ -642,10 +642,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public void basicQos(int prefetchSize, int prefetchCount, boolean global)
 	throws IOException
     {
-        if (prefetchCount < 0 || prefetchCount > MAX_UNSIGNED_SHORT) {
-            throw new IllegalArgumentException("Prefetch count must be between 0 and " + MAX_UNSIGNED_SHORT);
+        int unsignedShortPrefetchCount = ConnectionFactory.ensureUnsignedShort(prefetchCount);
+        if (unsignedShortPrefetchCount != prefetchCount) {
+            LOGGER.warn("Prefetch count must be between 0 and {}, value has been set to {} instead of {}",
+                    MAX_UNSIGNED_SHORT, unsignedShortPrefetchCount, prefetchCount);
         }
-	    exnWrappingRpc(new Basic.Qos(prefetchSize, prefetchCount, global));
+	    exnWrappingRpc(new Basic.Qos(prefetchSize, unsignedShortPrefetchCount, global));
     }
 
     /** Public API - {@inheritDoc} */
