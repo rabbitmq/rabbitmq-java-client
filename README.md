@@ -23,14 +23,14 @@ They require Java 8 or higher.
 <dependency>
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
-    <version>5.8.0</version>
+    <version>5.9.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ``` groovy
-compile 'com.rabbitmq:amqp-client:5.8.0'
+compile 'com.rabbitmq:amqp-client:5.9.0'
 ```
 
 #### 4.x Series
@@ -42,14 +42,14 @@ They require Java 6 or higher.
 <dependency>
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
-    <version>4.11.3</version>
+    <version>4.12.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ``` groovy
-compile 'com.rabbitmq:amqp-client:4.11.3'
+compile 'com.rabbitmq:amqp-client:4.12.0'
 ```
 
 
