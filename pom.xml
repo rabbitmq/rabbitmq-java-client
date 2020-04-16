@@ -68,7 +68,7 @@
     <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
     <versions.maven.plugin.version>2.3</versions.maven.plugin.version>
-    <maven.resources.plugin.version>3.0.2</maven.resources.plugin.version>
+    <maven.resources.plugin.version>3.1.0</maven.resources.plugin.version>
     <maven.source.plugin.version>3.0.1</maven.source.plugin.version>
     <groovy.maven.plugin.version>2.0</groovy.maven.plugin.version>
     <groovy.all.version>2.4.8</groovy.all.version>
@@ -783,6 +783,12 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
         <version>${maven.resources.plugin.version}</version>
+        <configuration>
+          <nonFilteredFileExtensions>
+            <nonFilteredFileExtension>p12</nonFilteredFileExtension>
+            <nonFilteredFileExtension>jks</nonFilteredFileExtension>
+          </nonFilteredFileExtensions>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.gmaven</groupId>
