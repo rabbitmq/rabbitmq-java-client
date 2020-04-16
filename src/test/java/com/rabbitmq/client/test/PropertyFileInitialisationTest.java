@@ -18,70 +18,66 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.ConnectionFactoryConfigurator;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
+import javax.net.ssl.SSLContext;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 import static com.rabbitmq.client.impl.AMQConnection.defaultClientProperties;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 /**
  *
  */
-@RunWith(Parameterized.class)
 public class PropertyFileInitialisationTest {
-
-    @Parameterized.Parameters
-    public static Object[] data() {
-        return new Object[] {
-            "./src/test/resources/property-file-initialisation/configuration.properties",
-            "classpath:/property-file-initialisation/configuration.properties"
-        };
-    }
-
-    @Parameterized.Parameter
-    public String propertyFileLocation;
 
     ConnectionFactory cf = new ConnectionFactory();
 
-    @Test public void propertyInitialisationFromFile() throws IOException {
-        cf.load(propertyFileLocation);
-        checkConnectionFactory();
+    @Test
+    public void propertyInitialisationFromFile() throws IOException {
+        for (String propertyFileLocation : Arrays.asList(
+                "./src/test/resources/property-file-initialisation/configuration.properties",
+                "classpath:/property-file-initialisation/configuration.properties")) {
+            ConnectionFactory connectionFactory = new ConnectionFactory();
+            connectionFactory.load(propertyFileLocation);
+            checkConnectionFactory(connectionFactory);
+        }
     }
 
-    @Test public void propertyInitialisationCustomPrefix() throws Exception {
+    @Test
+    public void propertyInitialisationCustomPrefix() throws Exception {
         Properties propertiesCustomPrefix = getPropertiesWitPrefix("prefix.");
 
         cf.load(propertiesCustomPrefix, "prefix.");
         checkConnectionFactory();
     }
 
-    @Test public void propertyInitialisationNoPrefix() throws Exception {
+    @Test
+    public void propertyInitialisationNoPrefix() throws Exception {
         Properties propertiesCustomPrefix = getPropertiesWitPrefix("");
 
         cf.load(propertiesCustomPrefix, "");
         checkConnectionFactory();
     }
 
-    @Test public void propertyInitialisationNullPrefix() throws Exception {
+    @Test
+    public void propertyInitialisationNullPrefix() throws Exception {
         Properties propertiesCustomPrefix = getPropertiesWitPrefix("");
 
         cf.load(propertiesCustomPrefix, null);
         checkConnectionFactory();
     }
 
-    @Test public void propertyInitialisationUri() {
+    @Test
+    public void propertyInitialisationUri() {
         cf.load(Collections.singletonMap("rabbitmq.uri", "amqp://foo:bar@127.0.0.1:5673/dummy"));
 
         assertThat(cf.getUsername(), is("foo"));
@@ -91,12 +87,14 @@ public class PropertyFileInitialisationTest {
         assertThat(cf.getPort(), is(5673));
     }
 
-    @Test public void propertyInitialisationIncludeDefaultClientPropertiesByDefault() {
-        cf.load(new HashMap<String, String>());
-        assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size()));
+    @Test
+    public void propertyInitialisationIncludeDefaultClientPropertiesByDefault() {
+        cf.load(new HashMap<>());
+        assertThat(cf.getClientProperties().entrySet()).hasSize(defaultClientProperties().size());
     }
 
-    @Test public void propertyInitialisationAddCustomClientProperty() {
+    @Test
+    public void propertyInitialisationAddCustomClientProperty() {
         cf.load(new HashMap<String, String>() {{
             put("rabbitmq.client.properties.foo", "bar");
         }});
@@ -104,7 +102,8 @@ public class PropertyFileInitialisationTest {
         assertThat(cf.getClientProperties().get("foo").toString(), is("bar"));
     }
 
-    @Test public void propertyInitialisationGetRidOfDefaultClientPropertyWithEmptyValue() {
+    @Test
+    public void propertyInitialisationGetRidOfDefaultClientPropertyWithEmptyValue() {
         final String key = defaultClientProperties().entrySet().iterator().next().getKey();
         cf.load(new HashMap<String, String>() {{
             put("rabbitmq.client.properties." + key, "");
@@ -112,7 +111,8 @@ public class PropertyFileInitialisationTest {
         assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size() - 1));
     }
 
-    @Test public void propertyInitialisationOverrideDefaultClientProperty() {
+    @Test
+    public void propertyInitialisationOverrideDefaultClientProperty() {
         final String key = defaultClientProperties().entrySet().iterator().next().getKey();
         cf.load(new HashMap<String, String>() {{
             put("rabbitmq.client.properties." + key, "whatever");
@@ -121,7 +121,8 @@ public class PropertyFileInitialisationTest {
         assertThat(cf.getClientProperties().get(key).toString(), is("whatever"));
     }
 
-    @Test public void propertyInitialisationDoNotUseNio() throws Exception {
+    @Test
+    public void propertyInitialisationDoNotUseNio() throws Exception {
         cf.load(new HashMap<String, String>() {{
             put("rabbitmq.use.nio", "false");
             put("rabbitmq.nio.nb.io.threads", "2");
@@ -129,34 +130,150 @@ public class PropertyFileInitialisationTest {
         assertThat(cf.getNioParams().getNbIoThreads(), not(2));
     }
 
+    @Test
+    public void lookUp() {
+        assertThat(ConnectionFactoryConfigurator.lookUp(
+                ConnectionFactoryConfigurator.SSL_KEY_STORE,
+                Collections.singletonMap(ConnectionFactoryConfigurator.SSL_KEY_STORE, "some file"),
+                ""
+        )).as("exact key should be looked up").isEqualTo("some file");
+
+        assertThat(ConnectionFactoryConfigurator.lookUp(
+                ConnectionFactoryConfigurator.SSL_KEY_STORE,
+                Collections.emptyMap(),
+                ""
+        )).as("lookup should return null when no match").isNull();
+
+        assertThat(ConnectionFactoryConfigurator.lookUp(
+                ConnectionFactoryConfigurator.SSL_KEY_STORE,
+                Collections.singletonMap("ssl.key-store", "some file"), // key alias
+                ""
+        )).as("alias key should be used when initial is missing").isEqualTo("some file");
+
+        assertThat(ConnectionFactoryConfigurator.lookUp(
+                ConnectionFactoryConfigurator.SSL_TRUST_STORE_TYPE,
+                Collections.emptyMap(),
+                "",
+                "JKS"
+        )).as("default value should be returned when key is not found").isEqualTo("JKS");
+    }
+
+    @Test
+    public void tlsInitialisationWithKeyManagerAndTrustManagerShouldSucceed() {
+        Stream.of("./src/test/resources/property-file-initialisation/tls/",
+                "classpath:/property-file-initialisation/tls/").forEach(baseDirectory -> {
+            Map<String, String> configuration = new HashMap<>();
+            configuration.put(ConnectionFactoryConfigurator.SSL_ENABLED, "true");
+            configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE, baseDirectory + "keystore.p12");
+            configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_PASSWORD, "bunnies");
+            configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_TYPE, "PKCS12");
+            configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_ALGORITHM, "SunX509");
+
+            configuration.put(ConnectionFactoryConfigurator.SSL_TRUST_STORE, baseDirectory + "truststore.jks");
+            configuration.put(ConnectionFactoryConfigurator.SSL_TRUST_STORE_PASSWORD, "bunnies");
+            configuration.put(ConnectionFactoryConfigurator.SSL_TRUST_STORE_TYPE, "JKS");
+            configuration.put(ConnectionFactoryConfigurator.SSL_TRUST_STORE_ALGORITHM, "SunX509");
+
+            configuration.put(ConnectionFactoryConfigurator.SSL_VERIFY_HOSTNAME, "true");
+
+            ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+            ConnectionFactoryConfigurator.load(connectionFactory, configuration, "");
+
+            verify(connectionFactory, times(1)).useSslProtocol(any(SSLContext.class));
+            verify(connectionFactory, times(1)).enableHostnameVerification();
+        });
+    }
+
+    @Test
+    public void tlsNotEnabledIfNotConfigured() {
+        ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+        ConnectionFactoryConfigurator.load(connectionFactory, Collections.emptyMap(), "");
+        verify(connectionFactory, never()).useSslProtocol(any(SSLContext.class));
+    }
+
+    @Test
+    public void tlsNotEnabledIfDisabled() {
+        ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+        ConnectionFactoryConfigurator.load(
+                connectionFactory,
+                Collections.singletonMap(ConnectionFactoryConfigurator.SSL_ENABLED, "false"),
+                ""
+        );
+        verify(connectionFactory, never()).useSslProtocol(any(SSLContext.class));
+    }
+
+    @Test
+    public void tlsSslContextSetIfTlsEnabled() {
+        AtomicBoolean sslProtocolSet = new AtomicBoolean(false);
+        ConnectionFactory connectionFactory = new ConnectionFactory() {
+            @Override
+            public void useSslProtocol(SSLContext context) {
+                sslProtocolSet.set(true);
+                super.useSslProtocol(context);
+            }
+        };
+        ConnectionFactoryConfigurator.load(
+                connectionFactory,
+                Collections.singletonMap(ConnectionFactoryConfigurator.SSL_ENABLED, "true"),
+                ""
+        );
+        assertThat(sslProtocolSet).isTrue();
+    }
+
+    @Test
+    public void tlsBasicSetupShouldTrustEveryoneWhenServerValidationIsNotEnabled() throws Exception {
+        String algorithm = ConnectionFactory.computeDefaultTlsProtocol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols());
+        Map<String, String> configuration = new HashMap<>();
+        configuration.put(ConnectionFactoryConfigurator.SSL_ENABLED, "true");
+        configuration.put(ConnectionFactoryConfigurator.SSL_VALIDATE_SERVER_CERTIFICATE, "false");
+        ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+        ConnectionFactoryConfigurator.load(connectionFactory, configuration, "");
+        verify(connectionFactory, times(1)).useSslProtocol(algorithm);
+    }
+
+    @Test
+    public void tlsBasicSetupShouldSetDefaultTrustManagerWhenServerValidationIsEnabled() throws Exception {
+        Map<String, String> configuration = new HashMap<>();
+        configuration.put(ConnectionFactoryConfigurator.SSL_ENABLED, "true");
+        configuration.put(ConnectionFactoryConfigurator.SSL_VALIDATE_SERVER_CERTIFICATE, "true");
+        ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+        ConnectionFactoryConfigurator.load(connectionFactory, configuration, "");
+        verify(connectionFactory, never()).useSslProtocol(anyString());
+        verify(connectionFactory, times(1)).useSslProtocol(any(SSLContext.class));
+    }
+
     private void checkConnectionFactory() {
-        assertThat(cf.getUsername(), is("foo"));
-        assertThat(cf.getPassword(), is("bar"));
-        assertThat(cf.getVirtualHost(), is("dummy"));
-        assertThat(cf.getHost(), is("127.0.0.1"));
-        assertThat(cf.getPort(), is(5673));
+        checkConnectionFactory(this.cf);
+    }
 
-        assertThat(cf.getRequestedChannelMax(), is(1));
-        assertThat(cf.getRequestedFrameMax(), is(2));
-        assertThat(cf.getRequestedHeartbeat(), is(10));
-        assertThat(cf.getConnectionTimeout(), is(10000));
-        assertThat(cf.getHandshakeTimeout(), is(5000));
+    private void checkConnectionFactory(ConnectionFactory connectionFactory) {
+        assertThat(connectionFactory.getUsername()).isEqualTo("foo");
+        assertThat(connectionFactory.getPassword()).isEqualTo("bar");
+        assertThat(connectionFactory.getVirtualHost()).isEqualTo("dummy");
+        assertThat(connectionFactory.getHost()).isEqualTo("127.0.0.1");
+        assertThat(connectionFactory.getPort()).isEqualTo(5673);
 
-        assertThat(cf.getClientProperties().entrySet(), hasSize(defaultClientProperties().size() + 1));
-        assertThat(cf.getClientProperties().get("foo").toString(), is("bar"));
+        assertThat(connectionFactory.getRequestedChannelMax()).isEqualTo(1);
+        assertThat(connectionFactory.getRequestedFrameMax()).isEqualTo(2);
+        assertThat(connectionFactory.getRequestedHeartbeat()).isEqualTo(10);
+        assertThat(connectionFactory.getConnectionTimeout()).isEqualTo(10000);
+        assertThat(connectionFactory.getHandshakeTimeout()).isEqualTo(5000);
 
-        assertThat(cf.isAutomaticRecoveryEnabled(), is(false));
-        assertThat(cf.isTopologyRecoveryEnabled(), is(false));
-        assertThat(cf.getNetworkRecoveryInterval(), is(10000l));
-        assertThat(cf.getChannelRpcTimeout(), is(10000));
-        assertThat(cf.isChannelShouldCheckRpcResponseType(), is(true));
+        assertThat(connectionFactory.getClientProperties().entrySet()).hasSize(defaultClientProperties().size() + 1);
+        assertThat(connectionFactory.getClientProperties()).extracting("foo").isEqualTo("bar");
 
-        assertThat(cf.getNioParams(), notNullValue());
-        assertThat(cf.getNioParams().getReadByteBufferSize(), is(32000));
-        assertThat(cf.getNioParams().getWriteByteBufferSize(), is(32000));
-        assertThat(cf.getNioParams().getNbIoThreads(), is(2));
-        assertThat(cf.getNioParams().getWriteEnqueuingTimeoutInMs(), is(5000));
-        assertThat(cf.getNioParams().getWriteQueueCapacity(), is(1000));
+        assertThat(connectionFactory.isAutomaticRecoveryEnabled()).isFalse();
+        assertThat(connectionFactory.isTopologyRecoveryEnabled()).isFalse();
+        assertThat(connectionFactory.getNetworkRecoveryInterval()).isEqualTo(10000l);
+        assertThat(connectionFactory.getChannelRpcTimeout()).isEqualTo(10000);
+        assertThat(connectionFactory.isChannelShouldCheckRpcResponseType()).isTrue();
+
+        assertThat(connectionFactory.getNioParams()).isNotNull();
+        assertThat(connectionFactory.getNioParams().getReadByteBufferSize()).isEqualTo(32000);
+        assertThat(connectionFactory.getNioParams().getWriteByteBufferSize()).isEqualTo(32000);
+        assertThat(connectionFactory.getNioParams().getNbIoThreads()).isEqualTo(2);
+        assertThat(connectionFactory.getNioParams().getWriteEnqueuingTimeoutInMs()).isEqualTo(5000);
+        assertThat(connectionFactory.getNioParams().getWriteQueueCapacity()).isEqualTo(1000);
     }
 
     private Properties getPropertiesWitPrefix(String prefix) throws IOException {
@@ -172,8 +289,8 @@ public class PropertyFileInitialisationTest {
         Properties propertiesCustomPrefix = new Properties();
         for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             propertiesCustomPrefix.put(
-                prefix + entry.getKey().toString().substring(ConnectionFactoryConfigurator.DEFAULT_PREFIX.length()),
-                entry.getValue()
+                    prefix + entry.getKey().toString().substring(ConnectionFactoryConfigurator.DEFAULT_PREFIX.length()),
+                    entry.getValue()
             );
         }
         return propertiesCustomPrefix;

@@ -18,36 +18,35 @@ package com.rabbitmq.client;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.nio.NioParams;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import javax.net.ssl.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Helper class to load {@link ConnectionFactory} settings from a property file.
- *
+ * <p>
  * The authorised keys are the constants values in this class (e.g. USERNAME).
  * The property file/properties instance/map instance keys can have
  * a prefix, the default being <code>rabbitmq.</code>.
- *
+ * <p>
  * Property files can be loaded from the file system (the default),
  * but also from the classpath, by using the <code>classpath:</code> prefix
  * in the location.
- *
+ * <p>
  * Client properties can be set by using
  * the <code>client.properties.</code> prefix, e.g. <code>client.properties.app.name</code>.
  * Default client properties and custom client properties are merged. To remove
  * a default client property, set its key to an empty value.
  *
- * @since 4.4.0
  * @see ConnectionFactory#load(String, String)
+ * @since 5.1.0
  */
 public class ConnectionFactoryConfigurator {
 
@@ -76,6 +75,33 @@ public class ConnectionFactoryConfigurator {
     public static final String NIO_NB_IO_THREADS = "nio.nb.io.threads";
     public static final String NIO_WRITE_ENQUEUING_TIMEOUT_IN_MS = "nio.write.enqueuing.timeout.in.ms";
     public static final String NIO_WRITE_QUEUE_CAPACITY = "nio.write.queue.capacity";
+    public static final String SSL_ALGORITHM = "ssl.algorithm";
+    public static final String SSL_ENABLED = "ssl.enabled";
+    public static final String SSL_KEY_STORE = "ssl.key.store";
+    public static final String SSL_KEY_STORE_PASSWORD = "ssl.key.store.password";
+    public static final String SSL_KEY_STORE_TYPE = "ssl.key.store.type";
+    public static final String SSL_KEY_STORE_ALGORITHM = "ssl.key.store.algorithm";
+    public static final String SSL_TRUST_STORE = "ssl.trust.store";
+    public static final String SSL_TRUST_STORE_PASSWORD = "ssl.trust.store.password";
+    public static final String SSL_TRUST_STORE_TYPE = "ssl.trust.store.type";
+    public static final String SSL_TRUST_STORE_ALGORITHM = "ssl.trust.store.algorithm";
+    public static final String SSL_VALIDATE_SERVER_CERTIFICATE = "ssl.validate.server.certificate";
+    public static final String SSL_VERIFY_HOSTNAME = "ssl.verify.hostname";
+
+    // aliases allow to be compatible with keys from Spring Boot and still be consistent with
+    // the initial naming of the keys
+    private static final Map<String, List<String>> ALIASES = new ConcurrentHashMap<String, List<String>>() {{
+        put(SSL_KEY_STORE, Arrays.asList("ssl.key-store"));
+        put(SSL_KEY_STORE_PASSWORD, Arrays.asList("ssl.key-store-password"));
+        put(SSL_KEY_STORE_TYPE, Arrays.asList("ssl.key-store-type"));
+        put(SSL_KEY_STORE_ALGORITHM, Arrays.asList("ssl.key-store-algorithm"));
+        put(SSL_TRUST_STORE, Arrays.asList("ssl.trust-store"));
+        put(SSL_TRUST_STORE_PASSWORD, Arrays.asList("ssl.trust-store-password"));
+        put(SSL_TRUST_STORE_TYPE, Arrays.asList("ssl.trust-store-type"));
+        put(SSL_TRUST_STORE_ALGORITHM, Arrays.asList("ssl.trust-store-algorithm"));
+        put(SSL_VALIDATE_SERVER_CERTIFICATE, Arrays.asList("ssl.validate-server-certificate"));
+        put(SSL_VERIFY_HOSTNAME, Arrays.asList("ssl.verify-hostname"));
+    }};
 
     @SuppressWarnings("unchecked")
     public static void load(ConnectionFactory cf, String propertyFileLocation, String prefix) throws IOException {
@@ -83,30 +109,26 @@ public class ConnectionFactoryConfigurator {
             throw new IllegalArgumentException("Property file argument cannot be null or empty");
         }
         Properties properties = new Properties();
-        if (propertyFileLocation.startsWith("classpath:")) {
-            InputStream in = null;
-            try {
-                in = ConnectionFactoryConfigurator.class.getResourceAsStream(
-                    propertyFileLocation.substring("classpath:".length())
-                );
-                properties.load(in);
-            } finally {
-                if (in != null) {
-                    in.close();
-                }
-            }
-        } else {
-            Reader reader = null;
-            try {
-                reader = new BufferedReader(new FileReader(propertyFileLocation));
-                properties.load(reader);
-            } finally {
-                if (reader != null) {
-                    reader.close();
-                }
+        InputStream in = null;
+        try {
+            in = loadResource(propertyFileLocation);
+            properties.load(in);
+        } finally {
+            if (in != null) {
+                in.close();
             }
         }
         load(cf, (Map) properties, prefix);
+    }
+
+    private static InputStream loadResource(String location) throws FileNotFoundException {
+        if (location.startsWith("classpath:")) {
+            return ConnectionFactoryConfigurator.class.getResourceAsStream(
+                    location.substring("classpath:".length())
+            );
+        } else {
+            return new FileInputStream(location);
+        }
     }
 
     public static void load(ConnectionFactory cf, Map<String, String> properties, String prefix) {
@@ -116,54 +138,54 @@ public class ConnectionFactoryConfigurator {
             try {
                 cf.setUri(uri);
             } catch (URISyntaxException e) {
-                throw new IllegalArgumentException("Error while setting AMQP URI: "+uri, e);
+                throw new IllegalArgumentException("Error while setting AMQP URI: " + uri, e);
             } catch (NoSuchAlgorithmException e) {
-                throw new IllegalArgumentException("Error while setting AMQP URI: "+uri, e);
+                throw new IllegalArgumentException("Error while setting AMQP URI: " + uri, e);
             } catch (KeyManagementException e) {
-                throw new IllegalArgumentException("Error while setting AMQP URI: "+uri, e);
+                throw new IllegalArgumentException("Error while setting AMQP URI: " + uri, e);
             }
         }
-        String username = properties.get(prefix + USERNAME);
+        String username = lookUp(USERNAME, properties, prefix);
         if (username != null) {
             cf.setUsername(username);
         }
-        String password = properties.get(prefix + PASSWORD);
+        String password = lookUp(PASSWORD, properties, prefix);
         if (password != null) {
             cf.setPassword(password);
         }
-        String vhost = properties.get(prefix + VIRTUAL_HOST);
+        String vhost = lookUp(VIRTUAL_HOST, properties, prefix);
         if (vhost != null) {
             cf.setVirtualHost(vhost);
         }
-        String host = properties.get(prefix + HOST);
+        String host = lookUp(HOST, properties, prefix);
         if (host != null) {
             cf.setHost(host);
         }
-        String port = properties.get(prefix + PORT);
+        String port = lookUp(PORT, properties, prefix);
         if (port != null) {
             cf.setPort(Integer.valueOf(port));
         }
-        String requestedChannelMax = properties.get(prefix + CONNECTION_CHANNEL_MAX);
+        String requestedChannelMax = lookUp(CONNECTION_CHANNEL_MAX, properties, prefix);
         if (requestedChannelMax != null) {
             cf.setRequestedChannelMax(Integer.valueOf(requestedChannelMax));
         }
-        String requestedFrameMax = properties.get(prefix + CONNECTION_FRAME_MAX);
+        String requestedFrameMax = lookUp(CONNECTION_FRAME_MAX, properties, prefix);
         if (requestedFrameMax != null) {
             cf.setRequestedFrameMax(Integer.valueOf(requestedFrameMax));
         }
-        String requestedHeartbeat = properties.get(prefix + CONNECTION_HEARTBEAT);
+        String requestedHeartbeat = lookUp(CONNECTION_HEARTBEAT, properties, prefix);
         if (requestedHeartbeat != null) {
             cf.setRequestedHeartbeat(Integer.valueOf(requestedHeartbeat));
         }
-        String connectionTimeout = properties.get(prefix + CONNECTION_TIMEOUT);
+        String connectionTimeout = lookUp(CONNECTION_TIMEOUT, properties, prefix);
         if (connectionTimeout != null) {
             cf.setConnectionTimeout(Integer.valueOf(connectionTimeout));
         }
-        String handshakeTimeout = properties.get(prefix + HANDSHAKE_TIMEOUT);
+        String handshakeTimeout = lookUp(HANDSHAKE_TIMEOUT, properties, prefix);
         if (handshakeTimeout != null) {
             cf.setHandshakeTimeout(Integer.valueOf(handshakeTimeout));
         }
-        String shutdownTimeout = properties.get(prefix + SHUTDOWN_TIMEOUT);
+        String shutdownTimeout = lookUp(SHUTDOWN_TIMEOUT, properties, prefix);
         if (shutdownTimeout != null) {
             cf.setShutdownTimeout(Integer.valueOf(shutdownTimeout));
         }
@@ -180,62 +202,187 @@ public class ConnectionFactoryConfigurator {
                     clientProperties.remove(clientPropertyKey);
                 } else {
                     clientProperties.put(
-                        clientPropertyKey,
-                        entry.getValue()
+                            clientPropertyKey,
+                            entry.getValue()
                     );
                 }
             }
         }
         cf.setClientProperties(clientProperties);
 
-        String automaticRecovery = properties.get(prefix + CONNECTION_RECOVERY_ENABLED);
+        String automaticRecovery = lookUp(CONNECTION_RECOVERY_ENABLED, properties, prefix);
         if (automaticRecovery != null) {
             cf.setAutomaticRecoveryEnabled(Boolean.valueOf(automaticRecovery));
         }
-        String topologyRecovery = properties.get(prefix + TOPOLOGY_RECOVERY_ENABLED);
+        String topologyRecovery = lookUp(TOPOLOGY_RECOVERY_ENABLED, properties, prefix);
         if (topologyRecovery != null) {
             cf.setTopologyRecoveryEnabled(Boolean.getBoolean(topologyRecovery));
         }
-        String networkRecoveryInterval = properties.get(prefix + CONNECTION_RECOVERY_INTERVAL);
+        String networkRecoveryInterval = lookUp(CONNECTION_RECOVERY_INTERVAL, properties, prefix);
         if (networkRecoveryInterval != null) {
             cf.setNetworkRecoveryInterval(Long.valueOf(networkRecoveryInterval));
         }
-        String channelRpcTimeout = properties.get(prefix + CHANNEL_RPC_TIMEOUT);
+        String channelRpcTimeout = lookUp(CHANNEL_RPC_TIMEOUT, properties, prefix);
         if (channelRpcTimeout != null) {
             cf.setChannelRpcTimeout(Integer.valueOf(channelRpcTimeout));
         }
-        String channelShouldCheckRpcResponseType = properties.get(prefix + CHANNEL_SHOULD_CHECK_RPC_RESPONSE_TYPE);
+        String channelShouldCheckRpcResponseType = lookUp(CHANNEL_SHOULD_CHECK_RPC_RESPONSE_TYPE, properties, prefix);
         if (channelShouldCheckRpcResponseType != null) {
             cf.setChannelShouldCheckRpcResponseType(Boolean.valueOf(channelShouldCheckRpcResponseType));
         }
 
-        String useNio = properties.get(prefix + USE_NIO);
+        String useNio = lookUp(USE_NIO, properties, prefix);
         if (useNio != null && Boolean.valueOf(useNio)) {
             cf.useNio();
 
             NioParams nioParams = new NioParams();
 
-            String readByteBufferSize = properties.get(prefix + NIO_READ_BYTE_BUFFER_SIZE);
+            String readByteBufferSize = lookUp(NIO_READ_BYTE_BUFFER_SIZE, properties, prefix);
             if (readByteBufferSize != null) {
                 nioParams.setReadByteBufferSize(Integer.valueOf(readByteBufferSize));
             }
-            String writeByteBufferSize = properties.get(prefix + NIO_WRITE_BYTE_BUFFER_SIZE);
+            String writeByteBufferSize = lookUp(NIO_WRITE_BYTE_BUFFER_SIZE, properties, prefix);
             if (writeByteBufferSize != null) {
                 nioParams.setWriteByteBufferSize(Integer.valueOf(writeByteBufferSize));
             }
-            String nbIoThreads = properties.get(prefix + NIO_NB_IO_THREADS);
+            String nbIoThreads = lookUp(NIO_NB_IO_THREADS, properties, prefix);
             if (nbIoThreads != null) {
                 nioParams.setNbIoThreads(Integer.valueOf(nbIoThreads));
             }
-            String writeEnqueuingTime = properties.get(prefix + NIO_WRITE_ENQUEUING_TIMEOUT_IN_MS);
+            String writeEnqueuingTime = lookUp(NIO_WRITE_ENQUEUING_TIMEOUT_IN_MS, properties, prefix);
             if (writeEnqueuingTime != null) {
                 nioParams.setWriteEnqueuingTimeoutInMs(Integer.valueOf(writeEnqueuingTime));
             }
-            String writeQueueCapacity = properties.get(prefix + NIO_WRITE_QUEUE_CAPACITY);
+            String writeQueueCapacity = lookUp(NIO_WRITE_QUEUE_CAPACITY, properties, prefix);
             if (writeQueueCapacity != null) {
                 nioParams.setWriteQueueCapacity(Integer.valueOf(writeQueueCapacity));
             }
             cf.setNioParams(nioParams);
+        }
+
+        String useSsl = lookUp(SSL_ENABLED, properties, prefix);
+        if (useSsl != null && Boolean.valueOf(useSsl)) {
+            setUpSsl(cf, properties, prefix);
+        }
+    }
+
+    private static void setUpSsl(ConnectionFactory cf, Map<String, String> properties, String prefix) {
+        String algorithm = lookUp(SSL_ALGORITHM, properties, prefix);
+        String keyStoreLocation = lookUp(SSL_KEY_STORE, properties, prefix);
+        String keyStorePassword = lookUp(SSL_KEY_STORE_PASSWORD, properties, prefix);
+        String keyStoreType = lookUp(SSL_KEY_STORE_TYPE, properties, prefix, "PKCS12");
+        String keyStoreAlgorithm = lookUp(SSL_KEY_STORE_ALGORITHM, properties, prefix, "SunX509");
+        String trustStoreLocation = lookUp(SSL_TRUST_STORE, properties, prefix);
+        String trustStorePassword = lookUp(SSL_TRUST_STORE_PASSWORD, properties, prefix);
+        String trustStoreType = lookUp(SSL_TRUST_STORE_TYPE, properties, prefix, "JKS");
+        String trustStoreAlgorithm = lookUp(SSL_TRUST_STORE_ALGORITHM, properties, prefix, "SunX509");
+        String validateServerCertificate = lookUp(SSL_VALIDATE_SERVER_CERTIFICATE, properties, prefix);
+        String verifyHostname = lookUp(SSL_VERIFY_HOSTNAME, properties, prefix);
+
+        try {
+            algorithm = algorithm == null ?
+                    ConnectionFactory.computeDefaultTlsProtocol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols()) : algorithm;
+            boolean enableHostnameVerification = verifyHostname == null ? Boolean.FALSE : Boolean.valueOf(verifyHostname);
+
+            if (keyStoreLocation == null && trustStoreLocation == null) {
+                setUpBasicSsl(
+                        cf,
+                        validateServerCertificate == null ? Boolean.FALSE : Boolean.valueOf(validateServerCertificate),
+                        enableHostnameVerification,
+                        algorithm
+                );
+            } else {
+                KeyManager[] keyManagers = configureKeyManagers(keyStoreLocation, keyStorePassword, keyStoreType, keyStoreAlgorithm);
+                TrustManager[] trustManagers = configureTrustManagers(trustStoreLocation, trustStorePassword, trustStoreType, trustStoreAlgorithm);
+
+                // create ssl context
+                SSLContext sslContext = SSLContext.getInstance(algorithm);
+                sslContext.init(keyManagers, trustManagers, null);
+
+                cf.useSslProtocol(sslContext);
+
+                if (enableHostnameVerification) {
+                    cf.enableHostnameVerification();
+                }
+            }
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Error while configuring TLS", e);
+        } catch (IOException e) {
+            throw new IllegalStateException("Error while configuring TLS", e);
+        }
+    }
+
+    private static KeyManager[] configureKeyManagers(String keystore, String keystorePassword, String keystoreType, String keystoreAlgorithm) throws KeyStoreException, IOException, NoSuchAlgorithmException,
+            CertificateException, UnrecoverableKeyException {
+        char[] keyPassphrase = null;
+        if (keystorePassword != null) {
+            keyPassphrase = keystorePassword.toCharArray();
+        }
+        KeyManager[] keyManagers = null;
+        if (keystore != null) {
+            KeyStore ks = KeyStore.getInstance(keystoreType);
+            InputStream in = null;
+            try {
+                in = loadResource(keystore);
+                ks.load(in, keyPassphrase);
+            } finally {
+                if (in != null) {
+                    in.close();
+                }
+            }
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(keystoreAlgorithm);
+            kmf.init(ks, keyPassphrase);
+            keyManagers = kmf.getKeyManagers();
+        }
+        return keyManagers;
+    }
+
+    private static TrustManager[] configureTrustManagers(String truststore, String truststorePassword, String truststoreType, String truststoreAlgorithm)
+            throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        char[] trustPassphrase = null;
+        if (truststorePassword != null) {
+            trustPassphrase = truststorePassword.toCharArray();
+        }
+        TrustManager[] trustManagers = null;
+        if (truststore != null) {
+            KeyStore tks = KeyStore.getInstance(truststoreType);
+            InputStream in = null;
+            try {
+                in = loadResource(truststore);
+                tks.load(in, trustPassphrase);
+            } finally {
+                if (in != null) {
+                    in.close();
+                }
+            }
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(truststoreAlgorithm);
+            tmf.init(tks);
+            trustManagers = tmf.getTrustManagers();
+        }
+        return trustManagers;
+    }
+
+    private static void setUpBasicSsl(ConnectionFactory cf, boolean validateServerCertificate, boolean verifyHostname, String sslAlgorithm) throws KeyManagementException, NoSuchAlgorithmException, KeyStoreException {
+        if (validateServerCertificate) {
+            useDefaultTrustStore(cf, sslAlgorithm, verifyHostname);
+        } else {
+            if (sslAlgorithm == null) {
+                cf.useSslProtocol();
+            } else {
+                cf.useSslProtocol(sslAlgorithm);
+            }
+        }
+    }
+
+    private static void useDefaultTrustStore(ConnectionFactory cf, String sslAlgorithm, boolean verifyHostname) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        SSLContext sslContext = SSLContext.getInstance(sslAlgorithm);
+        TrustManagerFactory trustManagerFactory =
+                TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        trustManagerFactory.init((KeyStore) null);
+        sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
+        cf.useSslProtocol(sslContext);
+        if (verifyHostname) {
+            cf.enableHostnameVerification();
         }
     }
 
@@ -256,4 +403,29 @@ public class ConnectionFactoryConfigurator {
     public static void load(ConnectionFactory connectionFactory, Map<String, String> properties) {
         load(connectionFactory, properties, DEFAULT_PREFIX);
     }
+
+    public static String lookUp(String key, Map<String, String> properties, String prefix) {
+        return lookUp(key, properties, prefix, null);
+    }
+
+    public static String lookUp(String key, Map<String, String> properties, String prefix, String defaultValue) {
+        String value = properties.get(prefix + key);
+        if (value == null) {
+            List<String> aliases = ALIASES.get(key);
+            if (aliases != null && !aliases.isEmpty()) {
+                for (String alias : aliases) {
+                    value = properties.get(prefix + alias);
+                    if (value != null) {
+                        break;
+                    }
+                }
+            }
+            if (value == null) {
+                value = defaultValue;
+            }
+        }
+        return value;
+    }
+
+
 }
