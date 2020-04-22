@@ -729,17 +729,19 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                 if (!oldName.equals(newName)) {
                     // make sure server-named queues are re-added with
                     // their new names. MK.
-                    synchronized (this.recordedQueues) {
-                        this.propagateQueueNameChangeToBindings(oldName, newName);
-                        this.propagateQueueNameChangeToConsumers(oldName, newName);
-                        // bug26552:
-                        // remove old name after we've updated the bindings and consumers,
-                        // plus only for server-named queues, both to make sure we don't lose
-                        // anything to recover. MK.
-                        if(q.isServerNamed()) {
-                            deleteRecordedQueue(oldName);
+                    synchronized (this.consumers) {
+                        synchronized (this.recordedQueues) {
+                            this.propagateQueueNameChangeToBindings(oldName, newName);
+                            this.propagateQueueNameChangeToConsumers(oldName, newName);
+                            // bug26552:
+                            // remove old name after we've updated the bindings and consumers,
+                            // plus only for server-named queues, both to make sure we don't lose
+                            // anything to recover. MK.
+                            if (q.isServerNamed()) {
+                                deleteRecordedQueue(oldName);
+                            }
+                            this.recordedQueues.put(newName, q);
                         }
-                        this.recordedQueues.put(newName, q);
                     }
                 }
                 for (QueueRecoveryListener qrl : Utility.copy(this.queueRecoveryListeners)) {
