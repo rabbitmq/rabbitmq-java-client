@@ -1032,15 +1032,13 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     void maybeDeleteRecordedAutoDeleteExchange(String exchange) {
-        synchronized (this.consumers) {
-            synchronized (this.recordedExchanges) {
-                if(!hasMoreDestinationsBoundToExchange(Utility.copy(this.recordedBindings), exchange)) {
-                    RecordedExchange x = this.recordedExchanges.get(exchange);
-                    // last binding where this exchange is the source is gone, remove recorded exchange
-                    // if it is auto-deleted. See bug 26364.
-                    if(x != null && x.isAutoDelete()) {
-                        deleteRecordedExchange(exchange);
-                    }
+        synchronized (this.recordedExchanges) {
+            if(!hasMoreDestinationsBoundToExchange(Utility.copy(this.recordedBindings), exchange)) {
+                RecordedExchange x = this.recordedExchanges.get(exchange);
+                // last binding where this exchange is the source is gone, remove recorded exchange
+                // if it is auto-deleted. See bug 26364.
+                if(x != null && x.isAutoDelete()) {
+                    deleteRecordedExchange(exchange);
                 }
             }
         }
