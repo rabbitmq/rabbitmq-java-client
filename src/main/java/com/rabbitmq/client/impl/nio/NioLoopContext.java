@@ -54,12 +54,19 @@ public class NioLoopContext {
     }
 
     void initStateIfNecessary() throws IOException {
-        // FIXME this should be synchronized
-        if (this.readSelectorState == null) {
-            this.readSelectorState = new SelectorHolder(Selector.open());
-            this.writeSelectorState = new SelectorHolder(Selector.open());
+        // This code is supposed to be called only from the SocketChannelFrameHandlerFactory
+        // and while holding the lock.
+        // We lock just in case some other code calls this method in the future.
+        socketChannelFrameHandlerFactory.lock();
+        try {
+            if (this.readSelectorState == null) {
+                this.readSelectorState = new SelectorHolder(Selector.open());
+                this.writeSelectorState = new SelectorHolder(Selector.open());
 
-            startIoLoops();
+                startIoLoops();
+            }
+        } finally {
+            socketChannelFrameHandlerFactory.unlock();
         }
     }
 
