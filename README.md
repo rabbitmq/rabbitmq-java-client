@@ -69,7 +69,7 @@ for the support timeline of this library.
 ## License
 
 This package, the RabbitMQ Java client library, is [triple-licensed](https://www.rabbitmq.com/api-guide.html#license) under
-the Mozilla Public License 1.1 ("MPL"), the GNU General Public License
+the Mozilla Public License 2.0 ("MPL"), the GNU General Public License
 version 2 ("GPL") and the Apache License version 2 ("ASL").
 
 This means that the user can consider the library to be licensed under **any of the licenses from the list** above.
