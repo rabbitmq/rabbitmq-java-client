@@ -60,6 +60,6 @@ See [Contributing](./CONTRIBUTING.md) and [How to Run Tests](./RUNNING_TESTS.md)
 
 ## License
 
-This package, the RabbitMQ Java client library, is triple-licensed under
-the Mozilla Public License 1.1 ("MPL"), the GNU General Public License
+This package, the RabbitMQ Java client library, is [triple-licensed](https://www.rabbitmq.com/api-guide.html#license) under
+the Mozilla Public License 2.0 ("MPL"), the GNU General Public License
 version 2 ("GPL") and the Apache License version 2 ("ASL").
