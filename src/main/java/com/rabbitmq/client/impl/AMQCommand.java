@@ -152,6 +152,12 @@ public class AMQCommand implements Command {
         }
     }
 
+    /**
+     * Instantiates and returns a StringBuilder
+     * @param body  Array of bytes that represents the content body
+     * @param suppressBody  A boolean that demonstrates if content body should be ignored
+     * @return StringBuilder instance
+     */
     private static StringBuilder contentBodyStringBuilder(byte[] body, boolean suppressBody) {
         try {
             if (suppressBody) {
