@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.functional;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,7 +32,7 @@ public class Nack extends AbstractRejectTest {
 
     @Test public void singleNack() throws Exception {
         String q =
-            channel.queueDeclare("", false, true, false, null).getQueue();
+                channel.queueDeclare("", true, false, false, Collections.singletonMap("x-queue-type", "quorum")).getQueue();
 
         byte[] m1 = "1".getBytes();
         byte[] m2 = "2".getBytes();
@@ -63,7 +64,7 @@ public class Nack extends AbstractRejectTest {
 
     @Test public void multiNack() throws Exception {
         String q =
-            channel.queueDeclare("", false, true, false, null).getQueue();
+                channel.queueDeclare("", true, false, false, Collections.singletonMap("x-queue-type", "quorum")).getQueue();
 
         byte[] m1 = "1".getBytes();
         byte[] m2 = "2".getBytes();
@@ -105,7 +106,7 @@ public class Nack extends AbstractRejectTest {
 
     @Test public void nackAll() throws Exception {
         String q =
-            channel.queueDeclare("", false, true, false, null).getQueue();
+                channel.queueDeclare("", true, false, false, Collections.singletonMap("x-queue-type", "quorum")).getQueue();
 
         byte[] m1 = "1".getBytes();
         byte[] m2 = "2".getBytes();

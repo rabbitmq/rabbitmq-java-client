@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.functional;
 import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import org.junit.Test;
 
@@ -30,7 +31,7 @@ public class Reject extends AbstractRejectTest
     @Test public void reject()
         throws IOException, InterruptedException
     {
-        String q = channel.queueDeclare("", false, true, false, null).getQueue();
+        String q = channel.queueDeclare("", true, false, false, Collections.singletonMap("x-queue-type", "quorum")).getQueue();
 
         byte[] m1 = "1".getBytes();
         byte[] m2 = "2".getBytes();
