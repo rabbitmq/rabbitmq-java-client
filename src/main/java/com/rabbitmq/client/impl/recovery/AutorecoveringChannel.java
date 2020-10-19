@@ -17,6 +17,7 @@ package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQCommand;
+import com.rabbitmq.client.impl.recovery.Utils.IoTimeoutExceptionRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,33 +70,41 @@ public class AutorecoveringChannel implements RecoverableChannel {
 
     @Override
     public void close() throws IOException, TimeoutException {
+        executeAndClean(() -> delegate.close());
+    }
+
+    @Override
+    public void close(int closeCode, String closeMessage) throws IOException, TimeoutException {
+        executeAndClean(() -> delegate.close(closeCode, closeMessage));
+    }
+
+    @Override
+    public void abort() throws IOException {
         try {
-            delegate.close();
+            executeAndClean(() -> delegate.abort());
+        } catch (TimeoutException e) {
+            // abort() ignores exceptions
+        }
+    }
+
+    @Override
+    public void abort(int closeCode, String closeMessage) throws IOException {
+        try {
+            executeAndClean(() -> delegate.abort(closeCode, closeMessage));
+        } catch (TimeoutException e) {
+            // abort() ignores exceptions
+        }
+    }
+
+    private void executeAndClean(IoTimeoutExceptionRunnable callback) throws IOException, TimeoutException {
+        try {
+            callback.run();
         } finally {
             for (String consumerTag : consumerTags) {
                 this.connection.deleteRecordedConsumer(consumerTag);
             }
             this.connection.unregisterChannel(this);
         }
-    }
-
-    @Override
-    public void close(int closeCode, String closeMessage) throws IOException, TimeoutException {
-        try {
-          delegate.close(closeCode, closeMessage);
-        } finally {
-          this.connection.unregisterChannel(this);
-        }
-    }
-
-    @Override
-    public void abort() throws IOException {
-        delegate.abort();
-    }
-
-    @Override
-    public void abort(int closeCode, String closeMessage) throws IOException {
-        delegate.abort(closeCode, closeMessage);
     }
 
     @Override
