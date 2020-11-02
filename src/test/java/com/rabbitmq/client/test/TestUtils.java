@@ -311,4 +311,12 @@ public class TestUtils {
             };
         }
     }
+
+    @FunctionalInterface
+    public interface CallableFunction<T, R> {
+
+        R apply(T t) throws Exception;
+
+    }
+
 }

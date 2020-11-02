@@ -18,19 +18,44 @@ package com.rabbitmq.client.test.functional;
 
 import static org.junit.Assert.assertNull;
 
-import java.io.IOException;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.test.TestUtils;
+import com.rabbitmq.client.test.TestUtils.CallableFunction;
+import java.util.Collections;
 
+import java.util.UUID;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 public class Reject extends AbstractRejectTest
 {
+
+    @Parameterized.Parameters
+    public static Object[] queueCreators() {
+        return new Object[] {
+            (CallableFunction<Channel, String>) channel -> {
+                String q = UUID.randomUUID().toString();
+                channel.queueDeclare(q, true, false, false, Collections.singletonMap("x-queue-type", "quorum"));
+                return q;
+            },
+            (CallableFunction<Channel, String>) channel -> {
+                String q = UUID.randomUUID().toString();
+                channel.queueDeclare(q, true, false, false, Collections.singletonMap("x-queue-type", "classic"));
+                return q;
+            }};
+    }
+
+    @Parameterized.Parameter public TestUtils.CallableFunction<Channel, String> queueCreator;
+
     @Test public void reject()
-        throws IOException, InterruptedException
+        throws Exception
     {
-        String q = channel.queueDeclare("", false, true, false, null).getQueue();
+        String q = queueCreator.apply(channel);
 
         byte[] m1 = "1".getBytes();
         byte[] m2 = "2".getBytes();
