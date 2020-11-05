@@ -17,6 +17,7 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +32,7 @@ import java.util.Optional;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(Parameterized.class)
 public class ConnectionTest {
@@ -43,6 +44,8 @@ public class ConnectionTest {
     @Mock
     Channel ch = mock(Channel.class);
 
+    AutoCloseable mocks;
+
     @Parameterized.Parameters
     public static Object[] configurators() {
         return new Object[]{new NotNumberedChannelCreationCallback(), new NumberedChannelCreationCallback()};
@@ -50,7 +53,12 @@ public class ConnectionTest {
 
     @Before
     public void init() {
-        initMocks(this);
+        mocks = openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        mocks.close();
     }
 
     @Test
