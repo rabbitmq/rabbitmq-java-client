@@ -23,6 +23,7 @@ import com.rabbitmq.client.impl.recovery.RecordedExchange;
 import com.rabbitmq.client.impl.recovery.RecordedQueue;
 import com.rabbitmq.client.impl.recovery.RetryContext;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -42,7 +43,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 /**
  *
@@ -72,9 +73,16 @@ public class DefaultRetryHandlerTest {
     @Mock
     BackoffPolicy backoffPolicy;
 
+    AutoCloseable mocks;
+
     @Before
     public void init() {
-        initMocks(this);
+        mocks = openMocks(this);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        mocks.close();
     }
 
     @Test
