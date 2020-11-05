@@ -60,8 +60,12 @@ public class Nack extends AbstractRejectTest {
         byte[] m1 = "1".getBytes();
         byte[] m2 = "2".getBytes();
 
+        channel.confirmSelect();
+
         basicPublishVolatile(m1, q);
         basicPublishVolatile(m2, q);
+
+        channel.waitForConfirmsOrDie(1000);
 
         long tag1 = checkDelivery(channel.basicGet(q, false), m1, false);
         long tag2 = checkDelivery(channel.basicGet(q, false), m2, false);
@@ -93,10 +97,14 @@ public class Nack extends AbstractRejectTest {
         byte[] m3 = "3".getBytes();
         byte[] m4 = "4".getBytes();
 
+        channel.confirmSelect();
+
         basicPublishVolatile(m1, q);
         basicPublishVolatile(m2, q);
         basicPublishVolatile(m3, q);
         basicPublishVolatile(m4, q);
+
+        channel.waitForConfirmsOrDie(1000);
 
         checkDelivery(channel.basicGet(q, false), m1, false);
         long tag1 = checkDelivery(channel.basicGet(q, false), m2, false);
@@ -132,8 +140,12 @@ public class Nack extends AbstractRejectTest {
         byte[] m1 = "1".getBytes();
         byte[] m2 = "2".getBytes();
 
+        channel.confirmSelect();
+
         basicPublishVolatile(m1, q);
         basicPublishVolatile(m2, q);
+
+        channel.waitForConfirmsOrDie(1000);
 
         checkDelivery(channel.basicGet(q, false), m1, false);
         checkDelivery(channel.basicGet(q, false), m2, false);
