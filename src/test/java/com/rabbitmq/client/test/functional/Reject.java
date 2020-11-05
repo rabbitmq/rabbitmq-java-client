@@ -57,11 +57,15 @@ public class Reject extends AbstractRejectTest
     {
         String q = queueCreator.apply(channel);
 
+        channel.confirmSelect();
+
         byte[] m1 = "1".getBytes();
         byte[] m2 = "2".getBytes();
 
         basicPublishVolatile(m1, q);
         basicPublishVolatile(m2, q);
+
+        channel.waitForConfirmsOrDie(1000);
 
         long tag1 = checkDelivery(channel.basicGet(q, false), m1, false);
         long tag2 = checkDelivery(channel.basicGet(q, false), m2, false);
