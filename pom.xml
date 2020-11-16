@@ -82,6 +82,7 @@
     <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
     <maven.packagecloud.wagon.version>0.0.6</maven.packagecloud.wagon.version>
     <checksum.maven.plugin.version>1.8</checksum.maven.plugin.version>
+    <jshell-maven-plugin.version>1.3</jshell-maven-plugin.version>
 
     <!--
     These groovy scripts are used later in this POM file to generate
@@ -1019,6 +1020,15 @@
           <additionalJOption>${javadoc.joption}</additionalJOption>
           <quiet>true</quiet>
           <source>8</source>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.johnpoth</groupId>
+        <artifactId>jshell-maven-plugin</artifactId>
+        <version>${jshell-maven-plugin.version}</version>
+        <configuration>
+          <testClasspath>true</testClasspath>
         </configuration>
       </plugin>
 

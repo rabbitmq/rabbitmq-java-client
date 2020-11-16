@@ -52,6 +52,22 @@ They require Java 6 or higher.
 compile 'com.rabbitmq:amqp-client:4.12.0'
 ```
 
+## Experimenting with JShell
+
+You can experiment with the client from JShell. This requires Java 9 or more.
+
+```
+git clone https://github.com/rabbitmq/rabbitmq-java-client.git
+cd rabbitmq-java-client
+./mvnw test-compile jshell:run
+...
+import com.rabbitmq.client.*
+ConnectionFactory cf = new ConnectionFactory()
+Connection c = cf.newConnection()
+...
+c.close()
+/exit
+```
 
 ## Contributing
 
