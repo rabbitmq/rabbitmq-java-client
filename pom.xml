@@ -60,9 +60,9 @@
     <jackson.version>2.12.0</jackson.version>
     <logback.version>1.2.3</logback.version>
     <junit.version>4.13.1</junit.version>
-    <mockito.version>3.6.0</mockito.version>
+    <mockito.version>3.6.28</mockito.version>
     <assertj.version>3.18.1</assertj.version>
-    <jetty.version>9.4.34.v20201102</jetty.version>
+    <jetty.version>9.4.35.v20201120</jetty.version>
     <bouncycastle.version>1.67</bouncycastle.version>
 
     <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
