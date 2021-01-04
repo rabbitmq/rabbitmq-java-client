@@ -35,6 +35,8 @@ compile 'com.rabbitmq:amqp-client:5.10.0'
 
 #### 4.x Series
 
+As of 1 January 2021 the 4.x branch is no longer supported.
+
 This client releases are independent from RabbitMQ server releases and can be used with RabbitMQ server `3.x`.
 They require Java 6 or higher.
 
