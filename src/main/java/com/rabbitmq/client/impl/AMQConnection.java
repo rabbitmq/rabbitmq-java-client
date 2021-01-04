@@ -34,7 +34,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class Copyright {
-    final static String COPYRIGHT="Copyright (c) 2007-2020 VMware, Inc. or its affiliates.";
+    final static String COPYRIGHT="Copyright (c) 2007-2021 VMware, Inc. or its affiliates.";
     final static String LICENSE="Licensed under the MPL. See https://www.rabbitmq.com/";
 }
 
