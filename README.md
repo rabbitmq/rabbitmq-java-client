@@ -10,7 +10,7 @@ This package is published to several Maven package repositories:
 
 * [Maven Central](https://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.rabbitmq%20a%3Aamqp-client)
 * [RabbitMQ Maven Milestones repository](https://packagecloud.io/rabbitmq/maven-milestones) 
-* [Sonatype OSS snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/com/rabbitmq/jms/rabbitmq-jms/)
+* [Sonatype OSS snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/com/rabbitmq/amqp-client/)
 
 ### Maven
 
