@@ -1,4 +1,4 @@
-## Overview
+# Running RabbitMQ Java Client Test Suites
 
 There are multiple test suites in the RabbitMQ Java client library;
 the source for all of the suites can be found in the [src/test/java](src/test/java)
@@ -8,29 +8,31 @@ The suites are:
 
   * Client tests
   * Server tests
-  * SSL tests
+  * TLS connectivity tests
   * Functional tests
-  * HA tests
+  * Multi-node tests
 
-All of them assume a RabbitMQ node listening on localhost:5672
-(the default settings). SSL tests require a broker listening on the default
-SSL port. HA tests expect a second node listening on localhost:5673.
+All of them assume a RabbitMQ node listening on `localhost:5672`
+(the default settings). TLS tests require a broker listening on the default
+TLS port, `5671`. Multi-node tests expect a second cluster node listening on `localhost:5673`.
 
 Connection recovery tests need `rabbitmqctl` to control the running nodes.
-can control the running node.
 
 `./mvnw verify` will start those nodes with the appropriate configuration.
 
-To easily fulfill all those requirements, you should use `make deps` to
+## Running Tests
+
+To easily fulfill all those requirements, use `make deps` to
 fetch the dependencies in the `deps` directory.
 
-You then run Maven with the `deps.dir` property set like this:
+Then run Maven with the `deps.dir` property set like this:
+
 ```
 ./mvnw -Ddeps.dir=$(pwd)/deps verify
 ```
 
-The previous command launches tests against the blocking IO connector. If you want
-to run the tests against the NIO connector, add `-P use-nio` to the command line:
+The previous command launches tests against the blocking IO connector.
+To run the tests against the NIO connector, add `-P use-nio` to the command line:
 
 ```
 ./mvnw -Ddeps.dir=$(pwd)/deps verify -P use-nio
