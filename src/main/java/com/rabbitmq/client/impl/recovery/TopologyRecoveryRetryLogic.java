@@ -77,7 +77,28 @@ public abstract class TopologyRecoveryRetryLogic {
      * Recover a binding.
      */
     public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_BINDING = context -> {
-        context.binding().recover();
+        if (context.entity() instanceof RecordedQueueBinding) {
+            // recover all bindings for the queue.
+            // need to do this incase some bindings have already been recovered successfully before this binding failed
+            String queue = context.binding().getDestination();
+            for (RecordedBinding recordedBinding : Utility.copy(context.connection().getRecordedBindings())) {
+                if (recordedBinding instanceof RecordedQueueBinding && queue.equals(recordedBinding.getDestination())) {
+                    recordedBinding.recover();
+                }
+            }
+        } else if (context.entity() instanceof RecordedExchangeBinding) {
+            // recover all bindings for the exchange
+            // need to do this incase some bindings have already been recovered successfully before this binding failed
+            String exchange = context.binding().getDestination();
+            for (RecordedBinding recordedBinding : Utility.copy(context.connection().getRecordedBindings())) {
+                if (recordedBinding instanceof RecordedExchangeBinding && exchange.equals(recordedBinding.getDestination())) {
+                    recordedBinding.recover();
+                }
+            }
+        } else {
+            // should't be possible to get here, but just in case recover just this binding
+            context.binding().recover();
+        }
         return null;
     };
 
