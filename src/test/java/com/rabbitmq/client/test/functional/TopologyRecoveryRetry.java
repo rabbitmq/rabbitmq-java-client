@@ -45,7 +45,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class TopologyRecoveryRetry extends BrokerTestCase {
 
-    private Consumer<Integer> backoffConsumer;
+    private volatile Consumer<Integer> backoffConsumer;
     
     @After
     public void cleanup() {
@@ -105,12 +105,14 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
         // it should fail once more because queue is gone, and then succeed
         final CountDownLatch backoffLatch = new CountDownLatch(1);
         backoffConsumer = attempt -> {
-            binding2.destination(queue);
-            try {
-                Host.rabbitmqctl("delete_queue " + queue);
-                Thread.sleep(2000);
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (attempt == 1) {
+                binding2.destination(queue);
+                try {
+                    Host.rabbitmqctl("delete_queue " + queue);
+                    Thread.sleep(2000);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             backoffLatch.countDown();
         };
@@ -166,12 +168,14 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
         // it should fail once more because queue is gone, and then succeed
         final CountDownLatch backoffLatch = new CountDownLatch(1);
         backoffConsumer = attempt -> {
-            consumer.setQueue(queue);
-            try {
-                Host.rabbitmqctl("delete_queue " + queue);
-                Thread.sleep(2000);
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (attempt == 1) {
+                consumer.setQueue(queue);
+                try {
+                    Host.rabbitmqctl("delete_queue " + queue);
+                    Thread.sleep(2000);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             backoffLatch.countDown();
         };
