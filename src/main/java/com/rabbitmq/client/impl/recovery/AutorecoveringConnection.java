@@ -560,7 +560,6 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     private synchronized void beginAutomaticRecovery() throws InterruptedException {
-        this.wait(this.params.getRecoveryDelayHandler().getDelay(0));
         final long delay = this.params.getRecoveryDelayHandler().getDelay(0);
         if (delay > 0)  {
             this.wait(delay);
