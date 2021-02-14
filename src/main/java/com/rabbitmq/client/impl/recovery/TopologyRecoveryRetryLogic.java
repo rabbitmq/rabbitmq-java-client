@@ -22,6 +22,8 @@ import com.rabbitmq.utility.Utility;
 import java.util.function.BiPredicate;
 import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryHandlerBuilder.builder;
 
+import ch.qos.logback.core.Context;
+
 /**
  * Useful ready-to-use conditions and operations for {@link DefaultRetryHandler}.
  * They're composed and used with the {@link TopologyRecoveryRetryHandlerBuilder}.
@@ -77,27 +79,27 @@ public abstract class TopologyRecoveryRetryLogic {
      * Recover a binding.
      */
     public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_BINDING = context -> {
+        context.binding().recover();
+        return null;
+    };
+    
+    /**
+     * Recover earlier bindings that share the same queue as this retry context
+     */
+    public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_PREVIOUS_QUEUE_BINDINGS = context -> {
         if (context.entity() instanceof RecordedQueueBinding) {
-            // recover all bindings for the queue.
-            // need to do this incase some bindings have already been recovered successfully before this binding failed
+            // recover all bindings for the same queue that were recovered before this current binding
+            // need to do this incase some bindings had already been recovered successfully before the queue was deleted & this binding failed
             String queue = context.binding().getDestination();
             for (RecordedBinding recordedBinding : Utility.copy(context.connection().getRecordedBindings())) {
-                if (recordedBinding instanceof RecordedQueueBinding && queue.equals(recordedBinding.getDestination())) {
+                if (recordedBinding == context.entity()) {
+                    // we have gotten to the binding in this context. Since this is an ordered list we can now break
+                    // as we know we have recovered all the earlier bindings that may have existed on this queue
+                    break;
+                } else if (recordedBinding instanceof RecordedQueueBinding && queue.equals(recordedBinding.getDestination())) {
                     recordedBinding.recover();
                 }
             }
-        } else if (context.entity() instanceof RecordedExchangeBinding) {
-            // recover all bindings for the exchange
-            // need to do this incase some bindings have already been recovered successfully before this binding failed
-            String exchange = context.binding().getDestination();
-            for (RecordedBinding recordedBinding : Utility.copy(context.connection().getRecordedBindings())) {
-                if (recordedBinding instanceof RecordedExchangeBinding && exchange.equals(recordedBinding.getDestination())) {
-                    recordedBinding.recover();
-                }
-            }
-        } else {
-            // should't be possible to get here, but just in case recover just this binding
-            context.binding().recover();
         }
         return null;
     };
@@ -148,7 +150,8 @@ public abstract class TopologyRecoveryRetryLogic {
     public static final TopologyRecoveryRetryHandlerBuilder RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER = builder()
         .bindingRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
         .consumerRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
-        .bindingRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_BINDING_QUEUE).andThen(RECOVER_BINDING))
+        .bindingRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_BINDING_QUEUE).andThen(RECOVER_BINDING)
+            .andThen(RECOVER_PREVIOUS_QUEUE_BINDINGS))
         .consumerRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_CONSUMER_QUEUE.andThen(RECOVER_CONSUMER)
             .andThen(RECOVER_CONSUMER_QUEUE_BINDINGS)));
 }
