@@ -36,4 +36,10 @@ public interface RecoveryListener {
      * @param recoverable a {@link Recoverable} connection.
      */
     void handleRecoveryStarted(Recoverable recoverable);
+    
+    /**
+     * Invoked before automatic topology recovery starts.
+     * @param recoverable a {@link Recoverable} connection.
+     */
+    default void handleTopologyRecoveryStarted(Recoverable recoverable) {}
 }
