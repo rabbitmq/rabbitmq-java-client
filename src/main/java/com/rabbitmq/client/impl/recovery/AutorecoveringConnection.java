@@ -561,6 +561,10 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 
     private synchronized void beginAutomaticRecovery() throws InterruptedException {
         this.wait(this.params.getRecoveryDelayHandler().getDelay(0));
+        final long delay = this.params.getRecoveryDelayHandler().getDelay(0);
+        if (delay > 0)  {
+            this.wait(delay);
+        }
 
         this.notifyRecoveryListenersStarted();
 
@@ -576,6 +580,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 	    // don't assign new delegate connection until channel recovery is complete
 	    this.delegate = newConn;
 	    if (this.params.isTopologyRecoveryEnabled()) {
+	        notifyTopologyRecoveryListenersStarted();
 	        recoverTopology(params.getTopologyRecoveryExecutor());
 	    }
 		this.notifyRecoveryListenersComplete();
@@ -647,6 +652,12 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     private void notifyRecoveryListenersStarted() {
         for (RecoveryListener f : Utility.copy(this.recoveryListeners)) {
             f.handleRecoveryStarted(this);
+        }
+    }
+    
+    private void notifyTopologyRecoveryListenersStarted() {
+        for (RecoveryListener f : Utility.copy(this.recoveryListeners)) {
+            f.handleTopologyRecoveryStarted(this);
         }
     }
     

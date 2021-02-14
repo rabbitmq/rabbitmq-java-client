@@ -170,7 +170,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     // see https://github.com/rabbitmq/rabbitmq-java-client/issues/135
     @Test public void thatShutdownHooksOnConnectionFireBeforeRecoveryStarts() throws IOException, InterruptedException {
         final List<String> events = new CopyOnWriteArrayList<String>();
-        final CountDownLatch latch = new CountDownLatch(2); // one when started, another when complete
+        final CountDownLatch latch = new CountDownLatch(3); // one when started, another when complete
         connection.addShutdownListener(new ShutdownListener() {
             @Override
             public void shutdownCompleted(ShutdownSignalException cause) {
@@ -200,6 +200,10 @@ public class ConnectionRecovery extends BrokerTestCase {
             }
             @Override
             public void handleRecoveryStarted(Recoverable recoverable) {
+                latch.countDown();
+            }
+            @Override
+            public void handleTopologyRecoveryStarted(Recoverable recoverable) {
                 latch.countDown();
             }
         });
