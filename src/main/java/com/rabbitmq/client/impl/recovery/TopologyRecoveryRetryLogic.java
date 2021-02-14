@@ -22,8 +22,6 @@ import com.rabbitmq.utility.Utility;
 import java.util.function.BiPredicate;
 import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryHandlerBuilder.builder;
 
-import ch.qos.logback.core.Context;
-
 /**
  * Useful ready-to-use conditions and operations for {@link DefaultRetryHandler}.
  * They're composed and used with the {@link TopologyRecoveryRetryHandlerBuilder}.
