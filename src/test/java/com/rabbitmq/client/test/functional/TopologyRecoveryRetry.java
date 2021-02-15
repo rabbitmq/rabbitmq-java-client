@@ -28,6 +28,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import java.io.IOException;
 import java.util.HashMap;
@@ -46,12 +47,12 @@ import static org.junit.Assert.assertTrue;
 public class TopologyRecoveryRetry extends BrokerTestCase {
 
     private volatile Consumer<Integer> backoffConsumer;
-    
-    @After
-    public void cleanup() {
-        backoffConsumer = null;
+
+    @Before
+    public void init() {
+        this.backoffConsumer = attempt -> { };
     }
-    
+
     @Test
     public void topologyRecoveryRetry() throws Exception {
         int nbQueues = 200;
@@ -78,8 +79,7 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
         final CountDownLatch messagesReceivedLatch = new CountDownLatch(2);
         channel.basicConsume(queue, true, new DefaultConsumer(channel) {
             @Override
-            public void handleDelivery(String consumerTag, Envelope envelope, BasicProperties properties, byte[] body) throws IOException {
-                System.out.println("Got message=" + new String(body));
+            public void handleDelivery(String consumerTag, Envelope envelope, BasicProperties properties, byte[] body) {
                 messagesReceivedLatch.countDown();
             }
         });
@@ -141,8 +141,7 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
         final CountDownLatch messagesReceivedLatch = new CountDownLatch(2);
         channel.basicConsume(queue, true, new DefaultConsumer(channel) {
             @Override
-            public void handleDelivery(String consumerTag, Envelope envelope, BasicProperties properties, byte[] body) throws IOException {
-                System.out.println("Got message=" + new String(body));
+            public void handleDelivery(String consumerTag, Envelope envelope, BasicProperties properties, byte[] body) {
                 messagesReceivedLatch.countDown();
             }
         });
@@ -198,11 +197,8 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
     @Override
     protected ConnectionFactory newConnectionFactory() {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
-        connectionFactory.setTopologyRecoveryRetryHandler(RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER.backoffPolicy(attempt -> {
-            if (backoffConsumer != null) {
-                backoffConsumer.accept(attempt);
-            }
-        }).build());
+        connectionFactory.setTopologyRecoveryRetryHandler(RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER
+            .backoffPolicy(attempt -> backoffConsumer.accept(attempt)).build());
         connectionFactory.setNetworkRecoveryInterval(1000);
         return connectionFactory;
     }
