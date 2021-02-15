@@ -217,7 +217,7 @@ public class RpcTest {
         cf.setNetworkRecoveryInterval(1000);
         Connection connection = null;
         try {
-            connection = cf.newConnection();
+            connection = cf.newConnection(UUID.randomUUID().toString());
             Channel channel = connection.createChannel();
             RpcClient client = new RpcClient(new RpcClientParams()
                     .channel(channel).exchange("").routingKey(queue).timeout(1000));
@@ -265,7 +265,7 @@ public class RpcTest {
         cf.setNetworkRecoveryInterval(1000);
         Connection connection = null;
         try {
-            connection = cf.newConnection();
+            connection = cf.newConnection(UUID.randomUUID().toString());
             Channel channel = connection.createChannel();
             RpcClient client = new RpcClient(new RpcClientParams()
                     .channel(channel).exchange("").routingKey(queue).timeout(1000));

@@ -166,6 +166,7 @@ Tests run: 121, Failures: 0, Errors: 0, Skipped: 0
 
 Test reports can be found in `target/failsafe-reports`.
 
+<<<<<<< HEAD
 
 ## Running tests against an externally provided broker or cluster
 
@@ -183,3 +184,22 @@ mvn verify -P '!setup-test-cluster'
 
 Note that by doing so some tests will fail as they require `rabbitmqctl` to
 control the running nodes.
+
+## Running Against a Broker in a Docker Container
+
+Run the broker:
+
+```
+docker run -it --rm --name rabbitmq -p 5672:5672 rabbitmq:3.8
+```
+
+Launch the tests:
+
+```
+./mvnw verify -P '!setup-test-cluster' \
+    -Drabbitmqctl.bin=DOCKER:rabbitmq \
+    -Dit.test=ClientTests,FunctionalTests,ServerTests
+```
+
+Note the `rabbitmqctl.bin` system property uses the syntax
+`DOCKER:{containerId}`.

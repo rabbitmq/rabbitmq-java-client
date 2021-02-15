@@ -148,7 +148,7 @@ public class BrokerTestCase {
     public void openConnection()
             throws IOException, TimeoutException {
         if (connection == null) {
-            connection = connectionFactory.newConnection();
+            connection = connectionFactory.newConnection(UUID.randomUUID().toString());
         }
     }
 

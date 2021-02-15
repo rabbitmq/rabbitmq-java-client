@@ -114,6 +114,10 @@ public class TestUtils {
         return new BrokerVersionTestRule("3.8.0");
     }
 
+    public static TestRule brokerIsNotRunningOnDocker() {
+        return new BrokerIsNotOnDocker();
+    }
+
     public static boolean isVersion37orLater(Connection connection) {
         return atLeastVersion("3.7.0", connection);
     }
@@ -305,6 +309,27 @@ public class TestUtils {
                         if (!TestUtils.atLeastVersion(version, c)) {
                             throw new AssumptionViolatedException("Broker version < " + version + ", skipping.");
                         }
+                    }
+                    base.evaluate();
+                }
+            };
+        }
+    }
+
+    private static class BrokerIsNotOnDocker implements TestRule {
+
+
+        @Override
+        public Statement apply(Statement base, Description description) {
+            return new Statement() {
+                @Override
+                public void evaluate() throws Throwable {
+                    try {
+                        if (Host.isOnDocker()) {
+                            throw new AssumptionViolatedException("Broker is running on Docker");
+                        }
+                    } catch (Exception e) {
+                        throw new AssumptionViolatedException("Could not check whether broker is running on Docker or not", e);
                     }
                     base.evaluate();
                 }

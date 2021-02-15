@@ -28,8 +28,14 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.client.test.TestUtils;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Host {
+
+    private static final String DOCKER_PREFIX = "DOCKER:";
+    private static final Pattern CONNECTION_NAME_PATTERN = Pattern.compile("\"connection_name\",\"(?<name>[a-zA-Z0-9\\-]+)?\"");
 
     public static String capture(InputStream is)
         throws IOException
@@ -102,14 +108,18 @@ public class Host {
 
     public static Process rabbitmqctl(String command) throws IOException {
         return executeCommand(rabbitmqctlCommand() +
-                              " -n \'" + nodenameA() + "\'" +
+                              rabbitmqctlNodenameArgument() +
                               " " + command);
     }
 
     public static Process rabbitmqctlIgnoreErrors(String command) throws IOException {
         return executeCommandIgnoringErrors(rabbitmqctlCommand() +
-                                            " -n \'" + nodenameA() + "\'" +
+                                            rabbitmqctlNodenameArgument() +
                                             " " + command);
+    }
+
+    private static String rabbitmqctlNodenameArgument() {
+        return isOnDocker() ? "" : " -n \'" + nodenameA() + "\'";
     }
 
     public static void setResourceAlarm(String source) throws IOException {
@@ -201,9 +211,25 @@ public class Host {
         return System.getProperty("test-broker.B.config_file");
     }
 
-    public static String rabbitmqctlCommand()
-    {
-        return System.getProperty("rabbitmqctl.bin");
+    public static String rabbitmqctlCommand() {
+        String rabbitmqCtl = System.getProperty("rabbitmqctl.bin");
+        if (rabbitmqCtl == null) {
+            throw new IllegalStateException("Please define the rabbitmqctl.bin system property");
+        }
+        if (rabbitmqCtl.startsWith(DOCKER_PREFIX)) {
+            String containerId = rabbitmqCtl.split(":")[1];
+            return "docker exec " + containerId + " rabbitmqctl";
+        } else {
+            return rabbitmqCtl;
+        }
+    }
+
+    public static boolean isOnDocker() {
+        String rabbitmqCtl = System.getProperty("rabbitmqctl.bin");
+        if (rabbitmqCtl == null) {
+            throw new IllegalStateException("Please define the rabbitmqctl.bin system property");
+        }
+        return rabbitmqCtl.startsWith(DOCKER_PREFIX);
     }
 
     public static String rabbitmqDir()
@@ -228,11 +254,13 @@ public class Host {
         private final String pid;
         private final int peerPort;
         private final String clientProperties;
+        private final String clientProvidedName;
 
-        public ConnectionInfo(String pid, int peerPort, String clientProperties) {
+        ConnectionInfo(String pid, int peerPort, String clientProperties, String clientProvidedName) {
             this.pid = pid;
             this.peerPort = peerPort;
             this.clientProperties = clientProperties;
+            this.clientProvidedName = clientProvidedName;
         }
 
         public String getPid() {
@@ -247,13 +275,22 @@ public class Host {
             return clientProperties;
         }
 
+        public String getClientProvidedName() {
+            return clientProvidedName;
+        }
+
+        boolean hasClientProvidedName() {
+            return clientProvidedName != null && !clientProvidedName.trim().isEmpty();
+        }
+
         @Override
         public String toString() {
             return "ConnectionInfo{" +
                     "pid='" + pid + '\'' +
                     ", peerPort=" + peerPort +
                     ", clientProperties='" + clientProperties + '\'' +
-                    '}';
+                    ", clientProvidedName='" + clientProvidedName + '\'' +
+                '}';
         }
     }
 
@@ -263,15 +300,17 @@ public class Host {
         // pid	peer_port
         // <rabbit@mercurio.1.11491.0>	58713
         String[] allLines = output.split("\n");
-
-        ArrayList<ConnectionInfo> result = new ArrayList<ConnectionInfo>();
+        List<ConnectionInfo> result = new ArrayList<ConnectionInfo>();
         for (String line : allLines) {
             if (line != null && !line.trim().isEmpty()) {
                 // line: <rabbit@mercurio.1.11491.0>	58713
                 String[] columns = line.split("\t");
                 // can be also header line, so ignoring NumberFormatException
                 try {
-                    result.add(new ConnectionInfo(columns[0], Integer.valueOf(columns[1]), columns[2]));
+                    int peerPort = Integer.valueOf(columns[1]);
+                    String clientProperties = columns[2];
+                    String clientProvidedName = extractConnectionName(clientProperties);
+                    result.add(new ConnectionInfo(columns[0], peerPort, clientProperties, clientProvidedName));
                 } catch (NumberFormatException e) {
                     // OK
                 }
@@ -280,14 +319,21 @@ public class Host {
         return result;
     }
 
-    private static Host.ConnectionInfo findConnectionInfoFor(List<Host.ConnectionInfo> xs, NetworkConnection c) {
-        Host.ConnectionInfo result = null;
-        for (Host.ConnectionInfo ci : xs) {
-            if(c.getLocalPort() == ci.getPeerPort()){
-                result = ci;
-                break;
-            }
+    private static String extractConnectionName(String clientProperties) {
+        if (clientProperties.contains("\"connection_name\",")) {
+            Matcher matcher = CONNECTION_NAME_PATTERN.matcher(clientProperties);
+            matcher.find();
+            return matcher.group("name");
+        } else {
+            return null;
         }
-        return result;
+    }
+
+    private static Host.ConnectionInfo findConnectionInfoFor(List<Host.ConnectionInfo> xs, NetworkConnection c) {
+        Connection conn = (Connection) c;
+        Predicate<ConnectionInfo> predicate = conn.getClientProvidedName() == null ?
+            ci -> ci.getPeerPort() == c.getLocalPort() :
+            ci -> ci.hasClientProvidedName() && ci.getClientProvidedName().equals(conn.getClientProvidedName());
+        return xs.stream().filter(predicate).findFirst().orElse(null);
     }
 }

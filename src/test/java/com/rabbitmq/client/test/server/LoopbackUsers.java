@@ -46,12 +46,14 @@ public class LoopbackUsers {
     }
 
     @Test public void loopback() throws IOException, TimeoutException {
-        String addr = findRealIPAddress().getHostAddress();
-        assertGuestFail(addr);
-        Host.rabbitmqctl("eval 'application:set_env(rabbit, loopback_users, []).'");
-        assertGuestSucceed(addr);
-        Host.rabbitmqctl("eval 'application:set_env(rabbit, loopback_users, [<<\"guest\">>]).'");
-        assertGuestFail(addr);
+	      if (!Host.isOnDocker()) {
+            String addr = findRealIPAddress().getHostAddress();
+            assertGuestFail(addr);
+            Host.rabbitmqctl("eval 'application:set_env(rabbit, loopback_users, []).'");
+            assertGuestSucceed(addr);
+            Host.rabbitmqctl("eval 'application:set_env(rabbit, loopback_users, [<<\"guest\">>]).'");
+            assertGuestFail(addr);
+        }
     }
 
     private void assertGuestSucceed(String addr) throws IOException, TimeoutException {
