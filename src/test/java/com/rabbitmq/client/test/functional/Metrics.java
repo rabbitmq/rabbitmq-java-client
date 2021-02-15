@@ -30,6 +30,7 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
+import java.util.UUID;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -414,7 +415,7 @@ public class Metrics extends BrokerTestCase {
 
         Connection connection = null;
         try {
-            connection = connectionFactory.newConnection();
+            connection = connectionFactory.newConnection(UUID.randomUUID().toString());
 
             Collection<?> shutdownHooks = getShutdownHooks(connection);
             assertThat(shutdownHooks.size()).isEqualTo(0);
@@ -444,7 +445,7 @@ public class Metrics extends BrokerTestCase {
 
         Connection connection = null;
         try {
-            connection = connectionFactory.newConnection();
+            connection = connectionFactory.newConnection(UUID.randomUUID().toString());
 
             Channel channel1 = connection.createChannel();
             AtomicInteger ackedMessages = new AtomicInteger(0);

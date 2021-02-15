@@ -69,6 +69,67 @@ c.close()
 /exit
 ```
 
+## Building from Source
+
+### Getting the Project and its Dependencies
+
+```
+git clone git@github.com:rabbitmq/rabbitmq-java-client.git
+cd rabbitmq-java-client
+make deps
+```
+
+### Building the JAR File
+
+```
+./mvnw clean package -Dmaven.test.skip -P '!setup-test-cluster'
+```
+
+### Launching Tests with the Broker Running In a Docker Container
+
+Run the broker:
+
+```
+docker run -it --rm --name rabbitmq -p 5672:5672 rabbitmq:3.8
+```
+
+Launch "essential" tests (takes about 10 minutes):
+
+```
+./mvnw verify -P '!setup-test-cluster' \
+    -Drabbitmqctl.bin=DOCKER:rabbitmq \
+    -Dit.test=ClientTests,FunctionalTests,ServerTests
+```
+
+Launch a single test:
+
+```
+./mvnw verify -P '!setup-test-cluster' \
+    -Drabbitmqctl.bin=DOCKER:rabbitmq \
+    -Dit.test=DeadLetterExchange
+```
+
+### Launching Tests with a Local Broker
+
+The tests can run against a local broker as well. The `rabbitmqctl.bin`
+system property must point to the `rabbitmqctl` program:
+
+```
+./mvnw verify -P '!setup-test-cluster' \
+       -Dtest-broker.A.nodename=rabbit@$(hostname) \
+       -Drabbitmqctl.bin=/path/to/rabbitmqctl \
+       -Dit.test=ClientTests,FunctionalTests,ServerTests
+```
+
+To launch a single test:
+
+```
+./mvnw verify -P '!setup-test-cluster' \
+       -Dtest-broker.A.nodename=rabbit@$(hostname) \
+       -Drabbitmqctl.bin=/path/to/rabbitmqctl \
+       -Dit.test=DeadLetterExchange
+```
+
 ## Contributing
 
 See [Contributing](./CONTRIBUTING.md) and [How to Run Tests](./RUNNING_TESTS.md).

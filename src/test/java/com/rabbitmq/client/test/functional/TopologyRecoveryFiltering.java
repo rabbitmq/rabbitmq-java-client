@@ -29,6 +29,7 @@ import com.rabbitmq.client.impl.recovery.RecordedQueue;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
+import java.util.UUID;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -66,7 +67,7 @@ public class TopologyRecoveryFiltering extends BrokerTestCase {
     @Override
     protected void createResources() throws IOException, TimeoutException {
         super.createResources();
-        c = connectionFactory.newConnection();
+        c = connectionFactory.newConnection(UUID.randomUUID().toString());
         deleteExchanges(exchangesToDelete);
         deleteQueues(queuesToDelete);
     }
