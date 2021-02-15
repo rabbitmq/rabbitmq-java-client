@@ -16,7 +16,7 @@ MVN_FLAGS += -Ddeps.dir="$(abspath $(DEPS_DIR))"
 all: deps
 	$(MVN) $(MVN_FLAGS) compile
 
-deps: $(DEPS_DIR)/rabbit $(DEPS_DIR)/rabbitmq_ct_helpers
+deps: $(DEPS_DIR)/rabbitmq_codegen
 	@:
 
 dist: clean
@@ -28,6 +28,9 @@ $(DEPS_DIR)/rabbit:
 
 $(DEPS_DIR)/rabbitmq_ct_helpers:
 	git clone https://github.com/rabbitmq/rabbitmq-ct-helpers.git "$@"
+
+$(DEPS_DIR)/rabbitmq_codegen:
+	git clone https://github.com/rabbitmq/rabbitmq-codegen.git "$@"
 
 tests: deps
 	$(MVN) $(MVN_FLAGS) verify
