@@ -39,6 +39,8 @@ public interface RecoveryListener {
     
     /**
      * Invoked before automatic topology recovery starts.
+     * This means that the connection and channel recovery has completed 
+     * and that exchange/queue/binding/consumer recovery is about to begin.
      * @param recoverable a {@link Recoverable} connection.
      */
     default void handleTopologyRecoveryStarted(Recoverable recoverable) {}
