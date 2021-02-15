@@ -89,3 +89,22 @@ top-level directory of the source tree:
 ```
 
 Test reports can be found in `target/failsafe-reports`.
+
+## Running Against a Broker in a Docker Container
+
+Run the broker:
+
+```
+docker run -it --rm --name rabbitmq -p 5672:5672 rabbitmq:3.8
+```
+
+Launch the tests:
+
+```
+./mvnw verify -P '!setup-test-cluster' \
+    -Drabbitmqctl.bin=DOCKER:rabbitmq \
+    -Dit.test=ClientTests,FunctionalTests,ServerTests
+```
+
+Note the `rabbitmqctl.bin` system property uses the syntax
+`DOCKER:{containerId}`.

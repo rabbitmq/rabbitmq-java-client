@@ -29,6 +29,7 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -41,6 +42,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.junit.rules.TestRule;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -65,6 +67,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </p>
  */
 public class NoAutoRecoveryWhenTcpWindowIsFullTest {
+
+    @ClassRule
+    public static TestRule brokerOnDockerTestRule = TestUtils.brokerIsNotRunningOnDocker();
 
     private static final int NUM_MESSAGES_TO_PRODUCE = 50000;
     private static final int MESSAGE_PROCESSING_TIME_MS = 3000;
