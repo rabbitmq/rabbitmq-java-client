@@ -1101,6 +1101,10 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     public List<RecordedBinding> getRecordedBindings() {
         return recordedBindings;
     }
+    
+    public Map<String, RecordedConsumer> getRecordedConsumers() {
+        return consumers;
+    }
 
     @Override
     public String toString() {
