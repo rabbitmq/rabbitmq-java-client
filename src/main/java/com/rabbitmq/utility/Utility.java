@@ -99,7 +99,7 @@ public class Utility {
      *
      * @param set
      *            The set, which may not be {@code null}
-     * @return LinkedHashSet copy of the list
+     * @return LinkedHashSet copy of the set
      */
     public static <E> Set<E> copy(final Set<E> set) {
         // No Sonar: this very list instance can be synchronized in other places of its owning class
