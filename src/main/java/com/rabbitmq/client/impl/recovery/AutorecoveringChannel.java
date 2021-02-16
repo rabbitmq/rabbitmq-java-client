@@ -18,6 +18,7 @@ package com.rabbitmq.client.impl.recovery;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.impl.recovery.Utils.IoTimeoutExceptionRunnable;
+import com.rabbitmq.utility.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,11 +40,11 @@ public class AutorecoveringChannel implements RecoverableChannel {
 
     private volatile RecoveryAwareChannelN delegate;
     private volatile AutorecoveringConnection connection;
-    private final List<ShutdownListener> shutdownHooks  = new CopyOnWriteArrayList<ShutdownListener>();
-    private final List<RecoveryListener> recoveryListeners = new CopyOnWriteArrayList<RecoveryListener>();
-    private final List<ReturnListener> returnListeners = new CopyOnWriteArrayList<ReturnListener>();
-    private final List<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<ConfirmListener>();
-    private final Set<String> consumerTags = Collections.synchronizedSet(new HashSet<String>());
+    private final List<ShutdownListener> shutdownHooks  = new CopyOnWriteArrayList<>();
+    private final List<RecoveryListener> recoveryListeners = new CopyOnWriteArrayList<>();
+    private final List<ReturnListener> returnListeners = new CopyOnWriteArrayList<>();
+    private final List<ConfirmListener> confirmListeners = new CopyOnWriteArrayList<>();
+    private final Set<String> consumerTags = Collections.synchronizedSet(new HashSet<>());
     private int prefetchCountConsumer;
     private int prefetchCountGlobal;
     private boolean usesPublisherConfirms;
@@ -100,7 +101,7 @@ public class AutorecoveringChannel implements RecoverableChannel {
         try {
             callback.run();
         } finally {
-            for (String consumerTag : consumerTags) {
+            for (String consumerTag : Utility.copy(consumerTags)) {
                 this.deleteRecordedConsumer(consumerTag);
             }
             this.connection.unregisterChannel(this);

@@ -20,8 +20,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Catch-all holder class for static helper methods.
@@ -92,6 +94,21 @@ public class Utility {
     }
     
     /**
+     * Synchronizes on the set and then returns a copy of the set that is safe to iterate over. Useful when wanting to do thread-safe iteration over
+     * a Set wrapped in {@link Collections#synchronizedSet(Set)}.
+     *
+     * @param set
+     *            The set, which may not be {@code null}
+     * @return LinkedHashSet copy of the list
+     */
+    public static <E> Set<E> copy(final Set<E> set) {
+        // No Sonar: this very list instance can be synchronized in other places of its owning class
+        synchronized (set) { //NOSONAR
+            return new LinkedHashSet<>(set);
+        }
+    }
+    
+    /**
      * Synchronizes on the list and then returns a copy of the list that is safe to iterate over. Useful when wanting to do thread-safe iteration over
      * a List wrapped in {@link Collections#synchronizedList(List)}.
      *
@@ -102,7 +119,7 @@ public class Utility {
     public static <E> List<E> copy(final List<E> list) {
         // No Sonar: this very list instance can be synchronized in other places of its owning class
         synchronized (list) { //NOSONAR
-            return new ArrayList<E>(list);
+            return new ArrayList<>(list);
         }
     }
     
@@ -117,7 +134,7 @@ public class Utility {
     public static <K, V> Map<K, V> copy(final Map<K, V> map) {
         // No Sonar: this very map instance can be synchronized in other places of its owning class
         synchronized (map) { //NOSONAR
-            return new LinkedHashMap<K, V>(map);
+            return new LinkedHashMap<>(map);
         }
     }
 }
