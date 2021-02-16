@@ -101,7 +101,7 @@ public class AutorecoveringChannel implements RecoverableChannel {
             callback.run();
         } finally {
             for (String consumerTag : consumerTags) {
-                this.connection.deleteRecordedConsumer(consumerTag);
+                this.deleteRecordedConsumer(consumerTag);
             }
             this.connection.unregisterChannel(this);
         }
@@ -644,10 +644,7 @@ public class AutorecoveringChannel implements RecoverableChannel {
 
     @Override
     public void basicCancel(String consumerTag) throws IOException {
-        RecordedConsumer c = this.deleteRecordedConsumer(consumerTag);
-        if(c != null) {
-            this.maybeDeleteRecordedAutoDeleteQueue(c.getQueue());
-        }
+        this.deleteRecordedConsumer(consumerTag);
         delegate.basicCancel(consumerTag);
     }
 
@@ -902,13 +899,12 @@ public class AutorecoveringChannel implements RecoverableChannel {
         this.connection.recordConsumer(result, consumer);
     }
 
-    private RecordedConsumer deleteRecordedConsumer(String consumerTag) {
+    private void deleteRecordedConsumer(String consumerTag) {
         this.consumerTags.remove(consumerTag);
-        return this.connection.deleteRecordedConsumer(consumerTag);
-    }
-
-    private void maybeDeleteRecordedAutoDeleteQueue(String queue) {
-        this.connection.maybeDeleteRecordedAutoDeleteQueue(queue);
+        RecordedConsumer c = this.connection.deleteRecordedConsumer(consumerTag);
+        if (c != null) {
+            this.connection.maybeDeleteRecordedAutoDeleteQueue(c.getQueue());
+        }
     }
 
     private void maybeDeleteRecordedAutoDeleteExchange(String exchange) {
