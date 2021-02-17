@@ -81,6 +81,7 @@
     <maven.jar.plugin.version>3.0.2</maven.jar.plugin.version>
     <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
     <maven.packagecloud.wagon.version>0.0.6</maven.packagecloud.wagon.version>
+    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
     <checksum.maven.plugin.version>1.8</checksum.maven.plugin.version>
     <jshell-maven-plugin.version>1.3</jshell-maven-plugin.version>
 
@@ -494,9 +495,9 @@
     <profile>
       <!--
       The "ossrh-release" Maven profile is used to push release artifacts to a
-      Sonatype staging repository.
+      Sonatype snapshots repository.
       -->
-      <id>ossrh-release</id>
+      <id>snapshots</id>
       <build>
         <plugins>
           <plugin>
@@ -546,13 +547,25 @@
     </profile>
 
     <!--
-      The "bintray-release" Maven profile is used to push release artifacts to the
-      Bintray Release Maven Repository.
+      The "release" Maven profile is used to push release artifacts to OSSRH
     -->
     <profile>
-      <id>bintray-release</id>
+      <id>release</id>
       <build>
         <plugins>
+
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>${nexus-staging-maven-plugin.version}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>false</autoReleaseAfterClose>
+            </configuration>
+          </plugin>
+
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
@@ -593,9 +606,8 @@
       </build>
       <distributionManagement>
         <repository>
-          <id>bintray-rabbitmq-maven</id>
-          <name>rabbitmq-maven</name>
-          <url>https://api.bintray.com/maven/rabbitmq/maven/com.rabbitmq:amqp-client/;publish=1</url>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
       </distributionManagement>
     </profile>
