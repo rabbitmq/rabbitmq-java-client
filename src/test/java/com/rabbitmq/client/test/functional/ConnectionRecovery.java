@@ -171,18 +171,8 @@ public class ConnectionRecovery extends BrokerTestCase {
     @Test public void thatShutdownHooksOnConnectionFireBeforeRecoveryStarts() throws IOException, InterruptedException {
         final List<String> events = new CopyOnWriteArrayList<String>();
         final CountDownLatch latch = new CountDownLatch(3); // one when started, another when complete
-        connection.addShutdownListener(new ShutdownListener() {
-            @Override
-            public void shutdownCompleted(ShutdownSignalException cause) {
-                events.add("shutdown hook 1");
-            }
-        });
-        connection.addShutdownListener(new ShutdownListener() {
-            @Override
-            public void shutdownCompleted(ShutdownSignalException cause) {
-                events.add("shutdown hook 2");
-            }
-        });
+        connection.addShutdownListener(cause -> events.add("shutdown hook 1"));
+        connection.addShutdownListener(cause -> events.add("shutdown hook 2"));
         // note: we do not want to expose RecoveryCanBeginListener so this
         // test does not use it
         final CountDownLatch recoveryCanBeginLatch = new CountDownLatch(1);
@@ -220,12 +210,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     @Test public void shutdownHooksRecoveryOnConnection() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(2);
-        connection.addShutdownListener(new ShutdownListener() {
-            @Override
-            public void shutdownCompleted(ShutdownSignalException cause) {
-                latch.countDown();
-            }
-        });
+        connection.addShutdownListener(cause -> latch.countDown());
         assertThat(connection.isOpen()).isTrue();
         closeAndWaitForRecovery();
         assertThat(connection.isOpen()).isTrue();
@@ -235,12 +220,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     @Test public void shutdownHooksRecoveryOnChannel() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(3);
-        channel.addShutdownListener(new ShutdownListener() {
-            @Override
-            public void shutdownCompleted(ShutdownSignalException cause) {
-                latch.countDown();
-            }
-        });
+        channel.addShutdownListener(cause -> latch.countDown());
         assertThat(connection.isOpen()).isTrue();
         closeAndWaitForRecovery();
         assertThat(connection.isOpen()).isTrue();
@@ -254,12 +234,12 @@ public class ConnectionRecovery extends BrokerTestCase {
         final CountDownLatch latch = new CountDownLatch(2);
         connection.addBlockedListener(new BlockedListener() {
             @Override
-            public void handleBlocked(String reason) throws IOException {
+            public void handleBlocked(String reason) {
                 latch.countDown();
             }
 
             @Override
-            public void handleUnblocked() throws IOException {
+            public void handleUnblocked() {
                 latch.countDown();
             }
         });
@@ -299,14 +279,8 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     @Test public void returnListenerRecovery() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        channel.addReturnListener(new ReturnListener() {
-            @Override
-            public void handleReturn(int replyCode, String replyText, String exchange,
-                                     String routingKey, AMQP.BasicProperties properties,
-                                     byte[] body) throws IOException {
-                latch.countDown();
-            }
-        });
+        channel.addReturnListener(
+            (replyCode, replyText, exchange, routingKey, properties, body) -> latch.countDown());
         closeAndWaitForRecovery();
         expectChannelRecovery(channel);
         channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
@@ -317,12 +291,12 @@ public class ConnectionRecovery extends BrokerTestCase {
         final CountDownLatch latch = new CountDownLatch(1);
         channel.addConfirmListener(new ConfirmListener() {
             @Override
-            public void handleAck(long deliveryTag, boolean multiple) throws IOException {
+            public void handleAck(long deliveryTag, boolean multiple) {
                 latch.countDown();
             }
 
             @Override
-            public void handleNack(long deliveryTag, boolean multiple) throws IOException {
+            public void handleNack(long deliveryTag, boolean multiple) {
                 latch.countDown();
             }
         });
@@ -425,13 +399,10 @@ public class ConnectionRecovery extends BrokerTestCase {
         final AtomicReference<String> nameBefore = new AtomicReference<String>(q);
         final AtomicReference<String> nameAfter  = new AtomicReference<String>();
         final CountDownLatch listenerLatch = new CountDownLatch(1);
-        ((AutorecoveringConnection)connection).addQueueRecoveryListener(new QueueRecoveryListener() {
-            @Override
-            public void queueRecovered(String oldName, String newName) {
-                nameBefore.set(oldName);
-                nameAfter.set(newName);
-                listenerLatch.countDown();
-            }
+        ((AutorecoveringConnection)connection).addQueueRecoveryListener((oldName, newName) -> {
+            nameBefore.set(oldName);
+            nameAfter.set(newName);
+            listenerLatch.countDown();
         });
         ch.queueBind(nameBefore.get(), x, "");
         restartPrimaryAndWaitForRecovery();
@@ -673,14 +644,12 @@ public class ConnectionRecovery extends BrokerTestCase {
         final AtomicReference<String> tagA = new AtomicReference<String>();
         final AtomicReference<String> tagB = new AtomicReference<String>();
         final CountDownLatch listenerLatch = new CountDownLatch(n);
-        ((AutorecoveringConnection)connection).addConsumerRecoveryListener(new ConsumerRecoveryListener() {
-            @Override
-            public void consumerRecovered(String oldConsumerTag, String newConsumerTag) {
+        ((AutorecoveringConnection)connection).addConsumerRecoveryListener(
+            (oldConsumerTag, newConsumerTag) -> {
                 tagA.set(oldConsumerTag);
                 tagB.set(newConsumerTag);
                 listenerLatch.countDown();
-            }
-        });
+            });
 
         assertConsumerCount(n, q);
         closeAndWaitForRecovery();
@@ -830,7 +799,8 @@ public class ConnectionRecovery extends BrokerTestCase {
     
     @Test public void recoveryWithMultipleThreads() throws Exception {
         // test with 8 recovery threads
-        final ThreadPoolExecutor executor = new ThreadPoolExecutor(8, 8, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        final ThreadPoolExecutor executor = new ThreadPoolExecutor(8, 8, 30, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>());
         executor.allowCoreThreadTimeOut(true);
         ConnectionFactory connectionFactory = buildConnectionFactoryWithRecoveryEnabled(false);
         assertThat(connectionFactory.getTopologyRecoveryExecutor()).isNull();
@@ -956,12 +926,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     private static CountDownLatch prepareForShutdown(Connection conn) {
         final CountDownLatch latch = new CountDownLatch(1);
-        conn.addShutdownListener(new ShutdownListener() {
-            @Override
-            public void shutdownCompleted(ShutdownSignalException cause) {
-                latch.countDown();
-            }
-        });
+        conn.addShutdownListener(cause -> latch.countDown());
         return latch;
     }
 
