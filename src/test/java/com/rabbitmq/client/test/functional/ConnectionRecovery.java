@@ -281,6 +281,22 @@ public class ConnectionRecovery extends BrokerTestCase {
         expectChannelRecovery(ch2);
     }
 
+    @Test public void channelRecoveryWithUserProvidedChannelIDs() throws IOException, InterruptedException {
+        int n1 = 11;
+        Channel ch1 = connection.createChannel(n1);
+        int n2 = 22;
+        Channel ch2 = connection.createChannel(n2);
+
+        assertThat(ch1.isOpen()).isTrue();
+        assertThat(ch2.isOpen()).isTrue();
+        closeAndWaitForRecovery();
+        expectChannelRecovery(ch1);
+        expectChannelRecovery(ch2);
+
+        assertThat(ch1.getChannelNumber()).isEqualTo(n1);
+        assertThat(ch2.getChannelNumber()).isEqualTo(n2);
+    }
+
     @Test public void returnListenerRecovery() throws IOException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         channel.addReturnListener(new ReturnListener() {

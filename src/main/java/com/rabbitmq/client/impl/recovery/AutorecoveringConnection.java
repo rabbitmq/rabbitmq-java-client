@@ -176,7 +176,13 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
      */
     @Override
     public Channel createChannel(int channelNumber) throws IOException {
-        return delegate.createChannel(channelNumber);
+        RecoveryAwareChannelN ch = (RecoveryAwareChannelN) delegate.createChannel(channelNumber);
+        // No Sonar: the channel could be null
+        if (ch == null) { //NOSONAR
+            return null;
+        } else {
+            return this.wrapChannel(ch);
+        }
     }
 
     /**
