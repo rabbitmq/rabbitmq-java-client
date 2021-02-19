@@ -352,6 +352,11 @@ public class ConnectionFactory implements Cloneable {
 
             setVirtualHost(uriDecode(uri.getPath().substring(1)));
         }
+        
+        String rawQuery = uri.getRawQuery();
+        if (rawQuery != null && rawQuery.length() > 0) {
+            setQuery(rawQuery);
+        }
     }
 
     /**
@@ -378,6 +383,65 @@ public class ConnectionFactory implements Cloneable {
         }
         catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Convenience method for setting some fields from query parameters
+     * Will handle only a subset of the query parameters supported by the
+     * official erlang client
+     * https://www.rabbitmq.com/uri-query-parameters.html
+     * @param rawQuery is the string containing the raw query parameters part from a URI
+     */
+    private void setQuery(String rawQuery) {
+        Map<String, String> parameters = new HashMap<>();
+        
+        // parsing the query parameters
+        try {
+            for (String param : rawQuery.split("&")) {
+                String[] pair = param.split("=");
+                String key = URLDecoder.decode(pair[0], "US-ASCII");
+                String value = null;
+                if (pair.length > 1) {
+                    value = URLDecoder.decode(pair[1], "US-ASCII");
+                }
+                parameters.put(key, value);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot parse the query parameters", e);
+        }
+
+        // heartbeat
+        String heartbeat = parameters.get("heartbeat");
+        if (heartbeat != null) {
+            try {
+                int heartbeatInt = Integer.parseInt(heartbeat);
+                setRequestedHeartbeat(heartbeatInt);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Requested heartbeat must an integer");
+            }
+        }
+        
+        // connection_timeout
+        String connectionTimeout = parameters.get("connection_timeout");
+        if (connectionTimeout != null) {
+            try {
+                int connectionTimeoutInt = Integer.parseInt(connectionTimeout);
+                setConnectionTimeout(connectionTimeoutInt);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("TCP connection timeout must an integer");
+            }
+        }
+        
+        // channel_max
+        String channelMax = parameters.get("channel_max");
+        if (channelMax != null) {
+            try {
+                int channelMaxInt = Integer.parseInt(channelMax);
+                setRequestedChannelMax(channelMaxInt);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Requested channel max must an integer");
+            }
         }
     }
 
