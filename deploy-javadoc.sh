@@ -3,6 +3,7 @@
 DEPLOY_DIRECTORY=api/current
 TAG=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))
 
+make deps
 ./mvnw -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
 git co gh-pages
 rm -rf $DEPLOY_DIRECTORY/*
