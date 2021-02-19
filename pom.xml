@@ -494,7 +494,7 @@
 
     <profile>
       <!--
-      The "ossrh-release" Maven profile is used to push release artifacts to a
+      The "snapshots" Maven profile is used to push release artifacts to a
       Sonatype snapshots repository.
       -->
       <id>snapshots</id>
