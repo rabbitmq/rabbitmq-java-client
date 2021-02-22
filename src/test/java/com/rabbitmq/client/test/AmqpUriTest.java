@@ -14,6 +14,7 @@
 // info@rabbitmq.com.
 package com.rabbitmq.client.test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -21,11 +22,13 @@ import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Test;
 
 import com.rabbitmq.client.ConnectionFactory;
 
-public class AmqpUriTest extends BrokerTestCase
+public class AmqpUriTest
 {
     @Test public void uriParsing()
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
@@ -107,6 +110,19 @@ public class AmqpUriTest extends BrokerTestCase
         parseFail("amqp://user:pass@host:10000/vhost?channel_max=not_an_integer");
         parseFail("amqp://user:pass@host:10000/vhost?channel_max=-1");
         parseFail("amqp://user:pass@host:10000/vhost?heartbeat=342?connection_timeout=442");
+    }
+
+    @Test
+    public void processUriQueryParameterShouldBeCalledForNotHandledParameter() throws Exception {
+        Map<String, String> processedParameters = new HashMap<>();
+        ConnectionFactory cf = new ConnectionFactory() {
+            @Override
+            protected void processUriQueryParameter(String key, String value) {
+                processedParameters.put(key, value);
+            }
+        };
+        cf.setUri("amqp://user:pass@host:10000/vhost?heartbeat=60&key=value");
+        assertThat(processedParameters).hasSize(1).containsEntry("key", "value");
     }
 
     private void parseSuccess(String uri, String user, String password,

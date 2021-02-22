@@ -24,6 +24,8 @@ import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map.Entry;
+import java.util.function.BiConsumer;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -386,6 +388,36 @@ public class ConnectionFactory implements Cloneable {
         }
     }
 
+  private static final Map<String, BiConsumer<String, ConnectionFactory>> URI_QUERY_PARAMETER_HANDLERS =
+      new HashMap<String, BiConsumer<String, ConnectionFactory>>() {
+        {
+            put("heartbeat", (value, cf) -> {
+                try {
+                    int heartbeatInt = Integer.parseInt(value);
+                    cf.setRequestedHeartbeat(heartbeatInt);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Requested heartbeat must an integer");
+                }
+            });
+            put("connection_timeout", (value, cf) -> {
+              try {
+                int connectionTimeoutInt = Integer.parseInt(value);
+                cf.setConnectionTimeout(connectionTimeoutInt);
+              } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("TCP connection timeout must an integer");
+              }
+            });
+            put("channel_max", (value, cf) -> {
+                try {
+                    int channelMaxInt = Integer.parseInt(value);
+                    cf.setRequestedChannelMax(channelMaxInt);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Requested channel max must an integer");
+                }
+            });
+        }
+      };
+
     /**
      * Convenience method for setting some fields from query parameters
      * Will handle only a subset of the query parameters supported by the
@@ -395,7 +427,6 @@ public class ConnectionFactory implements Cloneable {
      */
     private void setQuery(String rawQuery) {
         Map<String, String> parameters = new HashMap<>();
-        
         // parsing the query parameters
         try {
             for (String param : rawQuery.split("&")) {
@@ -408,41 +439,29 @@ public class ConnectionFactory implements Cloneable {
                 parameters.put(key, value);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Cannot parse the query parameters", e);
+            throw new IllegalArgumentException("Cannot parse the query parameters", e);
         }
 
-        // heartbeat
-        String heartbeat = parameters.get("heartbeat");
-        if (heartbeat != null) {
-            try {
-                int heartbeatInt = Integer.parseInt(heartbeat);
-                setRequestedHeartbeat(heartbeatInt);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Requested heartbeat must an integer");
+        for (Entry<String, String> entry : parameters.entrySet()) {
+            BiConsumer<String, ConnectionFactory> handler = URI_QUERY_PARAMETER_HANDLERS
+                .get(entry.getKey());
+            if (handler != null) {
+                handler.accept(entry.getValue(), this);
+            } else {
+                processUriQueryParameter(entry.getKey(), entry.getValue());
             }
         }
-        
-        // connection_timeout
-        String connectionTimeout = parameters.get("connection_timeout");
-        if (connectionTimeout != null) {
-            try {
-                int connectionTimeoutInt = Integer.parseInt(connectionTimeout);
-                setConnectionTimeout(connectionTimeoutInt);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("TCP connection timeout must an integer");
-            }
-        }
-        
-        // channel_max
-        String channelMax = parameters.get("channel_max");
-        if (channelMax != null) {
-            try {
-                int channelMaxInt = Integer.parseInt(channelMax);
-                setRequestedChannelMax(channelMaxInt);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Requested channel max must an integer");
-            }
-        }
+    }
+
+    /**
+     * Hook to process query parameters not handled natively.
+     * Handled natively: <code>heartbeat</code>, <code>connection_timeout</code>,
+     * <code>channel_max</code>.
+     * @param key
+     * @param value
+     */
+    protected void processUriQueryParameter(String key, String value) {
+
     }
 
     /**
