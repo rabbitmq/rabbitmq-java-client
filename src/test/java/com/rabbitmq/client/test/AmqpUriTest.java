@@ -104,11 +104,9 @@ public class AmqpUriTest
         parseFail("amqp://foo%xy");
 
         parseFail("amqp://user:pass@host:10000/vhost?heartbeat=not_an_integer");
-        parseFail("amqp://user:pass@host:10000/vhost?heartbeat=-1");
         parseFail("amqp://user:pass@host:10000/vhost?connection_timeout=not_an_integer");
         parseFail("amqp://user:pass@host:10000/vhost?connection_timeout=-1");
         parseFail("amqp://user:pass@host:10000/vhost?channel_max=not_an_integer");
-        parseFail("amqp://user:pass@host:10000/vhost?channel_max=-1");
         parseFail("amqp://user:pass@host:10000/vhost?heartbeat=342?connection_timeout=442");
     }
 
