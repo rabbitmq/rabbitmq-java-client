@@ -217,7 +217,9 @@ public class ValueReader
     }
 
     /** Read an unsigned int */
-    private static long readUnsignedInt(DataInputStream in) throws IOException {
+    private static long readUnsignedInt(DataInputStream in) 
+        throws IOException 
+    {
         long ch1 = in.read();
         long ch2 = in.read();
         long ch3 = in.read();
