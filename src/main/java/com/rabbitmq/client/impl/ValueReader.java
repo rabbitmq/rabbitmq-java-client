@@ -164,6 +164,9 @@ public class ValueReader
           case 'I':
               value = in.readInt();
               break;
+          case 'i':
+              value = readUnsignedInt(in);
+              break;
           case 'D':
               int scale = in.readUnsignedByte();
               byte [] unscaled = new byte[4];
@@ -211,6 +214,17 @@ public class ValueReader
                   ("Unrecognised type in table");
         }
         return value;
+    }
+
+    /** Read an unsigned int */
+    private static long readUnsignedInt(DataInputStream in) throws IOException {
+        long ch1 = in.read();
+        long ch2 = in.read();
+        long ch3 = in.read();
+        long ch4 = in.read();
+        if ((ch1 | ch2 | ch3 | ch4) < 0)
+            throw new EOFException();
+        return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + ch4);
     }
 
     /** Read a field-array */
