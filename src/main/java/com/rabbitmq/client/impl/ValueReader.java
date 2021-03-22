@@ -194,6 +194,9 @@ public class ValueReader
           case 's':
               value = in.readShort();
               break;
+          case 'u':
+              value = in.readUnsignedShort();
+              break;
           case 't':
               value = in.readBoolean();
               break;
