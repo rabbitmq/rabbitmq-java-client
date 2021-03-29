@@ -17,6 +17,7 @@
 package com.rabbitmq.client.impl;
 
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
