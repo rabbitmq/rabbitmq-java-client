@@ -15,6 +15,8 @@
 
 package com.rabbitmq.client;
 
+import com.rabbitmq.client.impl.recovery.RecordedEntity;
+
 /**
  * Indicates an exception thrown during topology recovery.
  *
@@ -22,7 +24,19 @@ package com.rabbitmq.client;
  * @since 3.3.0
  */
 public class TopologyRecoveryException extends Exception {
+    
+    private final RecordedEntity recordedEntity;
+    
     public TopologyRecoveryException(String message, Throwable cause) {
+        this(message, cause, null);
+    }
+    
+    public TopologyRecoveryException(String message, Throwable cause, final RecordedEntity recordedEntity) {
         super(message, cause);
+        this.recordedEntity = recordedEntity;
+    }
+    
+    public RecordedEntity getRecordedEntity() {
+        return recordedEntity;
     }
 }

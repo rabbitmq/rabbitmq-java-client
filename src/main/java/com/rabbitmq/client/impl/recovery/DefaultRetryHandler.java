@@ -40,19 +40,19 @@ public class DefaultRetryHandler implements RetryHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRetryHandler.class);
 
-    private final BiPredicate<? super RecordedQueue, Exception> queueRecoveryRetryCondition;
-    private final BiPredicate<? super RecordedExchange, Exception> exchangeRecoveryRetryCondition;
-    private final BiPredicate<? super RecordedBinding, Exception> bindingRecoveryRetryCondition;
-    private final BiPredicate<? super RecordedConsumer, Exception> consumerRecoveryRetryCondition;
+    protected final BiPredicate<? super RecordedQueue, Exception> queueRecoveryRetryCondition;
+    protected final BiPredicate<? super RecordedExchange, Exception> exchangeRecoveryRetryCondition;
+    protected final BiPredicate<? super RecordedBinding, Exception> bindingRecoveryRetryCondition;
+    protected final BiPredicate<? super RecordedConsumer, Exception> consumerRecoveryRetryCondition;
 
-    private final RetryOperation<?> queueRecoveryRetryOperation;
-    private final RetryOperation<?> exchangeRecoveryRetryOperation;
-    private final RetryOperation<?> bindingRecoveryRetryOperation;
-    private final RetryOperation<?> consumerRecoveryRetryOperation;
+    protected final RetryOperation<?> queueRecoveryRetryOperation;
+    protected final RetryOperation<?> exchangeRecoveryRetryOperation;
+    protected final RetryOperation<?> bindingRecoveryRetryOperation;
+    protected final RetryOperation<?> consumerRecoveryRetryOperation;
 
-    private final int retryAttempts;
+    protected final int retryAttempts;
 
-    private final BackoffPolicy backoffPolicy;
+    protected final BackoffPolicy backoffPolicy;
 
     public DefaultRetryHandler(BiPredicate<? super RecordedQueue, Exception> queueRecoveryRetryCondition,
         BiPredicate<? super RecordedExchange, Exception> exchangeRecoveryRetryCondition,
