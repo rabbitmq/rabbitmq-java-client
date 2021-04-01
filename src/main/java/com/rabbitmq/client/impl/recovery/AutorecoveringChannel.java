@@ -900,7 +900,11 @@ public class AutorecoveringChannel implements RecoverableChannel {
         this.connection.recordConsumer(result, consumer);
     }
 
-    private void deleteRecordedConsumer(String consumerTag) {
+    /**
+     * Delete the recorded consumer from this channel and accompanying connection
+     * @param consumerTag consumer tag to delete
+     */
+    public void deleteRecordedConsumer(String consumerTag) {
         this.consumerTags.remove(consumerTag);
         RecordedConsumer c = this.connection.deleteRecordedConsumer(consumerTag);
         if (c != null) {

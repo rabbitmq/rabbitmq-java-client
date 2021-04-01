@@ -55,6 +55,18 @@ public abstract class TopologyRecoveryRetryLogic {
         }
         return null;
     };
+    
+    /**
+     * Recover a queue
+     */
+    public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_QUEUE = context -> {
+        if (context.entity() instanceof RecordedQueue) {
+            final RecordedQueue recordedQueue = context.queue();
+            AutorecoveringConnection connection = context.connection();
+            connection.recoverQueue(recordedQueue.getName(), recordedQueue, false);
+        }
+        return null;
+    };
 
     /**
      * Recover the destination queue of a binding.
@@ -138,18 +150,52 @@ public abstract class TopologyRecoveryRetryLogic {
      * Recover a consumer.
      */
     public static final DefaultRetryHandler.RetryOperation<String> RECOVER_CONSUMER = context -> context.consumer().recover();
+    
+    /**
+     * Recover earlier consumers that share the same channel as this retry context
+     */
+    public static final DefaultRetryHandler.RetryOperation<String> RECOVER_PREVIOUS_CONSUMERS = context -> {
+        if (context.entity() instanceof RecordedConsumer) {
+            // recover all consumers for the same channel that were recovered before this current
+            // consumer. need to do this incase some consumers had already been recovered
+            // successfully on a different queue before this one failed
+            final AutorecoveringChannel channel = context.consumer().getChannel();
+            for (RecordedConsumer consumer : Utility.copy(context.connection().getRecordedConsumers()).values()) {
+                if (consumer == context.entity()) {
+                    break;
+                } else if (consumer.getChannel() == channel) {
+                    final RetryContext retryContext = new RetryContext(consumer, context.exception(), context.connection());
+                    RECOVER_CONSUMER_QUEUE.call(retryContext);
+                    consumer.recover();
+                    RECOVER_CONSUMER_QUEUE_BINDINGS.call(retryContext);
+                }
+            }
+        }
+        return null;
+    };
 
     /**
      * Pre-configured {@link TopologyRecoveryRetryHandlerBuilder} that retries recovery of bindings and consumers
      * when their respective queue is not found.
+     * 
      * This retry handler can be useful for long recovery processes, whereby auto-delete queues
      * can be deleted between queue recovery and binding/consumer recovery.
+     * 
+     * Also useful to retry channel-closed 404 errors that may arise with auto-delete queues during a cluster cycle.
      */
     public static final TopologyRecoveryRetryHandlerBuilder RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER = builder()
+        .queueRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
         .bindingRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
         .consumerRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
-        .bindingRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_BINDING_QUEUE).andThen(RECOVER_BINDING)
+        .queueRecoveryRetryOperation(RECOVER_CHANNEL
+            .andThen(RECOVER_QUEUE))
+        .bindingRecoveryRetryOperation(RECOVER_CHANNEL
+            .andThen(RECOVER_BINDING_QUEUE)
+            .andThen(RECOVER_BINDING)
             .andThen(RECOVER_PREVIOUS_QUEUE_BINDINGS))
-        .consumerRecoveryRetryOperation(RECOVER_CHANNEL.andThen(RECOVER_CONSUMER_QUEUE.andThen(RECOVER_CONSUMER)
-            .andThen(RECOVER_CONSUMER_QUEUE_BINDINGS)));
+        .consumerRecoveryRetryOperation(RECOVER_CHANNEL
+            .andThen(RECOVER_CONSUMER_QUEUE)
+            .andThen(RECOVER_CONSUMER)
+            .andThen(RECOVER_CONSUMER_QUEUE_BINDINGS)
+            .andThen(RECOVER_PREVIOUS_CONSUMERS));
 }

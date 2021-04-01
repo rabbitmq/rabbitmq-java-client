@@ -30,19 +30,19 @@ import java.util.function.BiPredicate;
  */
 public class TopologyRecoveryRetryHandlerBuilder {
 
-    private BiPredicate<? super RecordedQueue, Exception> queueRecoveryRetryCondition = (q, e) -> false;
-    private BiPredicate<? super RecordedExchange, Exception> exchangeRecoveryRetryCondition = (ex, e) -> false;
-    private BiPredicate<? super RecordedBinding, Exception> bindingRecoveryRetryCondition = (b, e) -> false;
-    private BiPredicate<? super RecordedConsumer, Exception> consumerRecoveryRetryCondition = (c, e) -> false;
+    protected BiPredicate<? super RecordedQueue, Exception> queueRecoveryRetryCondition = (q, e) -> false;
+    protected BiPredicate<? super RecordedExchange, Exception> exchangeRecoveryRetryCondition = (ex, e) -> false;
+    protected BiPredicate<? super RecordedBinding, Exception> bindingRecoveryRetryCondition = (b, e) -> false;
+    protected BiPredicate<? super RecordedConsumer, Exception> consumerRecoveryRetryCondition = (c, e) -> false;
 
-    private DefaultRetryHandler.RetryOperation<?> queueRecoveryRetryOperation = context -> null;
-    private DefaultRetryHandler.RetryOperation<?> exchangeRecoveryRetryOperation = context -> null;
-    private DefaultRetryHandler.RetryOperation<?> bindingRecoveryRetryOperation = context -> null;
-    private DefaultRetryHandler.RetryOperation<?> consumerRecoveryRetryOperation = context -> null;
+    protected DefaultRetryHandler.RetryOperation<?> queueRecoveryRetryOperation = context -> null;
+    protected DefaultRetryHandler.RetryOperation<?> exchangeRecoveryRetryOperation = context -> null;
+    protected DefaultRetryHandler.RetryOperation<?> bindingRecoveryRetryOperation = context -> null;
+    protected DefaultRetryHandler.RetryOperation<?> consumerRecoveryRetryOperation = context -> null;
 
-    private int retryAttempts = 2;
+    protected int retryAttempts = 2;
 
-    private BackoffPolicy backoffPolicy = nbAttempts -> {
+    protected BackoffPolicy backoffPolicy = nbAttempts -> {
     };
 
     public static TopologyRecoveryRetryHandlerBuilder builder() {
