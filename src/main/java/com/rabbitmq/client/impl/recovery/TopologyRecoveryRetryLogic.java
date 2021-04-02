@@ -165,10 +165,11 @@ public abstract class TopologyRecoveryRetryLogic {
                 } else if (consumer.getChannel() == channel) {
                     final RetryContext retryContext = new RetryContext(consumer, context.exception(), context.connection());
                     RECOVER_CONSUMER_QUEUE.call(retryContext);
-                    consumer.recover();
+                    context.connection().recoverConsumer(consumer.getConsumerTag(), consumer, false);
                     RECOVER_CONSUMER_QUEUE_BINDINGS.call(retryContext);
                 }
             }
+            return context.consumer().getConsumerTag();
         }
         return null;
     };
