@@ -33,7 +33,7 @@ import java.net.ConnectException;
 public class ForgivingExceptionHandler implements ExceptionHandler {
     @Override
     public void handleUnexpectedConnectionDriverException(Connection conn, Throwable exception) {
-        log("An unexpected connection driver error occured", exception);
+        log("An unexpected connection driver error occurred", exception);
     }
 
     @Override
