@@ -62,7 +62,7 @@
     <junit.version>4.13.2</junit.version>
     <mockito.version>3.9.0</mockito.version>
     <assertj.version>3.19.0</assertj.version>
-    <jetty.version>9.4.39.v20210325</jetty.version>
+    <jetty.version>9.4.40.v20210413</jetty.version>
     <bouncycastle.version>1.68</bouncycastle.version>
 
     <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
