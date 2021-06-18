@@ -55,7 +55,8 @@ public class RecoveryAwareAMQConnectionFactory {
     // package protected API, made public for testing only
     public RecoveryAwareAMQConnection newConnection() throws IOException, TimeoutException {
         Exception lastException = null;
-        List<Address> shuffled = shuffle(addressResolver.getAddresses());
+        List<Address> originalOrder = addressResolver.getAddresses();
+        List<Address> shuffled = params.shouldMaintainAddressOrder() ? originalOrder : shuffle(originalOrder);
 
         for (Address addr : shuffled) {
             try {

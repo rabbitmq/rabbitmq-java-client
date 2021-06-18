@@ -126,6 +126,7 @@ public class ConnectionFactory implements Cloneable {
     private boolean automaticRecovery               = true;
     private boolean topologyRecovery                = true;
     private ExecutorService topologyRecoveryExecutor;
+    private boolean maintainAddressOrder;
     
     // long is used to make sure the users can use both ints
     // and longs safely. It is unlikely that anybody'd need
@@ -197,6 +198,8 @@ public class ConnectionFactory implements Cloneable {
     private TrafficListener trafficListener = TrafficListener.NO_OP;
 
     private CredentialsRefreshService credentialsRefreshService;
+
+
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -1263,6 +1266,7 @@ public class ConnectionFactory implements Cloneable {
         result.setTopologyRecoveryRetryHandler(topologyRecoveryRetryHandler);
         result.setTrafficListener(trafficListener);
         result.setCredentialsRefreshService(credentialsRefreshService);
+        result.setMaintainAddressOrder(maintainAddressOrder);
         return result;
     }
 
@@ -1652,5 +1656,18 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setTrafficListener(TrafficListener trafficListener) {
         this.trafficListener = trafficListener;
+    }
+
+    /**
+     * Set to true in order to maintain the order of Addresses when setting automaticRecovery=true
+     * Default is false and automatic shuffling.
+     * @param maintainAddressOrder
+     */
+    public void setMaintainAddressOrder(boolean maintainAddressOrder) {
+        this.maintainAddressOrder = maintainAddressOrder;
+    }
+
+    public boolean shouldMaintainAddressOrder() {
+        return this.maintainAddressOrder;
     }
 }

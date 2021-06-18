@@ -49,6 +49,7 @@ public class ConnectionParams {
     private ExecutorService topologyRecoveryExecutor;
     private int channelRpcTimeout;
     private boolean channelShouldCheckRpcResponseType;
+    private boolean maintainAddressOrder;
     private ErrorOnWriteListener errorOnWriteListener;
     private int workPoolTimeout = -1;
     private TopologyRecoveryFilter topologyRecoveryFilter;
@@ -286,5 +287,13 @@ public class ConnectionParams {
 
     public CredentialsRefreshService getCredentialsRefreshService() {
         return credentialsRefreshService;
+    }
+
+    public boolean shouldMaintainAddressOrder() {
+        return maintainAddressOrder;
+    }
+
+    public void setMaintainAddressOrder(boolean maintainAddressOrder) {
+        this.maintainAddressOrder = maintainAddressOrder;
     }
 }
