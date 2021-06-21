@@ -20,21 +20,33 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Strategy interface to get the potential servers to connect to.
- */
+/** Strategy interface to get the potential servers to connect to. */
 public interface AddressResolver {
 
-    /**
-     * Get the potential {@link Address}es to connect to.
-     * @return candidate {@link Address}es
-     * @throws IOException if it encounters a problem
-     */
-    List<Address> getAddresses() throws IOException;
+  /**
+   * Get the potential {@link Address}es to connect to.
+   *
+   * @return candidate {@link Address}es
+   * @throws IOException if it encounters a problem
+   */
+  List<Address> getAddresses() throws IOException;
 
-    default List<Address> maybeShuffle(List<Address> input) {
-        List<Address> list = new ArrayList<Address>(input);
-        Collections.shuffle(list);
-        return list;
-    }
+  /**
+   * Optionally shuffle the list of addresses returned by {@link #getAddresses()}.
+   *
+   * <p>The automatic connection recovery calls this method after {@link #getAddresses()} to pick a
+   * random address for reconnecting.
+   *
+   * <p>The default method implementation calls {@link Collections#shuffle(List)}. Custom
+   * implementations can choose to not do any shuffling to have more predictability in the
+   * reconnection.
+   *
+   * @param input
+   * @return potentially shuffled list of addresses.
+   */
+  default List<Address> maybeShuffle(List<Address> input) {
+    List<Address> list = new ArrayList<Address>(input);
+    Collections.shuffle(list);
+    return list;
+  }
 }
