@@ -82,12 +82,6 @@ public class RecoveryAwareAMQConnectionFactory {
         throw new IOException("failed to connect");
     }
 
-    private static List<Address> shuffle(List<Address> addrs) {
-        List<Address> list = new ArrayList<Address>(addrs);
-        Collections.shuffle(list);
-        return list;
-    }
-
     protected RecoveryAwareAMQConnection createConnection(ConnectionParams params, FrameHandler handler, MetricsCollector metricsCollector) {
         return new RecoveryAwareAMQConnection(params, handler, metricsCollector);
     }
