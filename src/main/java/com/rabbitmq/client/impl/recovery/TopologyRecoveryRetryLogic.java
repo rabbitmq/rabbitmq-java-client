@@ -18,6 +18,9 @@ package com.rabbitmq.client.impl.recovery;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.utility.Utility;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.Map.Entry;
 import java.util.function.BiPredicate;
 import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryHandlerBuilder.builder;
 
@@ -62,7 +65,7 @@ public abstract class TopologyRecoveryRetryLogic {
         if (context.entity() instanceof RecordedQueue) {
             final RecordedQueue recordedQueue = context.queue();
             AutorecoveringConnection connection = context.connection();
-            connection.recoverQueue(recordedQueue.getName(), recordedQueue, false);
+          connection.recoverQueue(recordedQueue.getName(), recordedQueue);
         }
         return null;
     };
@@ -76,9 +79,7 @@ public abstract class TopologyRecoveryRetryLogic {
             AutorecoveringConnection connection = context.connection();
             RecordedQueue recordedQueue = connection.getRecordedQueues().get(binding.getDestination());
             if (recordedQueue != null) {
-                connection.recoverQueue(
-                    recordedQueue.getName(), recordedQueue, false
-                );
+              connection.recoverQueue(recordedQueue.getName(), recordedQueue);
             }
         }
         return null;
@@ -122,9 +123,7 @@ public abstract class TopologyRecoveryRetryLogic {
             AutorecoveringConnection connection = context.connection();
             RecordedQueue recordedQueue = connection.getRecordedQueues().get(consumer.getQueue());
             if (recordedQueue != null) {
-                connection.recoverQueue(
-                    recordedQueue.getName(), recordedQueue, false
-                );
+              connection.recoverQueue(recordedQueue.getName(), recordedQueue);
             }
         }
         return null;
@@ -165,11 +164,49 @@ public abstract class TopologyRecoveryRetryLogic {
                 } else if (consumer.getChannel() == channel) {
                     final RetryContext retryContext = new RetryContext(consumer, context.exception(), context.connection());
                     RECOVER_CONSUMER_QUEUE.call(retryContext);
-                    context.connection().recoverConsumer(consumer.getConsumerTag(), consumer, false);
+                    context.connection().recoverConsumer(consumer.getConsumerTag(), consumer);
                     RECOVER_CONSUMER_QUEUE_BINDINGS.call(retryContext);
                 }
             }
             return context.consumer().getConsumerTag();
+        }
+        return null;
+    };
+    
+    /**
+     * Recover earlier auto-delete or exclusive queues that share the same channel as this retry context
+     */
+    public static final DefaultRetryHandler.RetryOperation<Void> RECOVER_PREVIOUS_AUTO_DELETE_QUEUES = context -> {
+        if (context.entity() instanceof RecordedQueue) {
+            AutorecoveringConnection connection = context.connection();
+            RecordedQueue queue = context.queue();
+            // recover all queues for the same channel that had already been recovered successfully before this queue failed.
+            // If the previous ones were auto-delete or exclusive, they need recovered again
+            for (Entry<String, RecordedQueue> entry : Utility.copy(connection.getRecordedQueues()).entrySet()) {
+                if (entry.getValue() == queue) {
+                    // we have gotten to the queue in this context. Since this is an ordered map we can now break 
+                    // as we know we have recovered all the earlier queues on this channel
+                    break;
+                } else if (queue.getChannel() == entry.getValue().getChannel() 
+                        && (entry.getValue().isAutoDelete() || entry.getValue().isExclusive())) {
+                    connection.recoverQueue(entry.getKey(), entry.getValue());
+                }
+            }
+        } else if (context.entity() instanceof RecordedQueueBinding) {
+            AutorecoveringConnection connection = context.connection();
+            Set<String> queues = new LinkedHashSet<>();
+            for (Entry<String, RecordedQueue> entry : Utility.copy(connection.getRecordedQueues()).entrySet()) {
+                if (context.entity().getChannel() == entry.getValue().getChannel() 
+                        && (entry.getValue().isAutoDelete() || entry.getValue().isExclusive())) {
+                    connection.recoverQueue(entry.getKey(), entry.getValue());
+                    queues.add(entry.getValue().getName());
+                }
+            }
+            for (final RecordedBinding binding : Utility.copy(connection.getRecordedBindings())) {
+                if (binding instanceof RecordedQueueBinding && queues.contains(binding.getDestination())) {
+                    binding.recover();
+                }
+            }
         }
         return null;
     };
@@ -188,11 +225,13 @@ public abstract class TopologyRecoveryRetryLogic {
         .bindingRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
         .consumerRecoveryRetryCondition(CHANNEL_CLOSED_NOT_FOUND)
         .queueRecoveryRetryOperation(RECOVER_CHANNEL
-            .andThen(RECOVER_QUEUE))
+            .andThen(RECOVER_QUEUE)
+            .andThen(RECOVER_PREVIOUS_AUTO_DELETE_QUEUES))
         .bindingRecoveryRetryOperation(RECOVER_CHANNEL
             .andThen(RECOVER_BINDING_QUEUE)
             .andThen(RECOVER_BINDING)
-            .andThen(RECOVER_PREVIOUS_QUEUE_BINDINGS))
+            .andThen(RECOVER_PREVIOUS_QUEUE_BINDINGS)
+            .andThen(RECOVER_PREVIOUS_AUTO_DELETE_QUEUES))
         .consumerRecoveryRetryOperation(RECOVER_CHANNEL
             .andThen(RECOVER_CONSUMER_QUEUE)
             .andThen(RECOVER_CONSUMER)
