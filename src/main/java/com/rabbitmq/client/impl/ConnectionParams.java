@@ -21,6 +21,7 @@ import com.rabbitmq.client.RecoveryDelayHandler.DefaultRecoveryDelayHandler;
 import com.rabbitmq.client.SaslConfig;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.TrafficListener;
+import com.rabbitmq.client.impl.recovery.RecoveredQueueNameSupplier;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 
@@ -54,7 +55,8 @@ public class ConnectionParams {
     private TopologyRecoveryFilter topologyRecoveryFilter;
     private Predicate<ShutdownSignalException> connectionRecoveryTriggeringCondition;
     private RetryHandler topologyRecoveryRetryHandler;
-
+    private RecoveredQueueNameSupplier recoveredQueueNameSupplier;
+    
     private ExceptionHandler exceptionHandler;
     private ThreadFactory threadFactory;
 
@@ -270,6 +272,14 @@ public class ConnectionParams {
 
     public RetryHandler getTopologyRecoveryRetryHandler() {
         return topologyRecoveryRetryHandler;
+    }
+    
+    public void setRecoveredQueueNameSupplier(RecoveredQueueNameSupplier recoveredQueueNameSupplier) {
+        this.recoveredQueueNameSupplier = recoveredQueueNameSupplier;
+    }
+
+    public RecoveredQueueNameSupplier getRecoveredQueueNameSupplier() {
+        return recoveredQueueNameSupplier;
     }
 
     public void setTrafficListener(TrafficListener trafficListener) {

@@ -355,7 +355,8 @@ public class AutorecoveringChannel implements RecoverableChannel {
             durable(durable).
             exclusive(exclusive).
             autoDelete(autoDelete).
-            arguments(arguments);
+            arguments(arguments).
+            recoveredQueueNameSupplier(connection.getRecoveredQueueNameSupplier());
         delegate.queueDeclareNoWait(queue, durable, exclusive, autoDelete, arguments);
         recordQueue(queue, meta);
 
@@ -848,7 +849,8 @@ public class AutorecoveringChannel implements RecoverableChannel {
                 durable(durable).
                 exclusive(exclusive).
                 autoDelete(autoDelete).
-                arguments(arguments);
+                arguments(arguments).
+                recoveredQueueNameSupplier(connection.getRecoveredQueueNameSupplier());
         if (queue.equals(RecordedQueue.EMPTY_STRING)) {
             q.serverNamed(true);
         }

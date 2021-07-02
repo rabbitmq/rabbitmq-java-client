@@ -23,6 +23,10 @@ import java.util.Map;
  */
 public class RecordedQueue extends RecordedNamedEntity {
     public static final String EMPTY_STRING = "";
+    
+    static final RecoveredQueueNameSupplier DEFAULT_QUEUE_NAME_SUPPLIER = q -> q.isServerNamed() ? EMPTY_STRING : q.name;
+    
+    private RecoveredQueueNameSupplier recoveredQueueNameSupplier = DEFAULT_QUEUE_NAME_SUPPLIER;
     private boolean durable;
     private boolean autoDelete;
     private Map<String, Object> arguments;
@@ -60,11 +64,7 @@ public class RecordedQueue extends RecordedNamedEntity {
     }
 
     public String getNameToUseForRecovery() {
-        if(isServerNamed()) {
-            return EMPTY_STRING;
-        } else {
-            return this.name;
-        }
+        return recoveredQueueNameSupplier.getNameToUseForRecovery(this);
     }
 
     public RecordedQueue durable(boolean value) {
@@ -89,9 +89,14 @@ public class RecordedQueue extends RecordedNamedEntity {
         this.arguments = value;
         return this;
     }
-    
+
     public Map<String, Object> getArguments() {
         return arguments;
+    }
+
+    public RecordedQueue recoveredQueueNameSupplier(RecoveredQueueNameSupplier recoveredQueueNameSupplier) {
+        this.recoveredQueueNameSupplier = recoveredQueueNameSupplier;
+        return this;
     }
     
     @Override
