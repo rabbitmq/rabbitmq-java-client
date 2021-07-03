@@ -25,7 +25,6 @@ import org.mockito.Mockito;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
-
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ChannelNTest {

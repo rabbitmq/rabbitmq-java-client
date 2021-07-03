@@ -148,7 +148,7 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     }
 
     @Override
-    protected void markPublishedMessageNotRouted() {
+    protected void markPublishedMessageUnrouted() {
         unroutedPublishedMessages.increment();
     }
 

@@ -19,8 +19,11 @@ import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
+import com.rabbitmq.client.impl.recovery.RecoveredQueueNameSupplier;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
@@ -49,6 +52,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 public class ConnectionFactory implements Cloneable {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionFactory.class);
     private static final int MAX_UNSIGNED_SHORT = 65535;
 
     /** Default user name */
@@ -186,6 +190,7 @@ public class ConnectionFactory implements Cloneable {
      * @since 5.4.0
      */
     private RetryHandler topologyRecoveryRetryHandler;
+    private RecoveredQueueNameSupplier recoveredQueueNameSupplier;
 
     /**
      * Traffic listener notified of inbound and outbound {@link Command}s.
@@ -1261,6 +1266,7 @@ public class ConnectionFactory implements Cloneable {
         result.setTopologyRecoveryFilter(topologyRecoveryFilter);
         result.setConnectionRecoveryTriggeringCondition(connectionRecoveryTriggeringCondition);
         result.setTopologyRecoveryRetryHandler(topologyRecoveryRetryHandler);
+        result.setRecoveredQueueNameSupplier(recoveredQueueNameSupplier);
         result.setTrafficListener(trafficListener);
         result.setCredentialsRefreshService(credentialsRefreshService);
         return result;
@@ -1637,6 +1643,15 @@ public class ConnectionFactory implements Cloneable {
      */
     public void setTopologyRecoveryRetryHandler(RetryHandler topologyRecoveryRetryHandler) {
         this.topologyRecoveryRetryHandler = topologyRecoveryRetryHandler;
+    }
+
+    /**
+     * Set the recovered queue name supplier. Default is use the same queue name when recovering queues.
+     * 
+     * @param recoveredQueueNameSupplier queue name supplier
+     */
+    public void setRecoveredQueueNameSupplier(RecoveredQueueNameSupplier recoveredQueueNameSupplier) {
+        this.recoveredQueueNameSupplier = recoveredQueueNameSupplier;
     }
 
     /**

@@ -151,9 +151,9 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     @Override
     public void basicPublishUnrouted(Channel channel) {
         try {
-            markPublishedMessageNotRouted();
+            markPublishedMessageUnrouted();
         } catch(Exception e) {
-            LOGGER.info("Error while computing metrics in markPublishedMessageNotRouted: " + e.getMessage());
+            LOGGER.info("Error while computing metrics in markPublishedMessageUnrouted: " + e.getMessage());
         }
     }
 
@@ -420,5 +420,5 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     /**
      * Marks the event of a published message not being routed.
      */
-    protected abstract void markPublishedMessageNotRouted();
+    protected abstract void markPublishedMessageUnrouted();
 }
