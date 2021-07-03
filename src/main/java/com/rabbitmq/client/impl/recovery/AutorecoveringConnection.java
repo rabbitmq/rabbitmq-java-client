@@ -767,43 +767,62 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
 
-
+    /**
+     * Recover the queue. Any exceptions during recovery will be delivered to the connection's {@link ExceptionHandler}.
+     * @param oldName queue name
+     * @param q recorded queue
+     * @param retry whether to retry the recovery if an error occurs and a RetryHandler was configured on the connection
+     */
     public void recoverQueue(final String oldName, RecordedQueue q, boolean retry) {
         try {
-            if (topologyRecoveryFilter.filterQueue(q)) {
-                LOGGER.debug("Recovering {}", q);
-                if (retry) {
-                    final RecordedQueue entity = q;
-                    q = (RecordedQueue) wrapRetryIfNecessary(q, () -> {
-                        entity.recover();
-                        return null;
-                    }).getRecordedEntity();
-                } else {
-                    q.recover();
-                }
-                String newName = q.getName();
-                if (!oldName.equals(newName)) {
-                    // make sure server-named queues are re-added with
-                    // their new names. MK.
-                    synchronized (this.recordedQueues) {
-                        this.propagateQueueNameChangeToBindings(oldName, newName);
-                        this.propagateQueueNameChangeToConsumers(oldName, newName);
-                        // bug26552:
-                        // remove old name after we've updated the bindings and consumers,
-                        deleteRecordedQueue(oldName);
-                        this.recordedQueues.put(newName, q);
-                    }
-                }
-                for (QueueRecoveryListener qrl : Utility.copy(this.queueRecoveryListeners)) {
-                    qrl.queueRecovered(oldName, newName);
-                }
-                LOGGER.debug("{} has recovered", q);
-            }
+            internalRecoverQueue(oldName, q, retry);
         } catch (Exception cause) {
             final String message = "Caught an exception while recovering queue " + oldName +
                                            ": " + cause.getMessage();
             TopologyRecoveryException e = new TopologyRecoveryException(message, cause, q);
             this.getExceptionHandler().handleTopologyRecoveryException(delegate, q.getDelegateChannel(), e);
+        }
+    }
+    
+    /**
+     * Recover the queue. Errors are not retried and not delivered to the connection's {@link ExceptionHandler}
+     * @param oldName queue name
+     * @param q recorded queue
+     * @throws Exception if an error occurs recovering the queue
+     */
+    void recoverQueue(final String oldName, RecordedQueue q) throws Exception {
+        internalRecoverQueue(oldName, q, false);
+    }
+    
+    private void internalRecoverQueue(final String oldName, RecordedQueue q, boolean retry) throws Exception {
+        if (topologyRecoveryFilter.filterQueue(q)) {
+            LOGGER.debug("Recovering {}", q);
+            if (retry) {
+                final RecordedQueue entity = q;
+                q = (RecordedQueue) wrapRetryIfNecessary(q, () -> {
+                    entity.recover();
+                    return null;
+                }).getRecordedEntity();
+            } else {
+                q.recover();
+            }
+            String newName = q.getName();
+            if (!oldName.equals(newName)) {
+                // make sure queues are re-added with
+                // their new names, if applicable. MK.
+                synchronized (this.recordedQueues) {
+                    this.propagateQueueNameChangeToBindings(oldName, newName);
+                    this.propagateQueueNameChangeToConsumers(oldName, newName);
+                    // bug26552:
+                    // remove old name after we've updated the bindings and consumers,
+                    deleteRecordedQueue(oldName);
+                    this.recordedQueues.put(newName, q);
+                }
+            }
+            for (QueueRecoveryListener qrl : Utility.copy(this.queueRecoveryListeners)) {
+                qrl.queueRecovered(oldName, newName);
+            }
+            LOGGER.debug("{} has recovered", q);
         }
     }
 
@@ -829,39 +848,59 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
     }
 
+    /**
+     * Recover the consumer. Any exceptions during recovery will be delivered to the connection's {@link ExceptionHandler}.
+     * @param tag consumer tag
+     * @param consumer recorded consumer
+     * @param retry whether to retry the recovery if an error occurs and a RetryHandler was configured on the connection
+     */
     public void recoverConsumer(final String tag, RecordedConsumer consumer, boolean retry) {
         try {
-            if (this.topologyRecoveryFilter.filterConsumer(consumer)) {
-                LOGGER.debug("Recovering {}", consumer);
-                String newTag = null;
-                if (retry) {
-                    final RecordedConsumer entity = consumer;
-                    RetryResult retryResult = wrapRetryIfNecessary(consumer, entity::recover);
-                    consumer = (RecordedConsumer) retryResult.getRecordedEntity();
-                    newTag = (String) retryResult.getResult();
-                } else {
-                    newTag = consumer.recover();
-                }
-
-                // make sure server-generated tags are re-added. MK.
-                if(tag != null && !tag.equals(newTag)) {
-                    synchronized (this.consumers) {
-                        this.consumers.remove(tag);
-                        this.consumers.put(newTag, consumer);
-                    }
-                    consumer.getChannel().updateConsumerTag(tag, newTag);
-                }
-
-                for (ConsumerRecoveryListener crl : Utility.copy(this.consumerRecoveryListeners)) {
-                    crl.consumerRecovered(tag, newTag);
-                }
-                LOGGER.debug("{} has recovered", consumer);
-            }
+            internalRecoverConsumer(tag, consumer, retry);
         } catch (Exception cause) {
             final String message = "Caught an exception while recovering consumer " + tag +
                     ": " + cause.getMessage();
             TopologyRecoveryException e = new TopologyRecoveryException(message, cause, consumer);
             this.getExceptionHandler().handleTopologyRecoveryException(delegate, consumer.getDelegateChannel(), e);
+        }
+    }
+    
+    /**
+     * Recover the consumer. Errors are not retried and not delivered to the connection's {@link ExceptionHandler}
+     * @param tag consumer tag
+     * @param consumer recorded consumer
+     * @throws Exception if an error occurs recovering the consumer
+     */
+    void recoverConsumer(final String tag, RecordedConsumer consumer) throws Exception {
+        internalRecoverConsumer(tag, consumer, false);
+    }
+    
+    private void internalRecoverConsumer(final String tag, RecordedConsumer consumer, boolean retry) throws Exception {
+        if (this.topologyRecoveryFilter.filterConsumer(consumer)) {
+            LOGGER.debug("Recovering {}", consumer);
+            String newTag = null;
+            if (retry) {
+                final RecordedConsumer entity = consumer;
+                RetryResult retryResult = wrapRetryIfNecessary(consumer, entity::recover);
+                consumer = (RecordedConsumer) retryResult.getRecordedEntity();
+                newTag = (String) retryResult.getResult();
+            } else {
+                newTag = consumer.recover();
+            }
+
+            // make sure server-generated tags are re-added. MK.
+            if(tag != null && !tag.equals(newTag)) {
+                synchronized (this.consumers) {
+                    this.consumers.remove(tag);
+                    this.consumers.put(newTag, consumer);
+                }
+                consumer.getChannel().updateConsumerTag(tag, newTag);
+            }
+
+            for (ConsumerRecoveryListener crl : Utility.copy(this.consumerRecoveryListeners)) {
+                crl.consumerRecovered(tag, newTag);
+            }
+            LOGGER.debug("{} has recovered", consumer);
         }
     }
 

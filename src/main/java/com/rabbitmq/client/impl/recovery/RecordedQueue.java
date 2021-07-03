@@ -41,6 +41,10 @@ public class RecordedQueue extends RecordedNamedEntity {
         this.exclusive = value;
         return this;
     }
+    
+    public boolean isExclusive() {
+        return this.exclusive;
+    }
 
     public RecordedQueue serverNamed(boolean value) {
         this.serverNamed = value;
@@ -50,8 +54,6 @@ public class RecordedQueue extends RecordedNamedEntity {
     public boolean isServerNamed() {
         return this.serverNamed;
     }
-
-    public boolean isAutoDelete() { return this.autoDelete; }
 
     public void recover() throws IOException {
         this.name = this.channel.getDelegate().queueDeclare(this.getNameToUseForRecovery(),
@@ -69,17 +71,29 @@ public class RecordedQueue extends RecordedNamedEntity {
         this.durable = value;
         return this;
     }
+    
+    public boolean isDurable() {
+        return this.durable;
+    }
 
     public RecordedQueue autoDelete(boolean value) {
         this.autoDelete = value;
         return this;
+    }
+    
+    public boolean isAutoDelete() {
+        return this.autoDelete;
     }
 
     public RecordedQueue arguments(Map<String, Object> value) {
         this.arguments = value;
         return this;
     }
-    
+
+    public Map<String, Object> getArguments() {
+        return arguments;
+    }
+
     public RecordedQueue recoveredQueueNameSupplier(RecoveredQueueNameSupplier recoveredQueueNameSupplier) {
         this.recoveredQueueNameSupplier = recoveredQueueNameSupplier;
         return this;
