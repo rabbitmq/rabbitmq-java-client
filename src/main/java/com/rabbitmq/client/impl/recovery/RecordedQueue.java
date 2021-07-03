@@ -23,6 +23,10 @@ import java.util.Map;
  */
 public class RecordedQueue extends RecordedNamedEntity {
     public static final String EMPTY_STRING = "";
+    
+    static final RecoveredQueueNameSupplier DEFAULT_QUEUE_NAME_SUPPLIER = q -> q.isServerNamed() ? EMPTY_STRING : q.name;
+    
+    private RecoveredQueueNameSupplier recoveredQueueNameSupplier = DEFAULT_QUEUE_NAME_SUPPLIER;
     private boolean durable;
     private boolean autoDelete;
     private Map<String, Object> arguments;
@@ -37,6 +41,10 @@ public class RecordedQueue extends RecordedNamedEntity {
         this.exclusive = value;
         return this;
     }
+    
+    public boolean isExclusive() {
+        return this.exclusive;
+    }
 
     public RecordedQueue serverNamed(boolean value) {
         this.serverNamed = value;
@@ -47,8 +55,6 @@ public class RecordedQueue extends RecordedNamedEntity {
         return this.serverNamed;
     }
 
-    public boolean isAutoDelete() { return this.autoDelete; }
-
     public void recover() throws IOException {
         this.name = this.channel.getDelegate().queueDeclare(this.getNameToUseForRecovery(),
                                                      this.durable,
@@ -58,25 +64,38 @@ public class RecordedQueue extends RecordedNamedEntity {
     }
 
     public String getNameToUseForRecovery() {
-        if(isServerNamed()) {
-            return EMPTY_STRING;
-        } else {
-            return this.name;
-        }
+        return recoveredQueueNameSupplier.getNameToUseForRecovery(this);
     }
 
     public RecordedQueue durable(boolean value) {
         this.durable = value;
         return this;
     }
+    
+    public boolean isDurable() {
+        return this.durable;
+    }
 
     public RecordedQueue autoDelete(boolean value) {
         this.autoDelete = value;
         return this;
     }
+    
+    public boolean isAutoDelete() {
+        return this.autoDelete;
+    }
 
     public RecordedQueue arguments(Map<String, Object> value) {
         this.arguments = value;
+        return this;
+    }
+
+    public Map<String, Object> getArguments() {
+        return arguments;
+    }
+
+    public RecordedQueue recoveredQueueNameSupplier(RecoveredQueueNameSupplier recoveredQueueNameSupplier) {
+        this.recoveredQueueNameSupplier = recoveredQueueNameSupplier;
         return this;
     }
     

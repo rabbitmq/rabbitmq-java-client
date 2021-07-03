@@ -397,35 +397,35 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         }
 
         try {
-            int channelMax =
+            int negotiatedChannelMax =
                 negotiateChannelMax(this.requestedChannelMax,
                                     connTune.getChannelMax());
 
-            if (!checkUnsignedShort(channelMax)) {
-                throw new IllegalArgumentException("Negotiated channel max must be between 0 and " + MAX_UNSIGNED_SHORT + ": " + channelMax);
+            if (!checkUnsignedShort(negotiatedChannelMax)) {
+                throw new IllegalArgumentException("Negotiated channel max must be between 0 and " + MAX_UNSIGNED_SHORT + ": " + negotiatedChannelMax);
             }
 
-            _channelManager = instantiateChannelManager(channelMax, threadFactory);
+            _channelManager = instantiateChannelManager(negotiatedChannelMax, threadFactory);
 
             int frameMax =
                 negotiatedMaxValue(this.requestedFrameMax,
                                    connTune.getFrameMax());
             this._frameMax = frameMax;
 
-            int heartbeat =
+            int negotiatedHeartbeat =
                 negotiatedMaxValue(this.requestedHeartbeat,
                                    connTune.getHeartbeat());
 
-            if (!checkUnsignedShort(heartbeat)) {
-                throw new IllegalArgumentException("Negotiated heartbeat must be between 0 and " + MAX_UNSIGNED_SHORT + ": " + heartbeat);
+            if (!checkUnsignedShort(negotiatedHeartbeat)) {
+                throw new IllegalArgumentException("Negotiated heartbeat must be between 0 and " + MAX_UNSIGNED_SHORT + ": " + negotiatedHeartbeat);
             }
 
-            setHeartbeat(heartbeat);
+            setHeartbeat(negotiatedHeartbeat);
 
             _channel0.transmit(new AMQP.Connection.TuneOk.Builder()
-                                .channelMax(channelMax)
+                                .channelMax(negotiatedChannelMax)
                                 .frameMax(frameMax)
-                                .heartbeat(heartbeat)
+                                .heartbeat(negotiatedHeartbeat)
                               .build());
             _channel0.exnWrappingRpc(new AMQP.Connection.Open.Builder()
                                       .virtualHost(_virtualHost)

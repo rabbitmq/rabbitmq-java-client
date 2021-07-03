@@ -595,5 +595,4 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
         }
 
     }
-
 }
