@@ -96,6 +96,8 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 	private final Predicate<ShutdownSignalException> connectionRecoveryTriggeringCondition;
 
 	private final RetryHandler retryHandler;
+	
+	private final RecoveredQueueNameSupplier recoveredQueueNameSupplier;
 
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, List<Address> addrs) {
         this(params, f, new ListAddressResolver(addrs));
@@ -119,6 +121,8 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             letAllPassFilter() : params.getTopologyRecoveryFilter();
 
         this.retryHandler = params.getTopologyRecoveryRetryHandler();
+        this.recoveredQueueNameSupplier = params.getRecoveredQueueNameSupplier() == null ? 
+                RecordedQueue.DEFAULT_QUEUE_NAME_SUPPLIER : params.getRecoveredQueueNameSupplier();
     }
 
     private void setupErrorOnWriteListenerForPotentialRecovery() {
@@ -564,6 +568,10 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     public void removeConsumerRecoveryListener(ConsumerRecoveryListener listener) {
         this.consumerRecoveryListeners.remove(listener);
     }
+    
+    RecoveredQueueNameSupplier getRecoveredQueueNameSupplier() {
+        return this.recoveredQueueNameSupplier;
+    }
 
     private synchronized void beginAutomaticRecovery() throws InterruptedException {
         final long delay = this.params.getRecoveryDelayHandler().getDelay(0);
@@ -782,11 +790,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                         this.propagateQueueNameChangeToConsumers(oldName, newName);
                         // bug26552:
                         // remove old name after we've updated the bindings and consumers,
-                        // plus only for server-named queues, both to make sure we don't lose
-                        // anything to recover. MK.
-                        if(q.isServerNamed()) {
-                            deleteRecordedQueue(oldName);
-                        }
+                        deleteRecordedQueue(oldName);
                         this.recordedQueues.put(newName, q);
                     }
                 }
