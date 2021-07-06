@@ -39,9 +39,9 @@ public class ChannelManager {
 
     /** Monitor for <code>_channelMap</code> and <code>channelNumberAllocator</code> */
     private final Object monitor = new Object();
-        /** Mapping from <code><b>1.._channelMax</b></code> to {@link ChannelN} instance */
-        private final Map<Integer, ChannelN> _channelMap = new HashMap<Integer, ChannelN>();
-        private final IntAllocator channelNumberAllocator;
+    /** Mapping from <code><b>1.._channelMax</b></code> to {@link ChannelN} instance */
+    private final Map<Integer, ChannelN> _channelMap = new HashMap<Integer, ChannelN>();
+    private final IntAllocator channelNumberAllocator;
 
     private final ConsumerWorkService workService;
 
@@ -70,6 +70,8 @@ public class ChannelManager {
 
 
     public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory, MetricsCollector metricsCollector) {
+        if (channelMax < 0)
+            throw new IllegalStateException("create ChannelManager: 'channelMax' must be greater or equal to 0.");
         if (channelMax == 0) {
             // The framing encoding only allows for unsigned 16-bit integers
             // for the channel number
