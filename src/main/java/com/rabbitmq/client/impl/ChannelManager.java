@@ -71,7 +71,7 @@ public class ChannelManager {
 
     public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory, MetricsCollector metricsCollector) {
         if (channelMax < 0)
-            throw new IllegalStateException("create ChannelManager: 'channelMax' must be greater or equal to 0.");
+            throw new IllegalArgumentException("create ChannelManager: 'channelMax' must be greater or equal to 0.");
         if (channelMax == 0) {
             // The framing encoding only allows for unsigned 16-bit integers
             // for the channel number
