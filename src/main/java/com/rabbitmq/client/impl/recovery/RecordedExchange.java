@@ -31,6 +31,7 @@ public class RecordedExchange extends RecordedNamedEntity {
         super(channel, name);
     }
 
+    @Override
     public void recover() throws IOException {
         this.channel.getDelegate().exchangeDeclare(this.name, this.type, this.durable, this.autoDelete, this.arguments);
     }

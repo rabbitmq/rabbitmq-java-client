@@ -20,7 +20,7 @@ import com.rabbitmq.client.Channel;
 /**
  * @since 3.3.0
  */
-public class RecordedEntity {
+public  abstract class RecordedEntity {
     protected final AutorecoveringChannel channel;
 
     public RecordedEntity(AutorecoveringChannel channel) {
