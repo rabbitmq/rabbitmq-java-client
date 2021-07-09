@@ -15,16 +15,19 @@
 
 package com.rabbitmq.client.impl.recovery;
 
+import java.io.IOException;
 /**
  * @since 3.3.0
  */
-public class RecordedNamedEntity extends RecordedEntity {
+public abstract class RecordedNamedEntity extends RecordedEntity {
     protected String name;
 
     public RecordedNamedEntity(AutorecoveringChannel channel, String name) {
         super(channel);
         this.name = name;
     }
+
+    public abstract void recover() throws IOException;
 
     public String getName() {
         return name;

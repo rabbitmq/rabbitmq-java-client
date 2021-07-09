@@ -55,6 +55,7 @@ public class RecordedQueue extends RecordedNamedEntity {
         return this.serverNamed;
     }
 
+    @Override
     public void recover() throws IOException {
         this.name = this.channel.getDelegate().queueDeclare(this.getNameToUseForRecovery(),
                                                      this.durable,
@@ -71,7 +72,7 @@ public class RecordedQueue extends RecordedNamedEntity {
         this.durable = value;
         return this;
     }
-    
+
     public boolean isDurable() {
         return this.durable;
     }
@@ -80,7 +81,7 @@ public class RecordedQueue extends RecordedNamedEntity {
         this.autoDelete = value;
         return this;
     }
-    
+
     public boolean isAutoDelete() {
         return this.autoDelete;
     }
