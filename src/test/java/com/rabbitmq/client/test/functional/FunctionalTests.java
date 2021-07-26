@@ -40,7 +40,7 @@ import org.junit.runners.Suite;
     NoRequeueOnCancel.class,
     Bug20004Test.class,
     ExchangeDeleteIfUnused.class,
-    //QosTests.class,
+    QosTests.class,
     AlternateExchange.class,
     ExchangeExchangeBindings.class,
     ExchangeExchangeBindingsAutoDelete.class,
