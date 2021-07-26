@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -119,6 +120,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
+    @Ignore
     @Test public void noAckObeysLimit()
         throws IOException
     {
@@ -142,6 +144,7 @@ public class QosTests extends BrokerTestCase
         drain(c2, 1);
     }
 
+    @Ignore
     @Test public void permutations()
         throws IOException
     {
@@ -159,6 +162,7 @@ public class QosTests extends BrokerTestCase
         }
     }
 
+    @Ignore
     @Test public void fairness()
         throws IOException
     {
@@ -188,6 +192,7 @@ public class QosTests extends BrokerTestCase
 
     }
 
+    @Ignore
     @Test public void singleChannelAndQueueFairness()
         throws IOException
     {
@@ -237,6 +242,7 @@ public class QosTests extends BrokerTestCase
         assertTrue(counts.get("c2").intValue() > 0);
     }
 
+    @Ignore
     @Test public void consumerLifecycle()
         throws IOException
     {
@@ -258,6 +264,7 @@ public class QosTests extends BrokerTestCase
         channel.queueDelete(queue);
     }
 
+    @Ignore
     @Test public void setLimitAfterConsume()
         throws IOException
     {
@@ -282,6 +289,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
+    @Ignore
     @Test public void limitDecrease()
         throws IOException
     {
@@ -302,6 +310,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
+    @Ignore
     @Test public void limitingMultipleChannels()
         throws IOException
     {
@@ -338,6 +347,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
+    @Ignore
     @Test public void recoverReducesLimit() throws Exception {
         channel.basicQos(2, true);
         QueueingConsumer c = new QueueingConsumer(channel);
