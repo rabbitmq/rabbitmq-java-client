@@ -58,11 +58,11 @@
     <metrics.version>4.2.3</metrics.version>
     <micrometer.version>1.7.2</micrometer.version>
     <jackson.version>2.12.4</jackson.version>
-    <logback.version>1.2.3</logback.version>
+    <logback.version>1.2.5</logback.version>
     <junit.version>4.13.2</junit.version>
     <mockito.version>3.11.2</mockito.version>
     <assertj.version>3.20.2</assertj.version>
-    <jetty.version>9.4.42.v20210604</jetty.version>
+    <jetty.version>9.4.43.v20210629</jetty.version>
     <bouncycastle.version>1.69</bouncycastle.version>
 
     <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
