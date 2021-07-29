@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+
 /**
  *
  */
@@ -176,11 +177,14 @@ public class SocketChannelFrameHandlerState {
 
     void prepareForReadSequence() throws IOException {
         if(ssl) {
-            cipherIn.clear();
-            plainIn.clear();
+            if (!frameBuilder.isUnderflowHandlingEnabled()) {
+                cipherIn.clear();
+                cipherIn.flip();
+            }
 
-            cipherIn.flip();
+            plainIn.clear();
             plainIn.flip();
+
         } else {
             NioHelper.read(channel, plainIn);
             plainIn.flip();
@@ -189,6 +193,15 @@ public class SocketChannelFrameHandlerState {
 
     boolean continueReading() throws IOException {
         if(ssl) {
+            if (frameBuilder.isUnderflowHandlingEnabled()) {
+                int bytesRead = NioHelper.read(channel, cipherIn);
+                if (bytesRead == 0) {
+                    return false;
+                } else {
+                    cipherIn.flip();
+                    return true;
+                }
+            }
             if (!plainIn.hasRemaining() && !cipherIn.hasRemaining()) {
                 // need to try to read something
                 cipherIn.clear();

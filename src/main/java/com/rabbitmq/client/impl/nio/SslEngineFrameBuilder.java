@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
+
 /**
  * Sub-class of {@link FrameBuilder} that unwraps crypted data from the network.
  * @since 4.4.0
@@ -32,6 +33,8 @@ public class SslEngineFrameBuilder extends FrameBuilder {
 
     private final ByteBuffer cipherBuffer;
 
+    private boolean isUnderflowHandlingEnabled = false;
+
     public SslEngineFrameBuilder(SSLEngine sslEngine, ByteBuffer plainIn, ByteBuffer cipherIn, ReadableByteChannel channel) {
         super(channel, plainIn);
         this.sslEngine = sslEngine;
@@ -40,12 +43,14 @@ public class SslEngineFrameBuilder extends FrameBuilder {
 
     @Override
     protected boolean somethingToRead() throws IOException {
-        if (applicationBuffer.hasRemaining()) {
+        if (applicationBuffer.hasRemaining() && !isUnderflowHandlingEnabled) {
             return true;
         } else {
             applicationBuffer.clear();
 
-            while (true) {
+            boolean underflowHandling = false;
+
+            try {
                 SSLEngineResult result = sslEngine.unwrap(cipherBuffer, applicationBuffer);
                 switch (result.getStatus()) {
                     case OK:
@@ -59,19 +64,23 @@ public class SslEngineFrameBuilder extends FrameBuilder {
                         throw new SSLException("buffer overflow in read");
                     case BUFFER_UNDERFLOW:
                         cipherBuffer.compact();
-                        int read = NioHelper.read(channel, cipherBuffer);
-                        if (read == 0) {
-                            return false;
-                        }
-                        cipherBuffer.flip();
-                        break;
+                        underflowHandling = true;
+                        return false;
                     case CLOSED:
                         throw new SSLException("closed in read");
                     default:
                         throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
-                    }
+                }
+            } finally {
+                isUnderflowHandlingEnabled = underflowHandling;
             }
+
+            return false;
         }
     }
 
+    @Override
+    public boolean isUnderflowHandlingEnabled() {
+        return isUnderflowHandlingEnabled;
+    }
 }
