@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 
 /**
  *
@@ -70,6 +72,8 @@ public class SocketChannelFrameHandlerState {
 
     final FrameBuilder frameBuilder;
 
+    private final AtomicBoolean isUnderflowHandlingEnabled = new AtomicBoolean(false);
+
     public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopContext nioLoopsState, NioParams nioParams, SSLEngine sslEngine) {
         this.channel = channel;
         this.readSelectorState = nioLoopsState.readSelectorState;
@@ -105,7 +109,7 @@ public class SocketChannelFrameHandlerState {
             this.outputStream = new DataOutputStream(
                 new SslEngineByteBufferOutputStream(sslEngine, plainOut, cipherOut, channel)
             );
-            this.frameBuilder = new SslEngineFrameBuilder(sslEngine, plainIn, cipherIn, channel);
+            this.frameBuilder = new SslEngineFrameBuilder(sslEngine, plainIn, cipherIn, channel, isUnderflowHandlingEnabled);
         }
 
     }
@@ -176,11 +180,14 @@ public class SocketChannelFrameHandlerState {
 
     void prepareForReadSequence() throws IOException {
         if(ssl) {
-            cipherIn.clear();
-            plainIn.clear();
+            if (!isUnderflowHandlingEnabled.get()) {
+                cipherIn.clear();
+                cipherIn.flip();
+            }
 
-            cipherIn.flip();
+            plainIn.clear();
             plainIn.flip();
+
         } else {
             NioHelper.read(channel, plainIn);
             plainIn.flip();
@@ -189,6 +196,15 @@ public class SocketChannelFrameHandlerState {
 
     boolean continueReading() throws IOException {
         if(ssl) {
+            if (isUnderflowHandlingEnabled.get()) {
+                int bytesRead = NioHelper.read(channel, cipherIn);
+                if (bytesRead == 0) {
+                    return false;
+                } else {
+                    cipherIn.flip();
+                    return true;
+                }
+            }
             if (!plainIn.hasRemaining() && !cipherIn.hasRemaining()) {
                 // need to try to read something
                 cipherIn.clear();
