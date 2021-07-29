@@ -21,7 +21,6 @@ import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -34,18 +33,17 @@ public class SslEngineFrameBuilder extends FrameBuilder {
 
     private final ByteBuffer cipherBuffer;
 
-    private final AtomicBoolean isUnderflowHandlingEnabled;
+    private boolean isUnderflowHandlingEnabled = false;
 
-    public SslEngineFrameBuilder(SSLEngine sslEngine, ByteBuffer plainIn, ByteBuffer cipherIn, ReadableByteChannel channel, final AtomicBoolean isUnderflowHandlingEnabled) {
+    public SslEngineFrameBuilder(SSLEngine sslEngine, ByteBuffer plainIn, ByteBuffer cipherIn, ReadableByteChannel channel) {
         super(channel, plainIn);
         this.sslEngine = sslEngine;
         this.cipherBuffer = cipherIn;
-        this.isUnderflowHandlingEnabled = isUnderflowHandlingEnabled;
     }
 
     @Override
     protected boolean somethingToRead() throws IOException {
-        if (applicationBuffer.hasRemaining() && !isUnderflowHandlingEnabled.get()) {
+        if (applicationBuffer.hasRemaining() && !isUnderflowHandlingEnabled) {
             return true;
         } else {
             applicationBuffer.clear();
@@ -74,11 +72,15 @@ public class SslEngineFrameBuilder extends FrameBuilder {
                         throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
                 }
             } finally {
-                isUnderflowHandlingEnabled.set(underflowHandling);
+                isUnderflowHandlingEnabled = underflowHandling;
             }
 
             return false;
         }
     }
 
+    @Override
+    public boolean isUnderflowHandlingEnabled() {
+        return isUnderflowHandlingEnabled;
+    }
 }
