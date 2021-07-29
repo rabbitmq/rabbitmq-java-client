@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -72,8 +71,6 @@ public class SocketChannelFrameHandlerState {
 
     final FrameBuilder frameBuilder;
 
-    private final AtomicBoolean isUnderflowHandlingEnabled = new AtomicBoolean(false);
-
     public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopContext nioLoopsState, NioParams nioParams, SSLEngine sslEngine) {
         this.channel = channel;
         this.readSelectorState = nioLoopsState.readSelectorState;
@@ -109,7 +106,7 @@ public class SocketChannelFrameHandlerState {
             this.outputStream = new DataOutputStream(
                 new SslEngineByteBufferOutputStream(sslEngine, plainOut, cipherOut, channel)
             );
-            this.frameBuilder = new SslEngineFrameBuilder(sslEngine, plainIn, cipherIn, channel, isUnderflowHandlingEnabled);
+            this.frameBuilder = new SslEngineFrameBuilder(sslEngine, plainIn, cipherIn, channel);
         }
 
     }
@@ -180,7 +177,7 @@ public class SocketChannelFrameHandlerState {
 
     void prepareForReadSequence() throws IOException {
         if(ssl) {
-            if (!isUnderflowHandlingEnabled.get()) {
+            if (!frameBuilder.isUnderflowHandlingEnabled()) {
                 cipherIn.clear();
                 cipherIn.flip();
             }
@@ -196,7 +193,7 @@ public class SocketChannelFrameHandlerState {
 
     boolean continueReading() throws IOException {
         if(ssl) {
-            if (isUnderflowHandlingEnabled.get()) {
+            if (frameBuilder.isUnderflowHandlingEnabled()) {
                 int bytesRead = NioHelper.read(channel, cipherIn);
                 if (bytesRead == 0) {
                     return false;
