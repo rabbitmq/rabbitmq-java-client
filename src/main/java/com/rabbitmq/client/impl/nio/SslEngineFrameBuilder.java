@@ -32,6 +32,8 @@ public class SslEngineFrameBuilder extends FrameBuilder {
 
     private final ByteBuffer cipherBuffer;
 
+    private boolean needToReadMore = false;
+
     public SslEngineFrameBuilder(SSLEngine sslEngine, ByteBuffer plainIn, ByteBuffer cipherIn, ReadableByteChannel channel) {
         super(channel, plainIn);
         this.sslEngine = sslEngine;
@@ -40,10 +42,20 @@ public class SslEngineFrameBuilder extends FrameBuilder {
 
     @Override
     protected boolean somethingToRead() throws IOException {
-        if (applicationBuffer.hasRemaining()) {
+        if (applicationBuffer.hasRemaining() && !needToReadMore) {
             return true;
         } else {
             applicationBuffer.clear();
+
+            if (needToReadMore) {
+                int read = NioHelper.read(channel, cipherBuffer);
+                if (read == 0) {
+                    return false;
+                } else {
+                    this.needToReadMore = false;
+                    this.cipherBuffer.flip();
+                }
+            }
 
             while (true) {
                 SSLEngineResult result = sslEngine.unwrap(cipherBuffer, applicationBuffer);
@@ -61,6 +73,7 @@ public class SslEngineFrameBuilder extends FrameBuilder {
                         cipherBuffer.compact();
                         int read = NioHelper.read(channel, cipherBuffer);
                         if (read == 0) {
+                            this.needToReadMore = true;
                             return false;
                         }
                         cipherBuffer.flip();
