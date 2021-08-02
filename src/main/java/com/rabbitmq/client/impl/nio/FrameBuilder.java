@@ -200,4 +200,9 @@ public class FrameBuilder {
         }
         throw x;
     }
+
+    //Indicates ssl underflow state - means that cipherBuffer should aggregate next chunks of bytes
+    public boolean isUnderflowHandlingEnabled() {
+        return false;
+    }
 }
