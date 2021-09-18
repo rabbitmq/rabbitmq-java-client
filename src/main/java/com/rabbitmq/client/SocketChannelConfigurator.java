@@ -22,24 +22,27 @@ import java.util.Objects;
 @FunctionalInterface
 public interface SocketChannelConfigurator {
 
-    /**
-     * Provides a hook to insert custom configuration of the {@link SocketChannel}s
-     * used to connect to an AMQP server before they connect.
-     */
-    void configure(SocketChannel socketChannel) throws IOException;
+	/**
+	 * Provides a hook to insert custom configuration of the {@link SocketChannel}s
+	 * used to connect to an AMQP server before they connect.
+	 */
+	void configure(SocketChannel socketChannel) throws IOException;
 
-    /**
-     * Returns a composed configurator that performs, in sequence, this
-     * operation followed by the {@code after} operation.
-     *
-     * @param after the operation to perform after this operation
-     * @return a composed configurator that performs in sequence this
-     * operation followed by the {@code after} operation
-     * @throws NullPointerException if {@code after} is null
-     */
-    default SocketChannelConfigurator andThen(SocketChannelConfigurator after) {
-        Objects.requireNonNull(after);
-        return t -> { configure(t); after.configure(t); };
-    }
+	/**
+	 * Returns a composed configurator that performs, in sequence, this operation
+	 * followed by the {@code after} operation.
+	 *
+	 * @param after the operation to perform after this operation
+	 * @return a composed configurator that performs in sequence this operation
+	 *         followed by the {@code after} operation
+	 * @throws NullPointerException if {@code after} is null
+	 */
+	default SocketChannelConfigurator andThen(SocketChannelConfigurator after) {
+		Objects.requireNonNull(after);
+		return t -> {
+			configure(t);
+			after.configure(t);
+		};
+	}
 
 }

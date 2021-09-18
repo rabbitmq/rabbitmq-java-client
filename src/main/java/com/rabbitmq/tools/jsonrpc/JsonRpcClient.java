@@ -123,11 +123,11 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     }
 
     /**
-     * Private API - parses a JSON-RPC reply object, checking it for exceptions.
-     *
-     * @return the result contained within the reply, if no exception is found
-     * Throws JsonRpcException if the reply object contained an exception
-     */
+	 * Private API - parses a JSON-RPC reply object, checking it for exceptions.
+	 *
+	 * @return the result contained within the reply, if no exception is found
+	 *         Throws JsonRpcException if the reply object contained an exception
+	 */
     private Object checkReply(JsonRpcMapper.JsonRpcResponse reply)
         throws JsonRpcException {
         if (reply.getError() != null) {
