@@ -60,7 +60,7 @@ public class InternalExchange extends BrokerTestCase
         }
 
         // The second exchange, "e1", will be an 'internal' one.
-        for ( String e : exchanges )
+        for(String e : exchanges)
         {
             channel.exchangeDeclare(e, "direct",
                                     false, true,

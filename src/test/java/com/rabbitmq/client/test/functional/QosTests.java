@@ -82,7 +82,7 @@ public class QosTests extends BrokerTestCase
                 res.add(d);
             }
             long finish = System.currentTimeMillis();
-            Thread.sleep( (n == 0 ? 0 : (finish - start) / n) + 10 );
+            Thread.sleep((n == 0 ? 0 : (finish - start) / n) + 10);
             assertNull(c.nextDelivery(0));
         } catch (InterruptedException ie) {
             fail("interrupted");
