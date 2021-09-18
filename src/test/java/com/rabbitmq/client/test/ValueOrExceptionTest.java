@@ -21,48 +21,46 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-
 public class ValueOrExceptionTest {
-    public static class InsufficientMagicException extends Exception 
-      implements SensibleClone<InsufficientMagicException> {
-      /** Default for no check. */
-        private static final long serialVersionUID = 1L;
+	public static class InsufficientMagicException extends Exception
+			implements SensibleClone<InsufficientMagicException> {
+		/** Default for no check. */
+		private static final long serialVersionUID = 1L;
 
-    public InsufficientMagicException(String message) {
-        super(message);
-      }
+		public InsufficientMagicException(String message) {
+			super(message);
+		}
 
-      public InsufficientMagicException sensibleClone() {
-        return new InsufficientMagicException(getMessage());
-      }
-    }
+		public InsufficientMagicException sensibleClone() {
+			return new InsufficientMagicException(getMessage());
+		}
+	}
 
-    @Test public void storesValue() throws InsufficientMagicException {
-        Integer value = Integer.valueOf(3);
+	@Test
+	public void storesValue() throws InsufficientMagicException {
+		Integer value = Integer.valueOf(3);
 
-        ValueOrException<Integer, InsufficientMagicException> valueOrEx = 
-            ValueOrException.makeValue(value);
-        
-        Integer returnedValue = valueOrEx.getValue();
-        assertTrue(returnedValue == value);
-    }
+		ValueOrException<Integer, InsufficientMagicException> valueOrEx = ValueOrException.makeValue(value);
 
-    @Test public void clonesException() {
-        InsufficientMagicException exception = 
-            new InsufficientMagicException("dummy message");
-        ValueOrException<Integer, InsufficientMagicException> valueOrEx 
-            = ValueOrException.makeException(exception);
+		Integer returnedValue = valueOrEx.getValue();
+		assertTrue(returnedValue == value);
+	}
 
-        try {
-            valueOrEx.getValue();
-            fail("Expected exception");
-        } catch(InsufficientMagicException returnedException) {
-            assertTrue(returnedException != exception);
-            assertEquals(returnedException.getMessage(), exception.getMessage());
-            boolean inGetValue = false;
-            for(StackTraceElement elt : returnedException.getStackTrace())
-              inGetValue |= "getValue".equals(elt.getMethodName());
-            assertTrue(inGetValue);
-        }
-    }
+	@Test
+	public void clonesException() {
+		InsufficientMagicException exception = new InsufficientMagicException("dummy message");
+		ValueOrException<Integer, InsufficientMagicException> valueOrEx = ValueOrException.makeException(exception);
+
+		try {
+			valueOrEx.getValue();
+			fail("Expected exception");
+		} catch (InsufficientMagicException returnedException) {
+			assertTrue(returnedException != exception);
+			assertEquals(returnedException.getMessage(), exception.getMessage());
+			boolean inGetValue = false;
+			for (StackTraceElement elt : returnedException.getStackTrace())
+				inGetValue |= "getValue".equals(elt.getMethodName());
+			assertTrue(inGetValue);
+		}
+	}
 }
