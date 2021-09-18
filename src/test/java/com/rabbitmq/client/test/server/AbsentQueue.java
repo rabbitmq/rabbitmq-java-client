@@ -13,7 +13,6 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.AMQP;
@@ -29,75 +28,82 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 /**
- * This tests whether 'absent' queues - durable queues whose home node
- * is down - are handled properly.
+ * This tests whether 'absent' queues - durable queues whose home node is down -
+ * are handled properly.
  */
 public class AbsentQueue extends ClusteredTestBase {
 
-    private static final String Q = "absent-queue";
+	private static final String Q = "absent-queue";
 
-    @Override public void setUp() throws IOException, TimeoutException {
-        super.setUp();
-        if (clusteredConnection != null)
-            stopSecondary();
-    }
+	@Override
+	public void setUp() throws IOException, TimeoutException {
+		super.setUp();
+		if (clusteredConnection != null)
+			stopSecondary();
+	}
 
-    @Override public void tearDown() throws IOException, TimeoutException {
-        if (clusteredConnection != null)
-            startSecondary();
-        super.tearDown();
-    }
+	@Override
+	public void tearDown() throws IOException, TimeoutException {
+		if (clusteredConnection != null)
+			startSecondary();
+		super.tearDown();
+	}
 
-    @Override protected void createResources() throws IOException {
-        alternateChannel.queueDeclare(Q, true, false, false, null);
-    }
+	@Override
+	protected void createResources() throws IOException {
+		alternateChannel.queueDeclare(Q, true, false, false, null);
+	}
 
-    @Override protected void releaseResources() throws IOException {
-        alternateChannel.queueDelete(Q);
-    }
+	@Override
+	protected void releaseResources() throws IOException {
+		alternateChannel.queueDelete(Q);
+	}
 
-    @Test public void notFound() throws Exception {
-        if (!HATests.HA_TESTS_RUNNING) {
-            // we don't care about this test in normal mode
-            return;
-        }
-        waitPropagationInHa();
-        assertNotFound(() -> channel.queueDeclare(Q, true, false, false, null));
-        assertNotFound(() -> channel.queueDeclarePassive(Q));
-        assertNotFound(() -> channel.queuePurge(Q));
-        assertNotFound(() -> channel.basicGet(Q, true));
-        assertNotFound(() -> channel.queueBind(Q, "amq.fanout", "", null));
-    }
+	@Test
+	public void notFound() throws Exception {
+		if (!HATests.HA_TESTS_RUNNING) {
+			// we don't care about this test in normal mode
+			return;
+		}
+		waitPropagationInHa();
+		assertNotFound(() -> channel.queueDeclare(Q, true, false, false, null));
+		assertNotFound(() -> channel.queueDeclarePassive(Q));
+		assertNotFound(() -> channel.queuePurge(Q));
+		assertNotFound(() -> channel.basicGet(Q, true));
+		assertNotFound(() -> channel.queueBind(Q, "amq.fanout", "", null));
+	}
 
-    protected void assertNotFound(Callable<?> t) throws Exception {
-        if (clusteredChannel == null) return;
-        try {
-            t.call();
-            if (!HATests.HA_TESTS_RUNNING) fail("expected not_found");
-        } catch (IOException ioe) {
-            assertFalse(HATests.HA_TESTS_RUNNING);
-            checkShutdownSignal(AMQP.NOT_FOUND, ioe);
-            channel = connection.createChannel();
-        }
+	protected void assertNotFound(Callable<?> t) throws Exception {
+		if (clusteredChannel == null)
+			return;
+		try {
+			t.call();
+			if (!HATests.HA_TESTS_RUNNING)
+				fail("expected not_found");
+		} catch (IOException ioe) {
+			assertFalse(HATests.HA_TESTS_RUNNING);
+			checkShutdownSignal(AMQP.NOT_FOUND, ioe);
+			channel = connection.createChannel();
+		}
 
-    }
+	}
 
-    private void waitPropagationInHa() throws IOException, InterruptedException {
-        // can be necessary to wait a bit in HA mode
-        if (HATests.HA_TESTS_RUNNING) {
-            long waited = 0;
-            while(waited < 5000) {
-                Channel tempChannel = connection.createChannel();
-                try {
-                    tempChannel.queueDeclarePassive(Q);
-                    break;
-                } catch (IOException e) {
+	private void waitPropagationInHa() throws IOException, InterruptedException {
+		// can be necessary to wait a bit in HA mode
+		if (HATests.HA_TESTS_RUNNING) {
+			long waited = 0;
+			while (waited < 5000) {
+				Channel tempChannel = connection.createChannel();
+				try {
+					tempChannel.queueDeclarePassive(Q);
+					break;
+				} catch (IOException e) {
 
-                }
-                Thread.sleep(10);
-                waited += 10;
-            }
-        }
-    }
+				}
+				Thread.sleep(10);
+				waited += 10;
+			}
+		}
+	}
 
 }

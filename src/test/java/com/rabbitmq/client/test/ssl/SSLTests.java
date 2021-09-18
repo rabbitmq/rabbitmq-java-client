@@ -13,7 +13,6 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.test.AbstractRMQTestSuite;
@@ -28,21 +27,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RunWith(SSLTests.SslSuite.class)
-@Suite.SuiteClasses({
-	UnverifiedConnection.class,
-	VerifiedConnection.class,
-	BadVerifiedConnection.class,
-	ConnectionFactoryDefaultTlsVersion.class,
-	NioTlsUnverifiedConnection.class,
-	HostnameVerification.class,
-	TlsConnectionLogging.class,
-	SslContextFactoryTest.class
-})
+@Suite.SuiteClasses({ UnverifiedConnection.class, VerifiedConnection.class, BadVerifiedConnection.class,
+		ConnectionFactoryDefaultTlsVersion.class, NioTlsUnverifiedConnection.class, HostnameVerification.class,
+		TlsConnectionLogging.class, SslContextFactoryTest.class })
 public class SSLTests {
 
 	// initialize system properties
-	static{
-		new AbstractRMQTestSuite(){};
+	static {
+		new AbstractRMQTestSuite() {
+		};
 	}
 
 	public static class SslSuite extends Suite {
@@ -69,7 +62,7 @@ public class SSLTests {
 
 		@Override
 		protected List<Runner> getChildren() {
-			if(!AbstractRMQTestSuite.requiredProperties() && !AbstractRMQTestSuite.isSSLAvailable()) {
+			if (!AbstractRMQTestSuite.requiredProperties() && !AbstractRMQTestSuite.isSSLAvailable()) {
 				return new ArrayList<Runner>();
 			} else {
 				return super.getChildren();

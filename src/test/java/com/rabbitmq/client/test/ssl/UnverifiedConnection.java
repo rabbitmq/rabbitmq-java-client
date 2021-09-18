@@ -33,41 +33,40 @@ import static org.junit.Assert.*;
  */
 public class UnverifiedConnection extends BrokerTestCase {
 
-    public void openConnection()
-            throws IOException, TimeoutException {
-        try {
-            connectionFactory.useSslProtocol();
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IOException(ex.toString());
-        } catch (KeyManagementException ex) {
-            throw new IOException(ex.toString());
-        }
+	public void openConnection() throws IOException, TimeoutException {
+		try {
+			connectionFactory.useSslProtocol();
+		} catch (NoSuchAlgorithmException ex) {
+			throw new IOException(ex.toString());
+		} catch (KeyManagementException ex) {
+			throw new IOException(ex.toString());
+		}
 
-        int attempt = 0;
-        while(attempt < 3) {
-            try {
-                connection = connectionFactory.newConnection();
-                break;
-            } catch(Exception e) {
-                LoggerFactory.getLogger(getClass()).warn("Error when opening TLS connection");
-                attempt++;
-            }
-        }
-        if(connection == null) {
-            fail("Couldn't open TLS connection after 3 attempts");
-        }
-    }
+		int attempt = 0;
+		while (attempt < 3) {
+			try {
+				connection = connectionFactory.newConnection();
+				break;
+			} catch (Exception e) {
+				LoggerFactory.getLogger(getClass()).warn("Error when opening TLS connection");
+				attempt++;
+			}
+		}
+		if (connection == null) {
+			fail("Couldn't open TLS connection after 3 attempts");
+		}
+	}
 
-    @Test public void sSL() throws IOException
-    {
-        channel.queueDeclare("Bug19356Test", false, true, true, null);
-        channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());
+	@Test
+	public void sSL() throws IOException {
+		channel.queueDeclare("Bug19356Test", false, true, true, null);
+		channel.basicPublish("", "Bug19356Test", null, "SSL".getBytes());
 
-        GetResponse chResponse = channel.basicGet("Bug19356Test", false);
-        assertNotNull(chResponse);
+		GetResponse chResponse = channel.basicGet("Bug19356Test", false);
+		assertNotNull(chResponse);
 
-        byte[] body = chResponse.getBody();
-        assertEquals("SSL", new String(body));
-    }
-    
+		byte[] body = chResponse.getBody();
+		assertEquals("SSL", new String(body));
+	}
+
 }
