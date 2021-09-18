@@ -51,6 +51,8 @@ public class SslEngineHelper {
             case NEED_WRAP:
                 handshakeStatus = wrap(plainOut, cipherOut, socketChannel, engine);
                 break;
+            default: 
+            	break;
             }
         }
         return true;
