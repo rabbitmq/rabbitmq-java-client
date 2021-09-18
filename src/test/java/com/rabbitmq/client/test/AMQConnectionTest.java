@@ -129,8 +129,7 @@ public class AMQConnectionTest {
         assertEquals(Collections.<Throwable>singletonList(exception), exceptionList);
     }
 
-    /** Check we can open a connection once, but not twice.
-     * @throws IOException */
+    
 //    public void testCanOpenConnectionOnceOnly() throws IOException {
 //        AMQConnection connection = new AMQConnection(_mockFrameHandler);
 //        connection.open();
