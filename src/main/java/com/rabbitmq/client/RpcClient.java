@@ -139,6 +139,7 @@ public class RpcClient {
 
     /**
      * Private API - ensures the RpcClient is correctly open.
+     * 
      * @throws IOException if an error is encountered
      */
     public void checkConsumer() throws IOException {

@@ -457,6 +457,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 
     /**
      * Removes the recovery listener
+     * 
      * @param listener {@link com.rabbitmq.client.RecoveryListener} to remove
      */
     @Override

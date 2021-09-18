@@ -460,7 +460,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
 
     public interface RpcContinuation {
         void handleCommand(AMQCommand command);
-        /** @return true if the reply command can be handled for this request */
+        // @return true if the reply command can be handled for this request
         boolean canHandleReply(AMQCommand command);
         void handleShutdownSignal(ShutdownSignalException signal);
     }

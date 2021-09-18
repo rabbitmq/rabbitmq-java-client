@@ -146,7 +146,9 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
 
     /**
      * Remove a {@link ConfirmListener}.
+     *
      * @param listener the listener to remove
+     * 
      * @return <code><b>true</b></code> if the listener was found and removed,
      * <code><b>false</b></code> otherwise
      */
@@ -301,11 +303,17 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
 
     /**
      * Actively declare a non-autodelete, non-durable exchange with no extra arguments
+     * 
      * @see com.rabbitmq.client.AMQP.Exchange.Declare
+     * 
      * @see com.rabbitmq.client.AMQP.Exchange.DeclareOk
+     * 
      * @param exchange the name of the exchange
+     * 
      * @param type the exchange type
+     * 
      * @return a declaration-confirm method to indicate the exchange was successfully declared
+     * 
      * @throws java.io.IOException if an error is encountered
      */
     Exchange.DeclareOk exchangeDeclare(String exchange, String type) throws IOException;

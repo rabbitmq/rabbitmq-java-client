@@ -65,13 +65,19 @@ public class SetQueue<T> {
         return this.members.contains(item);
     }
 
-    /** @return <code><b>true</b></code> if and only if the queue is empty.*/
+    /** 
+     * 
+     * @return <code><b>true</b></code> if and only if the queue is empty.
+     * 
+     * */
     public boolean isEmpty() {
         return this.members.isEmpty();
     }
 
     /** Remove item from queue, if present.
+     * 
      * @param item to remove
+     *  
      *  @return <code><b>true</b></code> if and only if item was initially present and was removed.
      */
     public boolean remove(T item) {

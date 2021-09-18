@@ -18,6 +18,7 @@ package com.rabbitmq.client;
 /**
  * This interface represents a hook to allow you to control how exactly
  * a sasl client is selected during authentication.
+ *
  * @see com.rabbitmq.client.ConnectionFactory
  */
 public interface SaslConfig {

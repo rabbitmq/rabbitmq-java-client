@@ -96,7 +96,7 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
         return result.toString();
     }
 
-    /** @return true if this signals a connection error, or false if a channel error */
+    // @return true if this signals a connection error, or false if a channel error
     public boolean isHardError() { return _hardError; }
 
     /** @return true if this exception was caused by explicit application
@@ -108,7 +108,7 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
     /** @return the reason, if any */
     public Method getReason() { return _reason; }
 
-    /** @return Reference to Connection or Channel object that fired the signal **/
+    // @return Reference to Connection or Channel object that fired the signal 
     public Object getReference() { return _ref; }
 
     @Override

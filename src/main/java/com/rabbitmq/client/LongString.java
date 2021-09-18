@@ -55,6 +55,7 @@ public interface LongString
 
     /**
      * Get the content as a String. Uses UTF-8 as encoding.
+     * 
      * @return he content of the {@link LongString} as a string
      */
     @Override

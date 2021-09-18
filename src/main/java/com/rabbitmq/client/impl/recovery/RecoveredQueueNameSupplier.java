@@ -11,6 +11,8 @@ public interface RecoveredQueueNameSupplier {
 
     /**
      * Get the queue name to use when recovering this RecordedQueue entity
+     * 
+     * 
      * @param recordedQueue the queue to be recovered
      * @return new queue name
      */

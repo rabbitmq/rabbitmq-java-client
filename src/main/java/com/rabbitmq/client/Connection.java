@@ -55,6 +55,7 @@ import java.util.concurrent.ExecutorService;
 public interface Connection extends ShutdownNotifier, Closeable { // rename to AMQPConnection later, this is a temporary name
     /**
      * Retrieve the host.
+     * 
      * @return the hostname of the peer we're connected to.
      */
     InetAddress getAddress();

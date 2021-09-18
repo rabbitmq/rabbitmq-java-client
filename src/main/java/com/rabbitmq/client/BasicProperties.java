@@ -71,30 +71,35 @@ public interface BasicProperties {
     
     /**
      * Retrieve the value in the messageId field.
+     * 
      * @return messageId field, or null if the field has not been set.
      */
     public abstract String getMessageId();
     
     /**
      * Retrieve the value in the timestamp field.
+     * 
      * @return timestamp field, or null if the field has not been set.
      */
     public abstract Date getTimestamp();
     
     /**
      * Retrieve the value in the type field.
+     * 
      * @return type field, or null if the field has not been set.
      */
     public abstract String getType();
     
     /**
      * Retrieve the value in the userId field.
+     * 
      * @return userId field, or null if the field has not been set.
      */
     public abstract String getUserId();
     
     /**
      * Retrieve the value in the appId field.
+     * 
      * @return appId field, or null if the field has not been set.
      */
     public abstract String getAppId();

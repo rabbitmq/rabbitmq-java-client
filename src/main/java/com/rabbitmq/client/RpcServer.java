@@ -67,6 +67,8 @@ public class RpcServer {
     /**
      * Public API - cancels the consumer, thus deleting the queue, if
      * it was a temporary queue, and marks the RpcServer as closed.
+     * 
+     * 
      * @throws IOException if an error is encountered
      */
     public void close()

@@ -17,6 +17,7 @@ package com.rabbitmq.client.impl.recovery;
 
 /**
  * Filter to know whether entities should be recovered or not.
+ *
  * @since 4.8.0
  */
 public interface TopologyRecoveryFilter {

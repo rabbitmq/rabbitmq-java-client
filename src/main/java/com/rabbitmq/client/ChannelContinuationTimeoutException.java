@@ -5,6 +5,8 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Exception thrown when a channel times out on a continuation during a RPC call.
+ * 
+ *
  * @since 4.1.0
  */
 public class ChannelContinuationTimeoutException extends IOException {

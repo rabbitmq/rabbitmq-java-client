@@ -222,6 +222,6 @@ public class SocketFrameHandler implements FrameHandler {
                 flushTask.cancel(true);
             }
         }
-        try { _socket.close();                                   } catch (Exception _e) {}
+        try { _socket.close();                                   } catch (Exception e) {}
     }
 }

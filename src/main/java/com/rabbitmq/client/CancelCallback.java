@@ -22,6 +22,7 @@ import java.util.Map;
  * Callback interface to be notified of the cancellation of a consumer.
  * Prefer it over {@link Consumer} for a lambda-oriented syntax,
  * if you don't need to implement all the application callbacks.
+ * 
  * @see DeliverCallback
  * @see ConsumerShutdownSignalCallback
  * @see Channel#basicConsume(String, boolean, String, boolean, boolean, Map, DeliverCallback, CancelCallback)

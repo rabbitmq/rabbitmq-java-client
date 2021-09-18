@@ -58,7 +58,9 @@ public interface Consumer {
      * {@link Channel#basicCancel}. For example, the queue has been deleted.
      * See {@link #handleCancelOk} for notification of consumer
      * cancellation due to {@link Channel#basicCancel}.
+     * 
      * @param consumerTag the <i>consumer tag</i> associated with the consumer
+     * 
      * @throws IOException
      */
     void handleCancel(String consumerTag) throws IOException;

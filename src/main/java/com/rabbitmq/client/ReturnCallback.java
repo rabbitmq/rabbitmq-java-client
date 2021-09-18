@@ -21,6 +21,7 @@ package com.rabbitmq.client;
  * "immediate" flags set.
  * Prefer this interface over {@link ReturnListener} for
  * a simpler, lambda-oriented syntax.
+ * 
  * @see Channel#basicPublish
  * @see ReturnListener
  * @see Return

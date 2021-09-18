@@ -150,7 +150,9 @@ public class Address {
 
     /**
      * Factory method: takes a formatted addressString string as construction parameter
+     * 
      * @param addressString an addressString of the form "host[:port]".
+     * 
      * @return an {@link Address} from the given data
      */
     public static Address parseAddress(String addressString) {

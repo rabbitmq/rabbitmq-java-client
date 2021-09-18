@@ -147,6 +147,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Continuation timeout on RPC calls.
+     * 
      * @since 4.1.0
      */
     private int channelRpcTimeout = DEFAULT_CHANNEL_RPC_TIMEOUT;
@@ -203,12 +204,12 @@ public class ConnectionFactory implements Cloneable {
 
     private CredentialsRefreshService credentialsRefreshService;
 
-    /** @return the default host to use for connections */
+    // @return the default host to use for connections 
     public String getHost() {
         return host;
     }
 
-    /** @param host the default host to use for connections */
+    // @param host the default host to use for connections 
     public void setHost(String host) {
         this.host = host;
     }
@@ -219,7 +220,7 @@ public class ConnectionFactory implements Cloneable {
         else return DEFAULT_AMQP_PORT;
     }
 
-    /** @return the default port to use for connections */
+    // @return the default port to use for connections 
     public int getPort() {
         return portOrDefault(port, isSSL());
     }
@@ -303,6 +304,7 @@ public class ConnectionFactory implements Cloneable {
      * port, username, password and virtual host.  If any part of the
      * URI is omitted, the ConnectionFactory's corresponding variable
      * is left unchanged.
+     * 
      * @param uri is the AMQP URI containing the data
      */
     public void setUri(URI uri)
@@ -718,6 +720,7 @@ public class ConnectionFactory implements Cloneable {
 
     /**
      * Set the thread factory used to instantiate new threads.
+     * 
      * @see ThreadFactory
      */
     public void setThreadFactory(ThreadFactory threadFactory) {

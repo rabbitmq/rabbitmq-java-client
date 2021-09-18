@@ -147,6 +147,7 @@ public class TlsUtils {
 
     /**
      * Strips carriage return (CR) and line feed (LF) characters to mitigate CWE-117.
+     * 
      * @return sanitised string value
      */
     public static String stripCRLF(String value) {
