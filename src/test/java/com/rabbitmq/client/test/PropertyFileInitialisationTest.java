@@ -273,6 +273,7 @@ public class PropertyFileInitialisationTest {
         assertThat(connectionFactory.getNioParams().getWriteEnqueuingTimeoutInMs()).isEqualTo(5000);
         assertThat(connectionFactory.getNioParams().getWriteQueueCapacity()).isEqualTo(1000);
     }
+    
 
     private Properties getPropertiesWitPrefix(String prefix) throws IOException {
         Properties properties = new Properties();
