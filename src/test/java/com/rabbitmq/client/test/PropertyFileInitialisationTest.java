@@ -262,7 +262,7 @@ public class PropertyFileInitialisationTest {
 
         assertThat(connectionFactory.isAutomaticRecoveryEnabled()).isFalse();
         assertThat(connectionFactory.isTopologyRecoveryEnabled()).isFalse();
-        assertThat(connectionFactory.getNetworkRecoveryInterval()).isEqualTo(10000l);
+        assertThat(connectionFactory.getNetworkRecoveryInterval()).isEqualTo(10000L);
         assertThat(connectionFactory.getChannelRpcTimeout()).isEqualTo(10000);
         assertThat(connectionFactory.isChannelShouldCheckRpcResponseType()).isTrue();
 
