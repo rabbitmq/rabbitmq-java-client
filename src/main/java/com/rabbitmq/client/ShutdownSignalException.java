@@ -105,7 +105,7 @@ public class ShutdownSignalException extends RuntimeException implements Sensibl
      */
     public boolean isInitiatedByApplication() { return _initiatedByApplication; }
 
-    /** @return the reason, if any */
+    // @return the reason, if any 
     public Method getReason() { return _reason; }
 
     // @return Reference to Connection or Channel object that fired the signal 
