@@ -28,64 +28,66 @@ import java.util.concurrent.ExecutorService;
 
 public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
 
-    private final SocketFactory socketFactory;
-    private final ExecutorService shutdownExecutor;
-    private final SslContextFactory sslContextFactory;
+	private final SocketFactory socketFactory;
+	private final ExecutorService shutdownExecutor;
+	private final SslContextFactory sslContextFactory;
 
-    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory, SocketConfigurator configurator,
-                                     boolean ssl) {
-        this(connectionTimeout, socketFactory, configurator, ssl, null);
-    }
+	public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory,
+			SocketConfigurator configurator, boolean ssl) {
+		this(connectionTimeout, socketFactory, configurator, ssl, null);
+	}
 
-    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory, SocketConfigurator configurator,
-                                     boolean ssl, ExecutorService shutdownExecutor) {
-        this(connectionTimeout, socketFactory, configurator, ssl, shutdownExecutor, null);
-    }
+	public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory,
+			SocketConfigurator configurator, boolean ssl, ExecutorService shutdownExecutor) {
+		this(connectionTimeout, socketFactory, configurator, ssl, shutdownExecutor, null);
+	}
 
-    public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory, SocketConfigurator configurator,
-                                     boolean ssl, ExecutorService shutdownExecutor, SslContextFactory sslContextFactory) {
-        super(connectionTimeout, configurator, ssl);
-        this.socketFactory = socketFactory;
-        this.shutdownExecutor = shutdownExecutor;
-        this.sslContextFactory = sslContextFactory;
-    }
+	public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory,
+			SocketConfigurator configurator, boolean ssl, ExecutorService shutdownExecutor,
+			SslContextFactory sslContextFactory) {
+		super(connectionTimeout, configurator, ssl);
+		this.socketFactory = socketFactory;
+		this.shutdownExecutor = shutdownExecutor;
+		this.sslContextFactory = sslContextFactory;
+	}
 
-    public FrameHandler create(Address addr, String connectionName) throws IOException {
-        String hostName = addr.getHost();
-        int portNumber = ConnectionFactory.portOrDefault(addr.getPort(), ssl);
-        Socket socket = null;
-        try {
-            socket = createSocket(connectionName);
-            configurator.configure(socket);
-            socket.connect(new InetSocketAddress(hostName, portNumber),
-                    connectionTimeout);
-            return create(socket);
-        } catch (IOException ioe) {
-            quietTrySocketClose(socket);
-            throw ioe;
-        }
-    }
+	public FrameHandler create(Address addr, String connectionName) throws IOException {
+		String hostName = addr.getHost();
+		int portNumber = ConnectionFactory.portOrDefault(addr.getPort(), ssl);
+		Socket socket = null;
+		try {
+			socket = createSocket(connectionName);
+			configurator.configure(socket);
+			socket.connect(new InetSocketAddress(hostName, portNumber), connectionTimeout);
+			return create(socket);
+		} catch (IOException ioe) {
+			quietTrySocketClose(socket);
+			throw ioe;
+		}
+	}
 
-    protected Socket createSocket(String connectionName) throws IOException {
-        // SocketFactory takes precedence if specified
-        if (socketFactory != null) {
-            return socketFactory.createSocket();
-        } else {
-            if (ssl) {
-                return sslContextFactory.create(connectionName).getSocketFactory().createSocket();
-            } else {
-                return SocketFactory.getDefault().createSocket();
-            }
-        }
-    }
+	protected Socket createSocket(String connectionName) throws IOException {
+		// SocketFactory takes precedence if specified
+		if (socketFactory != null) {
+			return socketFactory.createSocket();
+		} else {
+			if (ssl) {
+				return sslContextFactory.create(connectionName).getSocketFactory().createSocket();
+			} else {
+				return SocketFactory.getDefault().createSocket();
+			}
+		}
+	}
 
-    public FrameHandler create(Socket sock) throws IOException
-    {
-        return new SocketFrameHandler(sock, this.shutdownExecutor);
-    }
+	public FrameHandler create(Socket sock) throws IOException {
+		return new SocketFrameHandler(sock, this.shutdownExecutor);
+	}
 
-    private static void quietTrySocketClose(Socket socket) {
-        if (socket != null)
-            try { socket.close(); } catch (Exception _e) {/*ignore exceptions*/}
-    }
+	private static void quietTrySocketClose(Socket socket) {
+		if (socket != null)
+			try {
+				socket.close();
+			} catch (Exception _e) {
+				/* ignore exceptions */}
+	}
 }
