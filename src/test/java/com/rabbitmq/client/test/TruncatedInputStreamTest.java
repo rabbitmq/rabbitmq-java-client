@@ -51,6 +51,7 @@ public class TruncatedInputStreamTest {
     
     /**
      * Check the amount of data initially available is as it should be
+     *
      * @throws IOException if there is an I/O problem
      */
     @Test public void amountInitiallyAvailable() throws IOException {

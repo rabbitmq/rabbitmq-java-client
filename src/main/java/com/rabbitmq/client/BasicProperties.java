@@ -22,6 +22,7 @@ public interface BasicProperties {
     
     /**
      * Retrieve the value in the contentType field.
+     * 
      * @return contentType field, or null if the field has not been set.
      */
     public abstract String getContentType();
@@ -35,6 +36,7 @@ public interface BasicProperties {
     /**
      * Retrieve the table in the headers field as a map of fields names and
      * values. 
+     * 
      * @return headers table, or null if the headers field has not been set.
      */
     public abstract Map<String, Object> getHeaders();
@@ -65,6 +67,7 @@ public interface BasicProperties {
     
     /**
      * Retrieve the value in the expiration field.
+     *
      * @return expiration field, or null if the field has not been set.
      */
     public abstract String getExpiration();

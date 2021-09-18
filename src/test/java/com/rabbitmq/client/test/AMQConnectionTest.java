@@ -206,6 +206,7 @@ public class AMQConnectionTest {
         private int timeoutCount = 0;
 
         /** count how many headers we've sent
+         * 
          * @return the number of sent headers
          */
         public int countHeadersSent() {

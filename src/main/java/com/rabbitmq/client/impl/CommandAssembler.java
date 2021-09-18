@@ -77,7 +77,8 @@ final class CommandAssembler {
         return this.contentHeader;
     }
 
-    /** @return true if the command is complete 
+    /** 
+     * @return true if the command is complete 
      * */
     public synchronized boolean isComplete() {
         return (this.state == CAState.COMPLETE);

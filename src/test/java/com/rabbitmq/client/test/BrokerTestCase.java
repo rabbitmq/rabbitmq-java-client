@@ -106,6 +106,7 @@ public class BrokerTestCase {
      * Whether to run the test or not.
      * Subclasses can check whether some broker features
      * are available or not, and choose not to run the test.
+     * 
      * @return
      */
     protected boolean shouldRun() throws IOException {

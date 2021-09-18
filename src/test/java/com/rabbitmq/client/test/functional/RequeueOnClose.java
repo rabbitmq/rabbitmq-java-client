@@ -113,6 +113,7 @@ public abstract class RequeueOnClose
 
     /**
      * Test we requeue unacknowledged message (using consumer)
+     * 
      * @throws Exception untested
      */
     @Test public void requeueingConsumer() throws Exception
@@ -201,6 +202,7 @@ public abstract class RequeueOnClose
 
     /**
      * Test close while consuming partially acked without cancel successfully requeues unacknowledged messages
+     * 
      * @throws Exception untested
      */
     @Test public void requeueInFlightConsumerAckNoCancel() throws Exception

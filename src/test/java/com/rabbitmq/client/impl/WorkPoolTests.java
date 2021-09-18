@@ -34,6 +34,7 @@ public class WorkPoolTests {
 
     /**
      * Test unknown key tolerated silently
+     * 
      * @throws Exception untested
      */
     @Test public void unknownKey() throws Exception{
