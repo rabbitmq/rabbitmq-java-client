@@ -17,6 +17,7 @@
 package com.rabbitmq.client.test.functional;
 
 import static org.junit.Assert.*;
+
 import org.junit.Test;
 
 
