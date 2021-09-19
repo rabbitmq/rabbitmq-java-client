@@ -24,50 +24,46 @@ import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.ConfirmBase;
 import org.junit.Test;
 
-public class MessageRecovery extends ConfirmBase
-{
+public class MessageRecovery extends ConfirmBase {
 
-    private final static String Q = "recovery-test";
-    private final static String Q2 = "recovery-test-ha-check";
+	private final static String Q = "recovery-test";
+	private final static String Q2 = "recovery-test-ha-check";
 
-    @Test public void messageRecovery()
-        throws Exception
-    {
-        channel.queueDelete(Q);
-        channel.queueDelete(Q2);
-        channel.confirmSelect();
-        channel.queueDeclare(Q, true, false, false, null);
-        channel.basicPublish("", Q, false, false,
-                             MessageProperties.PERSISTENT_BASIC,
-                             "nop".getBytes());
-        waitForConfirms();
+	@Test
+	public void messageRecovery() throws Exception {
+		channel.queueDelete(Q);
+		channel.queueDelete(Q2);
+		channel.confirmSelect();
+		channel.queueDeclare(Q, true, false, false, null);
+		channel.basicPublish("", Q, false, false, MessageProperties.PERSISTENT_BASIC, "nop".getBytes());
+		waitForConfirms();
 
-        channel.queueDeclare(Q2, false, false, false, null);
+		channel.queueDeclare(Q2, false, false, false, null);
 
-        restart();
+		restart();
 
-        // When testing in HA mode the message will be collected from
-        // a promoted slave and will have its redelivered flag
-        // set. But that only happens if there actually *is* a
-        // slave. We test that by passively declaring, and
-        // subsequently deleting, the secondary, non-durable queue,
-        // which only succeeds if the queue survived the restart,
-        // which in turn implies that it must have been a HA queue
-        // with slave(s).
-        // NB: this wont work when running against a single node broker
-        // and running the test individually outside of the HA suite
-        boolean expectDelivered = HATests.HA_TESTS_RUNNING;
-        try {
-            channel.queueDeclarePassive(Q2);
-            channel.queueDelete(Q2);
-            expectDelivered = true;
-        } catch (IOException e) {
-            checkShutdownSignal(AMQP.NOT_FOUND, e);
-            openChannel();
-        }
-        assertDelivered(Q, 1, expectDelivered);
-        channel.queueDelete(Q);
-        channel.queueDelete(Q2);
-    }
+		// When testing in HA mode the message will be collected from
+		// a promoted slave and will have its redelivered flag
+		// set. But that only happens if there actually *is* a
+		// slave. We test that by passively declaring, and
+		// subsequently deleting, the secondary, non-durable queue,
+		// which only succeeds if the queue survived the restart,
+		// which in turn implies that it must have been a HA queue
+		// with slave(s).
+		// NB: this wont work when running against a single node broker
+		// and running the test individually outside of the HA suite
+		boolean expectDelivered = HATests.HA_TESTS_RUNNING;
+		try {
+			channel.queueDeclarePassive(Q2);
+			channel.queueDelete(Q2);
+			expectDelivered = true;
+		} catch (IOException e) {
+			checkShutdownSignal(AMQP.NOT_FOUND, e);
+			openChannel();
+		}
+		assertDelivered(Q, 1, expectDelivered);
+		channel.queueDelete(Q);
+		channel.queueDelete(Q2);
+	}
 
 }

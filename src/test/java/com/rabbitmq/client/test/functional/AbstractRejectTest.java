@@ -13,7 +13,6 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test.functional;
 
 import static org.junit.Assert.assertEquals;
@@ -32,45 +31,38 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 abstract class AbstractRejectTest extends BrokerTestCase {
 
-    protected Channel secondaryChannel;
+	protected Channel secondaryChannel;
 
-    @Override
-    public void setUp()
-            throws IOException, TimeoutException {
-        super.setUp();
-        secondaryChannel = connection.createChannel();
+	@Override
+	public void setUp() throws IOException, TimeoutException {
+		super.setUp();
+		secondaryChannel = connection.createChannel();
 
-    }
+	}
 
-    @Override
-    public void tearDown()
-            throws IOException, TimeoutException {
-        if (secondaryChannel != null) {
-            secondaryChannel.abort();
-            secondaryChannel = null;
-        }
-        super.tearDown();
-    }
+	@Override
+	public void tearDown() throws IOException, TimeoutException {
+		if (secondaryChannel != null) {
+			secondaryChannel.abort();
+			secondaryChannel = null;
+		}
+		super.tearDown();
+	}
 
-    protected long checkDelivery(QueueingConsumer.Delivery d,
-                                 byte[] msg, boolean redelivered)
-    {
-        assertNotNull(d);
-        return checkDelivery(d.getEnvelope(), d.getBody(), msg, redelivered);
-    }
+	protected long checkDelivery(QueueingConsumer.Delivery d, byte[] msg, boolean redelivered) {
+		assertNotNull(d);
+		return checkDelivery(d.getEnvelope(), d.getBody(), msg, redelivered);
+	}
 
-    protected long checkDelivery(GetResponse r, byte[] msg, boolean redelivered)
-    {
-        assertNotNull(r);
-        return checkDelivery(r.getEnvelope(), r.getBody(), msg, redelivered);
-    }
+	protected long checkDelivery(GetResponse r, byte[] msg, boolean redelivered) {
+		assertNotNull(r);
+		return checkDelivery(r.getEnvelope(), r.getBody(), msg, redelivered);
+	}
 
-    protected long checkDelivery(Envelope e, byte[] m,
-                                 byte[] msg, boolean redelivered)
-    {
-        assertNotNull(e);
-        assertTrue(Arrays.equals(m, msg));
-        assertEquals(e.isRedeliver(), redelivered);
-        return e.getDeliveryTag();
-    }
+	protected long checkDelivery(Envelope e, byte[] m, byte[] msg, boolean redelivered) {
+		assertNotNull(e);
+		assertTrue(Arrays.equals(m, msg));
+		assertEquals(e.isRedeliver(), redelivered);
+		return e.getDeliveryTag();
+	}
 }

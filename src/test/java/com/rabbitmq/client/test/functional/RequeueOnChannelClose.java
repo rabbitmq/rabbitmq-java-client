@@ -13,22 +13,18 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 
-public class RequeueOnChannelClose extends RequeueOnClose
-{
+public class RequeueOnChannelClose extends RequeueOnClose {
 
-    protected void open() throws IOException
-    {
-        openChannel();
-    }
-    
-    protected void close() throws IOException
-    {
-        closeChannel();
-    }
+	protected void open() throws IOException {
+		openChannel();
+	}
+
+	protected void close() throws IOException {
+		closeChannel();
+	}
 
 }

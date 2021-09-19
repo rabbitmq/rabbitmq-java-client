@@ -13,7 +13,6 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test.functional;
 
 import static org.junit.Assert.assertTrue;
@@ -26,7 +25,6 @@ import org.junit.Test;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
-
 
 //
 // Functional test demonstrating use of an internal exchange in an exchange to
@@ -45,48 +43,39 @@ import com.rabbitmq.client.test.BrokerTestCase;
 // turn is bound to a queue.  A client should be able to publish to e0, but
 // not to e1, and publications to e0 should be delivered into q1.
 //
-public class InternalExchange extends BrokerTestCase
-{
-    private final String[] queues = new String[] { "q1" };
-    private final String[] exchanges = new String[] { "e0", "e1" };
+public class InternalExchange extends BrokerTestCase {
+	private final String[] queues = new String[] { "q1" };
+	private final String[] exchanges = new String[] { "e0", "e1" };
 
-    protected void createResources() throws IOException
-    {
-        // The queues and exchange we create here are all auto-delete, so we
-        // don't need to override releaseResources() with their deletions...
-        for (String q : queues)
-        {
-            channel.queueDeclare(q, false, true, true, null);
-        }
+	protected void createResources() throws IOException {
+		// The queues and exchange we create here are all auto-delete, so we
+		// don't need to override releaseResources() with their deletions...
+		for (String q : queues) {
+			channel.queueDeclare(q, false, true, true, null);
+		}
 
-        // The second exchange, "e1", will be an 'internal' one.
-        for(String e : exchanges)
-        {
-            channel.exchangeDeclare(e, "direct",
-                                    false, true,
-                                    !e.equals("e0"),
-                                    null);
-        }
+		// The second exchange, "e1", will be an 'internal' one.
+		for (String e : exchanges) {
+			channel.exchangeDeclare(e, "direct", false, true, !e.equals("e0"), null);
+		}
 
-        channel.exchangeBind("e1", "e0", "");
-        channel.queueBind("q1", "e1", "");
-    }
+		channel.exchangeBind("e1", "e0", "");
+		channel.queueBind("q1", "e1", "");
+	}
 
+	@Test
+	public void tryPublishingToInternalExchange() throws IOException {
+		byte[] testDataBody = "test-data".getBytes();
 
-    @Test public void tryPublishingToInternalExchange()
-            throws IOException
-    {
-        byte[] testDataBody = "test-data".getBytes();
+		// We should be able to publish to the non-internal exchange as usual
+		// and see our message land in the queue...
+		channel.basicPublish("e0", "", null, testDataBody);
+		GetResponse r = channel.basicGet("q1", true);
+		assertTrue(Arrays.equals(r.getBody(), testDataBody));
 
-        // We should be able to publish to the non-internal exchange as usual
-        // and see our message land in the queue...
-        channel.basicPublish("e0", "", null, testDataBody);
-        GetResponse r = channel.basicGet("q1", true);
-        assertTrue(Arrays.equals(r.getBody(), testDataBody));
+		// Publishing to the internal exchange will not be allowed...
+		channel.basicPublish("e1", "", null, testDataBody);
 
-        // Publishing to the internal exchange will not be allowed...
-        channel.basicPublish("e1", "", null, testDataBody);
-
-        expectError(AMQP.ACCESS_REFUSED);
-    }
+		expectError(AMQP.ACCESS_REFUSED);
+	}
 }

@@ -154,7 +154,7 @@ final class CommandAssembler {
      * @throws IOException if error reading frame
      */
     public synchronized boolean handleFrame(Frame f) throws IOException
-    {
+    
         switch (this.state) {
           case EXPECTING_METHOD:          consumeMethodFrame(f); break;
           case EXPECTING_CONTENT_HEADER:  consumeHeaderFrame(f); break;

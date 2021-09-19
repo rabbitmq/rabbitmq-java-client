@@ -325,6 +325,5 @@ public class RpcServer {
 			}
 			return delivery;
 		}
-	}
 
 }

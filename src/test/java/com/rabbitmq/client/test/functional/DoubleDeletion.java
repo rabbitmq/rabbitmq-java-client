@@ -13,7 +13,6 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
@@ -22,26 +21,23 @@ import org.junit.Test;
 
 import com.rabbitmq.client.test.BrokerTestCase;
 
-public class DoubleDeletion extends BrokerTestCase
-{
-    protected static final String Q = "DoubleDeletionQueue";
-    protected static final String X = "DoubleDeletionExchange";
+public class DoubleDeletion extends BrokerTestCase {
+	protected static final String Q = "DoubleDeletionQueue";
+	protected static final String X = "DoubleDeletionExchange";
 
-    @Test public void doubleDeletionQueue()
-        throws IOException
-    {
-        channel.queueDelete(Q);
-        channel.queueDeclare(Q, false, false, false, null);
-        channel.queueDelete(Q);
-        channel.queueDelete(Q);
-    }
+	@Test
+	public void doubleDeletionQueue() throws IOException {
+		channel.queueDelete(Q);
+		channel.queueDeclare(Q, false, false, false, null);
+		channel.queueDelete(Q);
+		channel.queueDelete(Q);
+	}
 
-    @Test public void doubleDeletionExchange()
-        throws IOException
-    {
-        channel.exchangeDelete(X);
-        channel.exchangeDeclare(X, "direct");
-	    channel.exchangeDelete(X);
-        channel.exchangeDelete(X);
-    }
+	@Test
+	public void doubleDeletionExchange() throws IOException {
+		channel.exchangeDelete(X);
+		channel.exchangeDeclare(X, "direct");
+		channel.exchangeDelete(X);
+		channel.exchangeDelete(X);
+	}
 }

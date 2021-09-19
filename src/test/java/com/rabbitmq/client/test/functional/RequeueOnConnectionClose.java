@@ -13,23 +13,20 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test.functional;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
-public class RequeueOnConnectionClose extends RequeueOnClose
-{
+public class RequeueOnConnectionClose extends RequeueOnClose {
 
-    protected void open() throws IOException, TimeoutException {
-        openConnection();
-        openChannel();
-    }
+	protected void open() throws IOException, TimeoutException {
+		openConnection();
+		openChannel();
+	}
 
-    protected void close() throws IOException
-    {
-        closeConnection();
-    }
+	protected void close() throws IOException {
+		closeConnection();
+	}
 
 }

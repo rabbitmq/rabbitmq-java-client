@@ -24,19 +24,19 @@ import com.rabbitmq.client.impl.recovery.RecordedEntity;
  * @since 3.3.0
  */
 public class TopologyRecoveryException extends Exception {
-    
-    private final RecordedEntity recordedEntity;
-    
-    public TopologyRecoveryException(String message, Throwable cause) {
-        this(message, cause, null);
-    }
-    
-    public TopologyRecoveryException(String message, Throwable cause, final RecordedEntity recordedEntity) {
-        super(message, cause);
-        this.recordedEntity = recordedEntity;
-    }
 
-    public RecordedEntity getRecordedEntity() {
-        return recordedEntity;
-    }
+	private final RecordedEntity recordedEntity;
+
+	public TopologyRecoveryException(String message, Throwable cause) {
+		this(message, cause, null);
+	}
+
+	public TopologyRecoveryException(String message, Throwable cause, final RecordedEntity recordedEntity) {
+		super(message, cause);
+		this.recordedEntity = recordedEntity;
+	}
+
+	public RecordedEntity getRecordedEntity() {
+		return recordedEntity;
+	}
 }

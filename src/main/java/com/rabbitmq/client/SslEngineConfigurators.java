@@ -27,90 +27,90 @@ import javax.net.ssl.SSLParameters;
  */
 public abstract class SslEngineConfigurators {
 
-    /**
-     * Default {@link SslEngineConfigurator}, does nothing.
-     */
-    public static final SslEngineConfigurator DEFAULT = sslEngine -> {
-    };
+	/**
+	 * Default {@link SslEngineConfigurator}, does nothing.
+	 */
+	public static final SslEngineConfigurator DEFAULT = sslEngine -> {
+	};
 
-    /**
-     * {@link SslEngineConfigurator} that enables server hostname verification.
-     */
-    public static final SslEngineConfigurator ENABLE_HOSTNAME_VERIFICATION = sslEngine -> {
-        SSLParameters sslParameters = SocketConfigurators.enableHostnameVerification(sslEngine.getSSLParameters());
-        sslEngine.setSSLParameters(sslParameters);
-    };
+	/**
+	 * {@link SslEngineConfigurator} that enables server hostname verification.
+	 */
+	public static final SslEngineConfigurator ENABLE_HOSTNAME_VERIFICATION = sslEngine -> {
+		SSLParameters sslParameters = SocketConfigurators.enableHostnameVerification(sslEngine.getSSLParameters());
+		sslEngine.setSSLParameters(sslParameters);
+	};
 
-    /**
-     * Default {@link SslEngineConfigurator}, does nothing.
-     *
-     * @return
-     */
-    public static SslEngineConfigurator defaultConfigurator() {
-        return DEFAULT;
-    }
+	/**
+	 * Default {@link SslEngineConfigurator}, does nothing.
+	 *
+	 * @return
+	 */
+	public static SslEngineConfigurator defaultConfigurator() {
+		return DEFAULT;
+	}
 
-    /**
-     * {@link SslEngineConfigurator} that enables server hostname verification.
-     *
-     * @return
-     */
-    public static SslEngineConfigurator enableHostnameVerification() {
-        return ENABLE_HOSTNAME_VERIFICATION;
-    }
+	/**
+	 * {@link SslEngineConfigurator} that enables server hostname verification.
+	 *
+	 * @return
+	 */
+	public static SslEngineConfigurator enableHostnameVerification() {
+		return ENABLE_HOSTNAME_VERIFICATION;
+	}
 
-    /**
-     * Builder to configure and creates a {@link SslEngineConfigurator} instance.
-     *
-     * @return
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
+	/**
+	 * Builder to configure and creates a {@link SslEngineConfigurator} instance.
+	 *
+	 * @return
+	 */
+	public static Builder builder() {
+		return new Builder();
+	}
 
-    public static class Builder {
+	public static class Builder {
 
-        private SslEngineConfigurator configurator = channel -> {
-        };
+		private SslEngineConfigurator configurator = channel -> {
+		};
 
-        /**
-         * Set default configuration (no op).
-         *
-         * @return
-         */
-        public Builder defaultConfigurator() {
-            configurator = configurator.andThen(DEFAULT);
-            return this;
-        }
+		/**
+		 * Set default configuration (no op).
+		 *
+		 * @return
+		 */
+		public Builder defaultConfigurator() {
+			configurator = configurator.andThen(DEFAULT);
+			return this;
+		}
 
-        /**
-         * Enables server hostname verification.
-         *
-         * @return
-         */
-        public Builder enableHostnameVerification() {
-            configurator = configurator.andThen(ENABLE_HOSTNAME_VERIFICATION);
-            return this;
-        }
+		/**
+		 * Enables server hostname verification.
+		 *
+		 * @return
+		 */
+		public Builder enableHostnameVerification() {
+			configurator = configurator.andThen(ENABLE_HOSTNAME_VERIFICATION);
+			return this;
+		}
 
-        /**
-         * Add extra configuration step.
-         *
-         * @param extraConfiguration
-         * @return
-         */
-        public Builder add(SslEngineConfigurator extraConfiguration) {
-            configurator = configurator.andThen(extraConfiguration);
-            return this;
-        }
+		/**
+		 * Add extra configuration step.
+		 *
+		 * @param extraConfiguration
+		 * @return
+		 */
+		public Builder add(SslEngineConfigurator extraConfiguration) {
+			configurator = configurator.andThen(extraConfiguration);
+			return this;
+		}
 
-        /**
-         * Return the configured {@link SslEngineConfigurator}.
-         *
-         * @return
-         */
-        public SslEngineConfigurator build() {
-            return configurator;
-        }
-    }
+		/**
+		 * Return the configured {@link SslEngineConfigurator}.
+		 *
+		 * @return
+		 */
+		public SslEngineConfigurator build() {
+			return configurator;
+		}
+	}
 }

@@ -13,7 +13,6 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test.functional;
 
 import static org.junit.Assert.assertNotNull;
@@ -29,40 +28,39 @@ import org.junit.Test;
 
 import com.rabbitmq.client.test.BrokerTestCase;
 
-public class NoRequeueOnCancel extends BrokerTestCase
-{
-    protected final String Q = "NoRequeueOnCancel";
+public class NoRequeueOnCancel extends BrokerTestCase {
+	protected final String Q = "NoRequeueOnCancel";
 
-    protected void createResources() throws IOException {
-      channel.queueDeclare(Q, false, false, false, null);
-    }
+	protected void createResources() throws IOException {
+		channel.queueDeclare(Q, false, false, false, null);
+	}
 
-    protected void releaseResources() throws IOException {
-        channel.queueDelete(Q);
-    }
+	protected void releaseResources() throws IOException {
+		channel.queueDelete(Q);
+	}
 
-    @Test public void noRequeueOnCancel()
-        throws IOException, InterruptedException
-    {
-        channel.basicPublish("", Q, null, "1".getBytes());
+	@Test
+	public void noRequeueOnCancel() throws IOException, InterruptedException {
+		channel.basicPublish("", Q, null, "1".getBytes());
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        Consumer c = new DefaultConsumer(channel) {
-            @Override
-            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-                latch.countDown();
-            }
-        };
-        String consumerTag = channel.basicConsume(Q, false, c);
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+		final CountDownLatch latch = new CountDownLatch(1);
+		Consumer c = new DefaultConsumer(channel) {
+			@Override
+			public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,
+					byte[] body) throws IOException {
+				latch.countDown();
+			}
+		};
+		String consumerTag = channel.basicConsume(Q, false, c);
+		assertTrue(latch.await(5, TimeUnit.SECONDS));
 
-        channel.basicCancel(consumerTag);
+		channel.basicCancel(consumerTag);
 
-        assertNull(channel.basicGet(Q, true));
+		assertNull(channel.basicGet(Q, true));
 
-        closeChannel();
-        openChannel();
+		closeChannel();
+		openChannel();
 
-        assertNotNull(channel.basicGet(Q, true));
-    }
+		assertNotNull(channel.basicGet(Q, true));
+	}
 }

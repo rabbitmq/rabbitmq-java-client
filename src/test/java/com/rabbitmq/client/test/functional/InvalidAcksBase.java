@@ -23,36 +23,35 @@ import java.io.IOException;
 import org.junit.Test;
 
 /**
- * See bug 21846:
- * Basic.Ack is now required to signal a channel error immediately upon
- * detecting an invalid deliveryTag, even if the channel is (Tx-)transacted.
+ * See bug 21846: Basic.Ack is now required to signal a channel error
+ * immediately upon detecting an invalid deliveryTag, even if the channel is
+ * (Tx-)transacted.
  *
  * Specifically, a client MUST not acknowledge the same message more than once.
  */
 public abstract class InvalidAcksBase extends BrokerTestCase {
-    protected abstract void select() throws IOException;
-    protected abstract void commit() throws IOException;
+	protected abstract void select() throws IOException;
 
-    @Test public void doubleAck()
-        throws IOException
-    {
-        select();
-        String q = channel.queueDeclare().getQueue();
-        basicPublishVolatile(q);
-        commit();
+	protected abstract void commit() throws IOException;
 
-        long tag = channel.basicGet(q, false).getEnvelope().getDeliveryTag();
-        channel.basicAck(tag, false);
-        channel.basicAck(tag, false);
+	@Test
+	public void doubleAck() throws IOException {
+		select();
+		String q = channel.queueDeclare().getQueue();
+		basicPublishVolatile(q);
+		commit();
 
-        expectError(AMQP.PRECONDITION_FAILED);
-    }
+		long tag = channel.basicGet(q, false).getEnvelope().getDeliveryTag();
+		channel.basicAck(tag, false);
+		channel.basicAck(tag, false);
 
-    @Test public void crazyAck()
-        throws IOException
-    {
-        select();
-        channel.basicAck(123456, false);
-        expectError(AMQP.PRECONDITION_FAILED);
-    }
+		expectError(AMQP.PRECONDITION_FAILED);
+	}
+
+	@Test
+	public void crazyAck() throws IOException {
+		select();
+		channel.basicAck(123456, false);
+		expectError(AMQP.PRECONDITION_FAILED);
+	}
 }
