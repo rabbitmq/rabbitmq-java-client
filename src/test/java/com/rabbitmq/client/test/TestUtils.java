@@ -343,6 +343,8 @@ public class TestUtils {
                         if (Host.isOnDocker()) {
                             throw new AssumptionViolatedException("Broker is running on Docker");
                         }
+                    } catch (AssumptionViolatedException e) {
+                        throw e;
                     } catch (Exception e) {
                         throw new AssumptionViolatedException("Could not check whether broker is running on Docker or not", e);
                     }
