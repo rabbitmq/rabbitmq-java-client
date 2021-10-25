@@ -40,4 +40,4 @@ jobs:
       - name: Test with NIO
         run: ./mvnw verify -P '!setup-test-cluster,use-nio' -Drabbitmqctl.bin=DOCKER:rabbitmq -Dit.test=ClientTests,FunctionalTests,ServerTests
       - name: Test with blocking IO
-        run: ./mvnw verify -P '!setup-test-cluster' -Drabbitmqctl.bin=DOCKER:rabbitmq -Dit.test=ClientTests,FunctionalTests,ServerTests
+        run: ./mvnw verify -P '!setup-test-cluster' -Drabbitmqctl.bin=DOCKER:${{job.services.rabbitmq.id}} -Dit.test=ClientTests,FunctionalTests,ServerTests
