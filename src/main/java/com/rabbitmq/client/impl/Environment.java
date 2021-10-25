@@ -23,32 +23,29 @@ import java.util.concurrent.ThreadFactory;
  * Package-protected API.
  */
 public class Environment {
+
+    /**
+     * This method is deprecated and subject to removal in the next major release.
+     *
+     * There is no replacement for this method, as it used to use the
+     * {@link SecurityManager}, which is itself deprecated and subject to removal.
+     * @deprecated
+     * @return always returns true
+     */
+    @Deprecated
     public static boolean isAllowedToModifyThreads() {
-        try {
-            SecurityManager sm = System.getSecurityManager();
-            if(sm != null) {
-                sm.checkPermission(new RuntimePermission("modifyThread"));
-                sm.checkPermission(new RuntimePermission("modifyThreadGroup"));
-            }
-            return true;
-        } catch (SecurityException se) {
-            return false;
-        }
+       return true;
     }
 
     public static Thread newThread(ThreadFactory factory, Runnable runnable, String name) {
         Thread t = factory.newThread(runnable);
-        if(isAllowedToModifyThreads()) {
-            t.setName(name);
-        }
+        t.setName(name);
         return t;
     }
 
     public static Thread newThread(ThreadFactory factory, Runnable runnable, String name, boolean isDaemon) {
         Thread t = newThread(factory, runnable, name);
-        if(isAllowedToModifyThreads()) {
-            t.setDaemon(isDaemon);
-        }
+        t.setDaemon(isDaemon);
         return t;
     }
 }

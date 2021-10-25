@@ -104,7 +104,7 @@ public class TlsUtils {
         try {
             return String.format("%s subject: %s, subject alternative names: %s, " +
                             "issuer: %s, not valid after: %s, X.509 usage extensions: %s",
-                    stripCRLF(prefix), stripCRLF(c.getSubjectDN().getName()), stripCRLF(sans(c, ",")), stripCRLF(c.getIssuerDN().getName()),
+                    stripCRLF(prefix), stripCRLF(c.getSubjectX500Principal().getName()), stripCRLF(sans(c, ",")), stripCRLF(c.getIssuerX500Principal().getName()),
                     c.getNotAfter(), stripCRLF(extensions(c)));
         } catch (Exception e) {
             return "Error while retrieving " + prefix + " certificate information";
