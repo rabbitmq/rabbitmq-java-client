@@ -25,19 +25,19 @@ They require Java 8 or higher.
 <dependency>
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
-    <version>5.12.0</version>
+    <version>5.13.1</version>
 </dependency>
 ```
 
 ### Gradle
 
 ``` groovy
-compile 'com.rabbitmq:amqp-client:5.12.0'
+compile 'com.rabbitmq:amqp-client:5.13.1'
 ```
 
 #### 4.x Series
 
-As of 1 January 2021 the 4.x branch is no longer supported.
+**As of 1 January 2021 the 4.x branch is no longer supported**.
 
 This client releases are independent from RabbitMQ server releases and can be used with RabbitMQ server `3.x`.
 They require Java 6 or higher.
