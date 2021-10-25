@@ -35,6 +35,8 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
+      - name: Get dependencies
+        run: make deps
       - name: Test with NIO
         run: ./mvnw verify -P '!setup-test-cluster,use-nio' -Drabbitmqctl.bin=DOCKER:rabbitmq -Dit.test=ClientTests,FunctionalTests,ServerTests
       - name: Test with blocking IO
