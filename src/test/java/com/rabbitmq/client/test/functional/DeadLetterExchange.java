@@ -19,12 +19,15 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static com.rabbitmq.client.test.TestUtils.waitAtMost;
+import static java.time.Duration.ofSeconds;
 import static org.junit.Assert.*;
 
 public class DeadLetterExchange extends BrokerTestCase {
@@ -403,9 +406,15 @@ public class DeadLetterExchange extends BrokerTestCase {
         channel.queueBind(DLQ, DLX, "test");
         publishN(1);
 
-        sleep(200);
-
-        GetResponse getResponse = channel.basicGet(DLQ, true);
+        AtomicReference<GetResponse> responseRefeference = new AtomicReference<>();
+        waitAtMost(
+            ofSeconds(1),
+            () -> {
+                GetResponse response = channel.basicGet(DLQ, true);
+                responseRefeference.set(response);
+                return responseRefeference.get() != null;
+        });
+        GetResponse getResponse = responseRefeference.get();
         assertNotNull("Message not dead-lettered",
             getResponse);
         assertEquals("test message", new String(getResponse.getBody()));
@@ -432,9 +441,15 @@ public class DeadLetterExchange extends BrokerTestCase {
                .headers(headers)
                .build(), "test message".getBytes());
 
-        sleep(100);
-
-        getResponse = channel.basicGet(DLQ, true);
+        responseRefeference.set(null);
+        waitAtMost(
+            ofSeconds(1),
+            () -> {
+                GetResponse response = channel.basicGet(DLQ, true);
+                responseRefeference.set(response);
+                return responseRefeference.get() != null;
+            });
+        getResponse = responseRefeference.get();
         assertNotNull("Message not dead-lettered", getResponse);
         assertEquals("test message", new String(getResponse.getBody()));
         headers = getResponse.getProps().getHeaders();
@@ -453,9 +468,17 @@ public class DeadLetterExchange extends BrokerTestCase {
             new AMQP.BasicProperties.Builder()
                .headers(headers)
                .build(), "test message".getBytes());
-        sleep(100);
 
-        getResponse = channel.basicGet(DLQ, true);
+        responseRefeference.set(null);
+        waitAtMost(
+            ofSeconds(1),
+            () -> {
+                GetResponse response = channel.basicGet(DLQ, true);
+                responseRefeference.set(response);
+                return responseRefeference.get() != null;
+            });
+        getResponse = responseRefeference.get();
+
         assertNotNull("Message not dead-lettered", getResponse);
         assertEquals("test message", new String(getResponse.getBody()));
         headers = getResponse.getProps().getHeaders();
