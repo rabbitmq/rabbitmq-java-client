@@ -56,9 +56,20 @@ public class TestUtils {
         return connectionFactory;
     }
 
-    public static void waitAtMost(Duration timeout, BooleanSupplier condition) {
-        if (condition.getAsBoolean()) {
-            return;
+    @FunctionalInterface
+    public interface CallableBooleanSupplier {
+
+        boolean getAsBoolean() throws Exception;
+
+    }
+
+    public static void waitAtMost(Duration timeout, CallableBooleanSupplier condition) {
+        try {
+            if (condition.getAsBoolean()) {
+                return;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
         int waitTime = 100;
         int waitedTime = 0;
@@ -70,8 +81,12 @@ public class TestUtils {
                 Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             }
-            if (condition.getAsBoolean()) {
-                return;
+            try {
+                if (condition.getAsBoolean()) {
+                    return;
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
             waitedTime += waitTime;
         }
