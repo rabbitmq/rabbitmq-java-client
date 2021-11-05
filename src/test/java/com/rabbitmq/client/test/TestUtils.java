@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -26,19 +26,15 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BooleanSupplier;
 
 import static org.junit.Assert.assertTrue;
 
@@ -107,22 +103,6 @@ public class TestUtils {
         if (connection != null) {
             connection.abort();
         }
-    }
-
-    public static SSLContext getSSLContext() throws NoSuchAlgorithmException {
-        SSLContext c = null;
-
-        // pick the first protocol available, preferring TLSv1.2, then TLSv1,
-        // falling back to SSLv3 if running on an ancient/crippled JDK
-        for (String proto : Arrays.asList("TLSv1.2", "TLSv1", "SSLv3")) {
-            try {
-                c = SSLContext.getInstance(proto);
-                return c;
-            } catch (NoSuchAlgorithmException x) {
-                // keep trying
-            }
-        }
-        throw new NoSuchAlgorithmException();
     }
 
     public static TestRule atLeast38() {
@@ -361,4 +341,27 @@ public class TestUtils {
 
     }
 
+    public static boolean basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch, int msgSize)
+        throws Exception {
+        Channel channel = connection.createChannel();
+        channel.queueDeclare(queue, false, true, false, null);
+        channel.queuePurge(queue);
+
+        channel.basicPublish("", queue, null, new byte[msgSize]);
+
+        String tag = channel.basicConsume(queue, false, new DefaultConsumer(channel) {
+
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+                getChannel().basicAck(envelope.getDeliveryTag(), false);
+                latch.countDown();
+            }
+        });
+
+        boolean messageReceived = latch.await(20, TimeUnit.SECONDS);
+
+        channel.basicCancel(tag);
+
+        return messageReceived;
+    }
 }

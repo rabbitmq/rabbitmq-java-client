@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -23,14 +23,20 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_TASK;
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_WRAP;
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
 
 /**
  *
  */
 public class SslEngineHelper {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SslEngineHelper.class);
 
     public static boolean doHandshake(SocketChannel socketChannel, SSLEngine engine) throws IOException {
 
@@ -39,20 +45,36 @@ public class SslEngineHelper {
         ByteBuffer cipherOut = ByteBuffer.allocate(engine.getSession().getPacketBufferSize());
         ByteBuffer cipherIn = ByteBuffer.allocate(engine.getSession().getPacketBufferSize());
 
+        LOGGER.debug("Starting TLS handshake");
+
         SSLEngineResult.HandshakeStatus handshakeStatus = engine.getHandshakeStatus();
+        LOGGER.debug("Initial handshake status is {}", handshakeStatus);
         while (handshakeStatus != FINISHED && handshakeStatus != NOT_HANDSHAKING) {
+            LOGGER.debug("Handshake status is {}", handshakeStatus);
             switch (handshakeStatus) {
             case NEED_TASK:
+                LOGGER.debug("Running tasks");
                 handshakeStatus = runDelegatedTasks(engine);
                 break;
             case NEED_UNWRAP:
+                LOGGER.debug("Unwrapping...");
                 handshakeStatus = unwrap(cipherIn, plainIn, socketChannel, engine);
                 break;
             case NEED_WRAP:
+                LOGGER.debug("Wrapping...");
                 handshakeStatus = wrap(plainOut, cipherOut, socketChannel, engine);
                 break;
+            case FINISHED:
+                break;
+            case NOT_HANDSHAKING:
+                break;
+            default:
+                throw new SSLException("Unexpected handshake status " + handshakeStatus);
             }
         }
+
+
+        LOGGER.debug("TLS handshake completed");
         return true;
     }
 
@@ -60,6 +82,7 @@ public class SslEngineHelper {
         // FIXME run in executor?
         Runnable runnable;
         while ((runnable = sslEngine.getDelegatedTask()) != null) {
+            LOGGER.debug("Running delegated task");
             runnable.run();
         }
         return sslEngine.getHandshakeStatus();
@@ -68,29 +91,57 @@ public class SslEngineHelper {
     private static SSLEngineResult.HandshakeStatus unwrap(ByteBuffer cipherIn, ByteBuffer plainIn,
         ReadableByteChannel channel, SSLEngine sslEngine) throws IOException {
         SSLEngineResult.HandshakeStatus handshakeStatus = sslEngine.getHandshakeStatus();
+        LOGGER.debug("Handshake status is {} before unwrapping", handshakeStatus);
 
-        if (channel.read(cipherIn) < 0) {
-            throw new SSLException("Could not read from socket channel");
+        LOGGER.debug("Cipher in position {}", cipherIn.position());
+        int read;
+        if (cipherIn.position() == 0) {
+            LOGGER.debug("Reading from channel");
+            read = channel.read(cipherIn);
+            LOGGER.debug("Read {} byte(s) from channel", read);
+            if (read < 0) {
+                throw new SSLException("Could not read from socket channel");
+            }
+            cipherIn.flip();
+        } else {
+            LOGGER.debug("Not reading");
         }
-        cipherIn.flip();
 
         SSLEngineResult.Status status;
+        SSLEngineResult unwrapResult;
         do {
-            SSLEngineResult unwrapResult = sslEngine.unwrap(cipherIn, plainIn);
+            int positionBeforeUnwrapping = cipherIn.position();
+            unwrapResult = sslEngine.unwrap(cipherIn, plainIn);
+            LOGGER.debug("SSL engine result is {} after unwrapping", unwrapResult);
             status = unwrapResult.getStatus();
             switch (status) {
             case OK:
                 plainIn.clear();
-                handshakeStatus = runDelegatedTasks(sslEngine);
+                if (unwrapResult.getHandshakeStatus() == NEED_TASK) {
+                    handshakeStatus = runDelegatedTasks(sslEngine);
+                    int newPosition = positionBeforeUnwrapping + unwrapResult.bytesConsumed();
+                    if (newPosition == cipherIn.limit()) {
+                        LOGGER.debug("Clearing cipherIn because all bytes have been read and unwrapped");
+                        cipherIn.clear();
+                    } else {
+                        LOGGER.debug("Setting cipherIn position to {} (limit is {})", newPosition, cipherIn.limit());
+                        cipherIn.position(positionBeforeUnwrapping + unwrapResult.bytesConsumed());
+                    }
+                } else {
+                    handshakeStatus = unwrapResult.getHandshakeStatus();
+                }
                 break;
             case BUFFER_OVERFLOW:
                 throw new SSLException("Buffer overflow during handshake");
             case BUFFER_UNDERFLOW:
+                LOGGER.debug("Buffer underflow");
                 cipherIn.compact();
-                int read = NioHelper.read(channel, cipherIn);
+                LOGGER.debug("Reading from channel...");
+                read = NioHelper.read(channel, cipherIn);
                 if(read <= 0) {
                     retryRead(channel, cipherIn);
                 }
+                LOGGER.debug("Done reading from channel...");
                 cipherIn.flip();
                 break;
             case CLOSED:
@@ -100,9 +151,9 @@ public class SslEngineHelper {
                 throw new SSLException("Unexpected status from " + unwrapResult);
             }
         }
-        while (cipherIn.hasRemaining());
+        while (unwrapResult.getHandshakeStatus() != NEED_WRAP && unwrapResult.getHandshakeStatus() != FINISHED);
 
-        cipherIn.compact();
+        LOGGER.debug("cipherIn position after unwrap {}", cipherIn.position());
         return handshakeStatus;
     }
 
@@ -127,34 +178,30 @@ public class SslEngineHelper {
     private static SSLEngineResult.HandshakeStatus wrap(ByteBuffer plainOut, ByteBuffer cipherOut,
         WritableByteChannel channel, SSLEngine sslEngine) throws IOException {
         SSLEngineResult.HandshakeStatus handshakeStatus = sslEngine.getHandshakeStatus();
-        SSLEngineResult.Status status = sslEngine.wrap(plainOut, cipherOut).getStatus();
-        switch (status) {
+        LOGGER.debug("Handshake status is {} before wrapping", handshakeStatus);
+        SSLEngineResult result = sslEngine.wrap(plainOut, cipherOut);
+        LOGGER.debug("SSL engine result is {} after wrapping", result);
+        switch (result.getStatus()) {
         case OK:
-            handshakeStatus = runDelegatedTasks(sslEngine);
             cipherOut.flip();
             while (cipherOut.hasRemaining()) {
-                channel.write(cipherOut);
+                int written = channel.write(cipherOut);
+                LOGGER.debug("Wrote {} byte(s)", written);
             }
             cipherOut.clear();
+            if (result.getHandshakeStatus() == NEED_TASK) {
+                handshakeStatus = runDelegatedTasks(sslEngine);
+            } else {
+                handshakeStatus = result.getHandshakeStatus();
+            }
+
             break;
         case BUFFER_OVERFLOW:
             throw new SSLException("Buffer overflow during handshake");
         default:
-            throw new SSLException("Unexpected status " + status);
+            throw new SSLException("Unexpected status " + result.getStatus());
         }
         return handshakeStatus;
-    }
-
-    static int bufferCopy(ByteBuffer from, ByteBuffer to) {
-        int maxTransfer = Math.min(to.remaining(), from.remaining());
-
-        ByteBuffer temporaryBuffer = from.duplicate();
-        temporaryBuffer.limit(temporaryBuffer.position() + maxTransfer);
-        to.put(temporaryBuffer);
-
-        from.position(from.position() + maxTransfer);
-
-        return maxTransfer;
     }
 
     public static void write(WritableByteChannel socketChannel, SSLEngine engine, ByteBuffer plainOut, ByteBuffer cypherOut) throws IOException {

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -24,17 +24,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.TrustManagerFactory;
-import java.io.FileInputStream;
-import java.security.KeyStore;
 import java.util.function.Consumer;
 
-import static com.rabbitmq.client.test.TestUtils.getSSLContext;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -73,32 +67,7 @@ public class HostnameVerification {
 
     @BeforeClass
     public static void initCrypto() throws Exception {
-        String keystorePath = System.getProperty("test-keystore.ca");
-        assertNotNull(keystorePath);
-        String keystorePasswd = System.getProperty("test-keystore.password");
-        assertNotNull(keystorePasswd);
-        char[] keystorePassword = keystorePasswd.toCharArray();
-
-        KeyStore tks = KeyStore.getInstance("JKS");
-        tks.load(new FileInputStream(keystorePath), keystorePassword);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(tks);
-
-        String p12Path = System.getProperty("test-client-cert.path");
-        assertNotNull(p12Path);
-        String p12Passwd = System.getProperty("test-client-cert.password");
-        assertNotNull(p12Passwd);
-
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        char[] p12Password = p12Passwd.toCharArray();
-        ks.load(new FileInputStream(p12Path), p12Password);
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, p12Password);
-
-        sslContext = getSSLContext();
-        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        sslContext = TlsTestUtils.verifiedSslContext();
     }
 
     @Test(expected = SSLHandshakeException.class)
