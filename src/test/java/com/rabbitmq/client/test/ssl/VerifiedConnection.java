@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,25 +15,25 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.FileInputStream;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.impl.nio.NioParams;
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import javax.net.ssl.KeyManagerFactory;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.SSLSocket;
 
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.TestUtils;
+import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -45,44 +45,11 @@ public class VerifiedConnection extends UnverifiedConnection {
     public void openConnection()
             throws IOException, TimeoutException {
         try {
-            String keystorePath = System.getProperty("test-keystore.ca");
-            assertNotNull(keystorePath);
-            String keystorePasswd = System.getProperty("test-keystore.password");
-            assertNotNull(keystorePasswd);
-            char [] keystorePassword = keystorePasswd.toCharArray();
-
-            KeyStore tks = KeyStore.getInstance("JKS");
-            tks.load(new FileInputStream(keystorePath), keystorePassword);
-
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-            tmf.init(tks);
-
-            String p12Path = System.getProperty("test-client-cert.path");
-            assertNotNull(p12Path);
-            String p12Passwd = System.getProperty("test-client-cert.password");
-            assertNotNull(p12Passwd);
-            KeyStore ks = KeyStore.getInstance("PKCS12");
-            char [] p12Password = p12Passwd.toCharArray();
-            ks.load(new FileInputStream(p12Path), p12Password);
-
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, p12Password);
-
-            SSLContext c = getSSLContext();
-            c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
+            SSLContext c = TlsTestUtils.verifiedSslContext();
             connectionFactory = TestUtils.connectionFactory();
             connectionFactory.useSslProtocol(c);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IOException(ex.toString());
-        } catch (KeyManagementException ex) {
-            throw new IOException(ex.toString());
-        } catch (KeyStoreException ex) {
-            throw new IOException(ex.toString());
-        } catch (CertificateException ex) {
-            throw new IOException(ex.toString());
-        } catch (UnrecoverableKeyException ex) {
-            throw new IOException(ex.toString());
+        } catch (Exception ex) {
+            throw new IOException(ex);
         }
 
         int attempt = 0;
@@ -99,4 +66,36 @@ public class VerifiedConnection extends UnverifiedConnection {
             fail("Couldn't open TLS connection after 3 attempts");
         }
     }
+
+    @Test
+    public void connectionGetConsumeProtocols() throws Exception {
+        String [] protocols = new String[] {"TLSv1.2", "TLSv1.3"};
+        for (String protocol : protocols) {
+            SSLContext sslContext = SSLContext.getInstance(protocol);
+            ConnectionFactory cf = TestUtils.connectionFactory();
+            cf.useSslProtocol(TlsTestUtils.verifiedSslContext(() -> sslContext));
+            AtomicReference<Supplier<String[]>> protocolsSupplier = new AtomicReference<>();
+            if (TestUtils.USE_NIO) {
+                cf.useNio();
+                cf.setNioParams(new NioParams()
+                    .setSslEngineConfigurator(sslEngine -> {
+                        protocolsSupplier.set(() -> sslEngine.getEnabledProtocols());
+                    }));
+            } else {
+                cf.setSocketConfigurator(socket -> {
+                    SSLSocket s = (SSLSocket) socket;
+                    protocolsSupplier.set(() -> s.getEnabledProtocols());
+                });
+            }
+            try (Connection c = cf.newConnection()) {
+                CountDownLatch latch = new CountDownLatch(1);
+                TestUtils.basicGetBasicConsume(c, VerifiedConnection.class.getName(), latch, 100);
+                boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
+                assertTrue("Message has not been received", messagesReceived);
+                assertThat(protocolsSupplier.get()).isNotNull();
+                assertThat(protocolsSupplier.get().get()).contains(protocol);
+            }
+        }
+    }
+
 }
