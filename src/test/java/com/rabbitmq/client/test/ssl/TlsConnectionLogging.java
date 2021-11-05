@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2019-2021 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -66,7 +66,7 @@ public class TlsConnectionLogging {
 
     @Test
     public void certificateInfoAreProperlyExtracted() throws Exception {
-        SSLContext sslContext = TestUtils.getSSLContext();
+        SSLContext sslContext = TlsTestUtils.getSSLContext();
         sslContext.init(null, new TrustManager[]{new AlwaysTrustTrustManager()}, null);
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         connectionFactory.useSslProtocol(sslContext);
