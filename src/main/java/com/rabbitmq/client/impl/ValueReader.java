@@ -186,6 +186,9 @@ public class ValueReader
           case 'b':
               value = in.readByte();
               break;
+          case 'B':
+              value = in.readUnsignedByte();
+              break;
           case 'd':
               value = in.readDouble();
               break;
