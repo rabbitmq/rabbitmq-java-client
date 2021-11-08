@@ -21,6 +21,8 @@ import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Collectors;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -105,6 +107,16 @@ class TlsTestUtils {
       }
     }
     throw new NoSuchAlgorithmException();
+  }
+
+  static Collection<String> availableTlsProtocols() {
+    try {
+      String[] protocols = SSLContext.getDefault().getSupportedSSLParameters().getProtocols();
+      return Arrays.stream(protocols).filter(p -> p.toLowerCase().startsWith("tls")).collect(
+          Collectors.toList());
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @FunctionalInterface

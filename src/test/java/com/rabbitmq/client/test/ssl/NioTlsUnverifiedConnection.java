@@ -19,7 +19,10 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import org.junit.Test;
@@ -84,7 +87,10 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
     @Test
     public void connectionGetConsumeProtocols() throws Exception {
-        String [] protocols = new String[] {"TLSv1.2", "TLSv1.3"};
+        Collection<String> availableProtocols = TlsTestUtils.availableTlsProtocols();
+        Collection<String> protocols = Stream.of("TLSv1.2", "TLSv1.3")
+           .filter(p -> availableProtocols.contains(p))
+           .collect(Collectors.toList());
         for (String protocol : protocols) {
             SSLContext sslContext = SSLContext.getInstance(protocol);
             sslContext.init(null, new TrustManager[] {new TrustEverythingTrustManager()}, null);

@@ -22,12 +22,15 @@ import static org.junit.Assert.fail;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.impl.nio.NioParams;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 
@@ -69,7 +72,10 @@ public class VerifiedConnection extends UnverifiedConnection {
 
     @Test
     public void connectionGetConsumeProtocols() throws Exception {
-        String [] protocols = new String[] {"TLSv1.2", "TLSv1.3"};
+        Collection<String> availableProtocols = TlsTestUtils.availableTlsProtocols();
+        Collection<String> protocols = Stream.of("TLSv1.2", "TLSv1.3")
+            .filter(p -> availableProtocols.contains(p))
+            .collect(Collectors.toList());
         for (String protocol : protocols) {
             SSLContext sslContext = SSLContext.getInstance(protocol);
             ConnectionFactory cf = TestUtils.connectionFactory();
