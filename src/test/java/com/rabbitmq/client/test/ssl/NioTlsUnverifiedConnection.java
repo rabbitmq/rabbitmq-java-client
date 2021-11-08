@@ -98,8 +98,9 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
             cf.useSslProtocol(sslContext);
             cf.useNio();
             AtomicReference<SSLEngine> engine = new AtomicReference<>();
-            cf.setNioParams(new NioParams()
-                    .setSslEngineConfigurator(sslEngine -> engine.set(sslEngine)));
+            NioParams nioParams = new NioParams();
+            nioParams.setSslEngineConfigurator(sslEngine -> engine.set(sslEngine));
+            cf.setNioParams(nioParams);
             try (Connection c = cf.newConnection()) {
                 CountDownLatch latch = new CountDownLatch(1);
                 basicGetBasicConsume(c, QUEUE, latch, 100);

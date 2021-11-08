@@ -83,10 +83,11 @@ public class VerifiedConnection extends UnverifiedConnection {
             AtomicReference<Supplier<String[]>> protocolsSupplier = new AtomicReference<>();
             if (TestUtils.USE_NIO) {
                 cf.useNio();
-                cf.setNioParams(new NioParams()
-                    .setSslEngineConfigurator(sslEngine -> {
-                        protocolsSupplier.set(() -> sslEngine.getEnabledProtocols());
-                    }));
+                NioParams nioParams = new NioParams();
+                nioParams.setSslEngineConfigurator(
+                    sslEngine -> protocolsSupplier.set(() -> sslEngine.getEnabledProtocols())
+                );
+                cf.setNioParams(nioParams);
             } else {
                 cf.setSocketConfigurator(socket -> {
                     SSLSocket s = (SSLSocket) socket;
