@@ -58,7 +58,7 @@
     <metrics.version>4.2.4</metrics.version>
     <micrometer.version>1.8.0</micrometer.version>
     <jackson.version>2.13.0</jackson.version>
-    <logback.version>1.2.6</logback.version>
+    <logback.version>1.2.7</logback.version>
     <junit.version>4.13.2</junit.version>
     <mockito.version>4.0.0</mockito.version>
     <assertj.version>3.21.0</assertj.version>
