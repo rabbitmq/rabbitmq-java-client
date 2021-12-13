@@ -70,7 +70,7 @@
     <versions.maven.plugin.version>2.3</versions.maven.plugin.version>
     <maven.resources.plugin.version>3.1.0</maven.resources.plugin.version>
     <maven.source.plugin.version>3.0.1</maven.source.plugin.version>
-    <groovy.maven.plugin.version>2.0</groovy.maven.plugin.version>
+    <groovy.maven.plugin.version>2.1.1</groovy.maven.plugin.version>
     <groovy.all.version>2.4.8</groovy.all.version>
     <keytool.maven.plugin.version>1.5</keytool.maven.plugin.version>
     <build.helper.maven-plugin.version>1.12</build.helper.maven-plugin.version>
