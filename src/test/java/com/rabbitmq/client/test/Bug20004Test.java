@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,66 +15,55 @@
 
 package com.rabbitmq.client.test;
 
-import org.junit.Test;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-
-import static org.junit.Assert.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import org.junit.Test;
 
 /**
- * Test for bug 20004 - deadlock through internal synchronization on
- * the channel object. This is more properly a unit test, but since it
- * requires a connection to a broker, it's grouped with the functional
- * tests.
- * <p/>
- * Test calls channel.queueDeclare, while synchronising on channel, from
- * an independent thread.
+ * Test for bug 20004 - deadlock through internal synchronization on the channel object. This is
+ * more properly a unit test, but since it requires a connection to a broker, it's grouped with the
+ * functional tests.
+ *
+ * <p>Test calls channel.queueDeclare, while synchronising on channel, from an independent thread.
  */
 public class Bug20004Test extends BrokerTestCase {
-    private volatile Exception caughtException = null;
-    private volatile boolean completed = false;
-    private volatile boolean created = false;
+  private volatile Exception caughtException = null;
+  private volatile boolean created = false;
 
-    protected void releaseResources()
-        throws IOException
-    {
-        if (created) {
-            channel.queueDelete("Bug20004Test");
-        }
+  protected void releaseResources() throws IOException {
+    if (created) {
+      channel.queueDelete("Bug20004Test");
     }
+  }
 
-    @SuppressWarnings("deprecation")
-    @Test public void bug20004() throws IOException
-    {
-        final Bug20004Test testInstance = this;
+  @Test
+  public void bug20004() throws InterruptedException {
+    final Bug20004Test testInstance = this;
+    CountDownLatch completedLatch = new CountDownLatch(1);
 
-        Thread declaringThread = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    synchronized (channel) {
-                        channel.queueDeclare("Bug20004Test", false, false, false, null);
-                        testInstance.created = true;
-                    }
-                } catch (Exception e) {
-                    testInstance.caughtException = e;
+    Thread declaringThread =
+        new Thread(
+            () -> {
+              try {
+                synchronized (channel) {
+                  channel.queueDeclare("Bug20004Test", false, false, false, null);
+                  testInstance.created = true;
                 }
-                testInstance.completed = true;
-            }
-        });
-        declaringThread.start();
+              } catch (Exception e) {
+                testInstance.caughtException = e;
+              }
+              completedLatch.countDown();
+            });
+    declaringThread.start();
 
-        // poll (100ms) for `completed`, up to 5s
-        long endTime = System.currentTimeMillis() + 5000;
-        while (!completed && (System.currentTimeMillis() < endTime)) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ie) {}
-        }
+    boolean completed = completedLatch.await(5, TimeUnit.SECONDS);
 
-        declaringThread.stop(); // see bug 20012.
-
-        assertTrue("Deadlock detected?", completed);
-        assertNull("queueDeclare threw an exception", caughtException);
-        assertTrue("unknown sequence of events", created);
-    }
+    assertTrue("Deadlock detected?", completed);
+    assertNull("queueDeclare threw an exception", caughtException);
+    assertTrue("unknown sequence of events", created);
+  }
 }
