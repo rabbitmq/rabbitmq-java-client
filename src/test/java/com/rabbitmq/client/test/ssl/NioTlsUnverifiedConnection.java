@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,30 +15,38 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import com.rabbitmq.client.*;
-import com.rabbitmq.client.impl.nio.NioParams;
-import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.test.TestUtils;
-import java.util.Collection;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import org.junit.Test;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.SSLEngine;
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static com.rabbitmq.client.test.TestUtils.basicGetBasicConsume;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.TrustEverythingTrustManager;
+import com.rabbitmq.client.impl.nio.NioParams;
+import com.rabbitmq.client.test.BrokerTestCase;
+import com.rabbitmq.client.test.TestUtils;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
+import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import org.junit.Test;
+import org.netcrusher.core.reactor.NioReactor;
+import org.netcrusher.tcp.TcpCrusher;
+import org.netcrusher.tcp.TcpCrusherBuilder;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -148,6 +156,59 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
             sendAndVerifyMessage(76390);
         }
     }
+
+  @Test
+  public void connectionShouldEnforceConnectionTimeout() throws Exception {
+    int amqpPort = 5671; // assumes RabbitMQ server running on localhost;
+    int amqpProxyPort = TestUtils.randomNetworkPort();
+
+    int connectionTimeout = 3_000;
+    int handshakeTimeout = 1_000;
+
+    try (NioReactor reactor = new NioReactor();
+        TcpCrusher tcpProxy =
+            TcpCrusherBuilder.builder()
+                .withReactor(reactor)
+                .withBindAddress(new InetSocketAddress(amqpProxyPort))
+                .withConnectAddress("localhost", amqpPort)
+                .build()) {
+
+      tcpProxy.open();
+      tcpProxy.freeze();
+
+      ConnectionFactory factory = new ConnectionFactory();
+      factory.setHost("localhost");
+      factory.setPort(amqpProxyPort);
+
+      factory.useSslProtocol();
+      factory.useNio();
+
+      factory.setConnectionTimeout(connectionTimeout);
+      factory.setHandshakeTimeout(handshakeTimeout);
+
+      ExecutorService executorService = Executors.newSingleThreadExecutor();
+      try {
+        CountDownLatch latch = new CountDownLatch(1);
+        executorService.submit(
+            () -> {
+              try {
+                factory.newConnection();
+                latch.countDown();
+              } catch (SocketTimeoutException e) {
+                latch.countDown();
+              } catch (Exception e) {
+                // not supposed to happen
+              }
+            });
+
+        boolean connectionCreatedTimedOut = latch.await(10, TimeUnit.SECONDS);
+        assertThat(connectionCreatedTimedOut).isTrue();
+
+      } finally {
+        executorService.shutdownNow();
+      }
+    }
+  }
 
     private void sendAndVerifyMessage(int size) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
