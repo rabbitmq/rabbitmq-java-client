@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -21,7 +21,6 @@ import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +37,7 @@ public class SslEngineHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SslEngineHelper.class);
 
-    public static boolean doHandshake(SocketChannel socketChannel, SSLEngine engine) throws IOException {
+    public static boolean doHandshake(WritableByteChannel writeChannel, ReadableByteChannel readChannel, SSLEngine engine) throws IOException {
 
         ByteBuffer plainOut = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize());
         ByteBuffer plainIn = ByteBuffer.allocate(engine.getSession().getApplicationBufferSize());
@@ -58,11 +57,11 @@ public class SslEngineHelper {
                 break;
             case NEED_UNWRAP:
                 LOGGER.debug("Unwrapping...");
-                handshakeStatus = unwrap(cipherIn, plainIn, socketChannel, engine);
+                handshakeStatus = unwrap(cipherIn, plainIn, readChannel, engine);
                 break;
             case NEED_WRAP:
                 LOGGER.debug("Wrapping...");
-                handshakeStatus = wrap(plainOut, cipherOut, socketChannel, engine);
+                handshakeStatus = wrap(plainOut, cipherOut, writeChannel, engine);
                 break;
             case FINISHED:
                 break;
