@@ -58,12 +58,11 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
 
     private final List<NioLoopContext> nioLoopContexts;
 
-    public SocketChannelFrameHandlerFactory(int connectionTimeout, NioParams nioParams, boolean ssl, SslContextFactory sslContextFactory)
-        throws IOException {
+    public SocketChannelFrameHandlerFactory(int connectionTimeout, NioParams nioParams, boolean ssl, SslContextFactory sslContextFactory) {
         super(connectionTimeout, null, ssl);
         this.nioParams = new NioParams(nioParams);
         this.sslContextFactory = sslContextFactory;
-        this.nioLoopContexts = new ArrayList<NioLoopContext>(this.nioParams.getNbIoThreads());
+        this.nioLoopContexts = new ArrayList<>(this.nioParams.getNbIoThreads());
         for (int i = 0; i < this.nioParams.getNbIoThreads(); i++) {
             this.nioLoopContexts.add(new NioLoopContext(this, this.nioParams));
         }
@@ -96,7 +95,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                 nioParams.getSocketChannelConfigurator().configure(channel);
             }
 
-            channel.connect(address);
+            channel.socket().connect(address, this.connectionTimeout);
 
 
             if (ssl) {
