@@ -64,6 +64,7 @@
     <assertj.version>3.22.0</assertj.version>
     <jetty.version>9.4.44.v20210927</jetty.version>
     <bouncycastle.version>1.70</bouncycastle.version>
+    <netcrusher.version>0.10</netcrusher.version>
 
     <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
@@ -759,6 +760,13 @@
       <version>${bouncycastle.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.github.netcrusherorg</groupId>
+      <artifactId>netcrusher-core</artifactId>
+      <version>${netcrusher.version}</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
