@@ -1,5 +1,8 @@
 # RabbitMQ Java Client
 
+![Build Status](https://github.com/rabbitmq/rabbitmq-java-client/workflows/Build%20(Linux)/badge.svg?branch=main)
+
+
 This repository contains source code of the [RabbitMQ Java client](https://www.rabbitmq.com/api-guide.html).
 The client is maintained by the [RabbitMQ team at Pivotal](https://github.com/rabbitmq/).
 
