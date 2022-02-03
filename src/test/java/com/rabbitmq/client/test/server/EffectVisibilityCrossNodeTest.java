@@ -15,11 +15,15 @@
 
 package com.rabbitmq.client.test.server;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.*;
 
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 import com.rabbitmq.client.test.functional.ClusteredTestBase;
@@ -31,16 +35,20 @@ import com.rabbitmq.client.test.functional.ClusteredTestBase;
 public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
     private final String[] queues = new String[QUEUES];
 
+    ExecutorService executorService;
+
     @Override
     protected void createResources() throws IOException {
         for (int i = 0; i < queues.length ; i++) {
             queues[i] = alternateChannel.queueDeclare("", false, false, true, null).getQueue();
             alternateChannel.queueBind(queues[i], "amq.fanout", "");
         }
+        executorService = Executors.newSingleThreadExecutor();
     }
 
     @Override
     protected void releaseResources() throws IOException {
+        executorService.shutdownNow();
         for (int i = 0; i < queues.length ; i++) {
             alternateChannel.queueDelete(queues[i]);
         }
@@ -53,14 +61,41 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
     private static final byte[] msg = "".getBytes();
 
     @Test public void effectVisibility() throws Exception {
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        try {
+        AtomicReference<CountDownLatch> confirmLatch = new AtomicReference<>();
+        Set<Long> publishIds = ConcurrentHashMap.newKeySet();
+        channel.addConfirmListener(
+            (deliveryTag, multiple) -> {
+                if (multiple) {
+                    Iterator<Long> iterator = publishIds.iterator();
+                    while (iterator.hasNext()) {
+                        long publishId = iterator.next();
+                        if (publishId <= deliveryTag) {
+                            iterator.remove();
+                        }
+                    }
+                } else {
+                    publishIds.remove(deliveryTag);
+                }
+                if (publishIds.isEmpty()) {
+                    confirmLatch.get().countDown();
+                }
+            },
+            (deliveryTag, multiple) -> {});
+            // the test bulk is asynchronous because this test has a history of hanging
             Future<Void> task = executorService.submit(() -> {
+                // we use publish confirm to make sure messages made it to the queues
+                // before checking their content
+                channel.confirmSelect();
                 for (int i = 0; i < BATCHES; i++) {
                     Thread.sleep(10); // to avoid flow control for the connection
+                    confirmLatch.set(new CountDownLatch(1));
                     for (int j = 0; j < MESSAGES_PER_BATCH; j++) {
+                        long publishId = channel.getNextPublishSeqNo();
                         channel.basicPublish("amq.fanout", "", null, msg);
+                        publishIds.add(publishId);
                     }
+                    assertThat(confirmLatch.get().await(10, TimeUnit.SECONDS)).isTrue();
+                    publishIds.clear();
                     for (int j = 0; j < queues.length; j++) {
                         assertEquals(MESSAGES_PER_BATCH, channel.queuePurge(queues[j]).getMessageCount());
                     }
@@ -68,9 +103,5 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
                 return null;
             });
             task.get(1, TimeUnit.MINUTES);
-        } finally {
-            executorService.shutdownNow();
-            executorService.awaitTermination(1, TimeUnit.SECONDS);
-        }
     }
 }
