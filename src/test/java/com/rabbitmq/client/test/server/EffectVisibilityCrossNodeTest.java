@@ -92,8 +92,8 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
                     confirmLatch.set(new CountDownLatch(1));
                     for (int j = 0; j < MESSAGES_PER_BATCH; j++) {
                         long publishId = channel.getNextPublishSeqNo();
-                        channel.basicPublish("amq.fanout", "", null, msg);
                         publishIds.add(publishId);
+                        channel.basicPublish("amq.fanout", "", null, msg);
                     }
                     boolean confirmed = confirmLatch.get().await(10, TimeUnit.SECONDS);
                     if (!confirmed) {
