@@ -15,16 +15,11 @@
 
 package com.rabbitmq.client.test.server;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.*;
 
-import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Assert;
 import org.junit.Test;
 
 import com.rabbitmq.client.test.functional.ClusteredTestBase;
@@ -62,49 +57,33 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
     private static final byte[] msg = "".getBytes();
 
     @Test public void effectVisibility() throws Exception {
-        AtomicReference<CountDownLatch> confirmLatch = new AtomicReference<>();
-        Set<Long> publishIds = ConcurrentHashMap.newKeySet();
-        channel.addConfirmListener(
-            (deliveryTag, multiple) -> {
-                if (multiple) {
-                    Iterator<Long> iterator = publishIds.iterator();
-                    while (iterator.hasNext()) {
-                        long publishId = iterator.next();
-                        if (publishId <= deliveryTag) {
-                            iterator.remove();
-                        }
-                    }
-                } else {
-                    publishIds.remove(deliveryTag);
+    // the test bulk is asynchronous because this test has a history of hanging
+    Future<Void> task =
+        executorService.submit(
+            () -> {
+              for (int i = 0; i < BATCHES; i++) {
+                Thread.sleep(10); // to avoid flow control for the connection
+                for (int j = 0; j < MESSAGES_PER_BATCH; j++) {
+                  channel.basicPublish("amq.fanout", "", null, msg);
                 }
-                if (publishIds.isEmpty()) {
-                    confirmLatch.get().countDown();
+                for (int j = 0; j < queues.length; j++) {
+                  String queue = queues[j];
+                  long timeout = 10 * 1000;
+                  long waited = 0;
+                  int purged = 0;
+                  while (waited < timeout) {
+                    purged += channel.queuePurge(queue).getMessageCount();
+                    if (purged == MESSAGES_PER_BATCH) {
+                      break;
+                    }
+                    Thread.sleep(10);
+                    waited += 10;
+                  }
+                  assertEquals("Queue " + queue + " should have been purged after 10 seconds",
+                      MESSAGES_PER_BATCH, purged);
                 }
-            },
-            (deliveryTag, multiple) -> {});
-            // the test bulk is asynchronous because this test has a history of hanging
-            Future<Void> task = executorService.submit(() -> {
-                // we use publish confirm to make sure messages made it to the queues
-                // before checking their content
-                channel.confirmSelect();
-                for (int i = 0; i < BATCHES; i++) {
-                    Thread.sleep(10); // to avoid flow control for the connection
-                    confirmLatch.set(new CountDownLatch(1));
-                    for (int j = 0; j < MESSAGES_PER_BATCH; j++) {
-                        long publishId = channel.getNextPublishSeqNo();
-                        publishIds.add(publishId);
-                        channel.basicPublish("amq.fanout", "", null, msg);
-                    }
-                    boolean confirmed = confirmLatch.get().await(10, TimeUnit.SECONDS);
-                    if (!confirmed) {
-                        Assert.fail("Messages not confirmed in 10 seconds: " + publishIds);
-                    }
-                    publishIds.clear();
-                    for (int j = 0; j < queues.length; j++) {
-                        assertEquals(MESSAGES_PER_BATCH, channel.queuePurge(queues[j]).getMessageCount());
-                    }
-                }
-                return null;
+              }
+              return null;
             });
             task.get(1, TimeUnit.MINUTES);
     }
