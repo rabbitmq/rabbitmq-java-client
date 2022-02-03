@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.*;
 
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.rabbitmq.client.test.functional.ClusteredTestBase;
@@ -94,7 +95,10 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
                         channel.basicPublish("amq.fanout", "", null, msg);
                         publishIds.add(publishId);
                     }
-                    assertThat(confirmLatch.get().await(10, TimeUnit.SECONDS)).isTrue();
+                    boolean confirmed = confirmLatch.get().await(10, TimeUnit.SECONDS);
+                    if (!confirmed) {
+                        Assert.fail("Messages not confirmed in 10 seconds: " + publishIds);
+                    }
                     publishIds.clear();
                     for (int j = 0; j < queues.length; j++) {
                         assertEquals(MESSAGES_PER_BATCH, channel.queuePurge(queues[j]).getMessageCount());
