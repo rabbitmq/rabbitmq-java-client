@@ -25,10 +25,14 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.fail;
 
 public class TopicPermissions extends BrokerTestCase {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TopicPermissions.class);
 
     String protectedTopic = "protected.topic";
     String notProtectedTopic = "not.protected.topic";
@@ -36,25 +40,30 @@ public class TopicPermissions extends BrokerTestCase {
 
     @Override
     protected boolean shouldRun() throws IOException {
+        LOGGER.debug("Checking if test should run");
         return Host.isRabbitMqCtlCommandAvailable("set_topic_permissions");
     }
 
     @Override
     protected void createResources() throws IOException, TimeoutException {
+        LOGGER.debug("Creating AMQP resources");
         channel.exchangeDeclare(protectedTopic, BuiltinExchangeType.TOPIC);
         channel.exchangeDeclare(notProtectedTopic, BuiltinExchangeType.TOPIC);
         channel.exchangeDeclare(noneTopicExchange, BuiltinExchangeType.DIRECT);
 
+        LOGGER.debug("Setting permissions");
         Host.rabbitmqctl("set_topic_permissions -p / guest " + protectedTopic + " \"^{username}\" \"^{username}\"");
         Host.rabbitmqctl("set_topic_permissions -p / guest " + noneTopicExchange + " \"^{username}\" \"^{username}\"");
     }
 
     @Override
     protected void releaseResources() throws IOException {
+        LOGGER.debug("Deleting AMQP resources");
         channel.exchangeDelete(protectedTopic);
         channel.exchangeDelete(notProtectedTopic);
         channel.exchangeDelete(noneTopicExchange);
 
+        LOGGER.debug("Clearing permissions");
         Host.rabbitmqctl("clear_topic_permissions -p / guest");
     }
 
@@ -107,14 +116,18 @@ public class TopicPermissions extends BrokerTestCase {
     }
 
     void assertAccessOk(String description, Callable<Void> action) {
+        LOGGER.debug("Running '" + description + "'");
         try {
             action.call();
         } catch(Exception e) {
             fail(description + " (" + e.getMessage()+")");
+        } finally {
+            LOGGER.debug("'" + description + "' done");
         }
     }
 
     void assertAccessRefused(String description, Callable<Void> action) throws IOException {
+        LOGGER.debug("Running '" + description + "'");
         try {
             action.call();
             fail(description);
@@ -126,6 +139,8 @@ public class TopicPermissions extends BrokerTestCase {
             openChannel();
         } catch(Exception e) {
             fail("Unexpected exception: " + e.getMessage());
+        } finally {
+            LOGGER.debug("'" + description + "' done");
         }
     }
 }
