@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -28,11 +28,16 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.client.test.TestUtils;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Host {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Host.class);
 
     private static final String DOCKER_PREFIX = "DOCKER:";
     private static final Pattern CONNECTION_NAME_PATTERN = Pattern.compile("\"connection_name\",\"(?<name>[a-zA-Z0-9\\-]+)?\"");
@@ -78,7 +83,14 @@ public class Host {
     public static Process executeCommandIgnoringErrors(String command) throws IOException
     {
         Process pr = executeCommandProcess(command);
-        waitForExitValue(pr);
+        boolean exited = false;
+        try {
+            exited = pr.waitFor(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+        }
+        if (!exited) {
+            LOGGER.warn("Command '{}' did not finish in 30 seconds", command);
+        }
         return pr;
     }
 
@@ -101,9 +113,9 @@ public class Host {
     }
 
     public static boolean isRabbitMqCtlCommandAvailable(String command) throws IOException {
-        Process process = rabbitmqctlIgnoreErrors("");
-        String stderr = capture(process.getErrorStream());
-        return stderr.contains(command);
+        Process process = rabbitmqctlIgnoreErrors(command + " --help");
+        int exitValue = process.exitValue();
+        return exitValue == 0;
     }
 
     public static Process rabbitmqctl(String command) throws IOException {
