@@ -54,25 +54,68 @@ public class Host {
         return buff.toString();
     }
 
-    public static Process executeCommand(String command) throws IOException
+    public static ProcessState executeCommand(String command) throws IOException
     {
         Process pr = executeCommandProcess(command);
+        InputStreamPumpState inputState = new InputStreamPumpState(pr.getInputStream());
+        InputStreamPumpState errorState = new InputStreamPumpState(pr.getErrorStream());
 
-        int ev = waitForExitValue(pr);
+        int ev = waitForExitValue(pr, inputState, errorState);
+        inputState.pump();
+        errorState.pump();
         if (ev != 0) {
-            String stdout = capture(pr.getInputStream());
-            String stderr = capture(pr.getErrorStream());
             throw new IOException("unexpected command exit value: " + ev +
                                   "\ncommand: " + command + "\n" +
-                                  "\nstdout:\n" + stdout +
-                                  "\nstderr:\n" + stderr + "\n");
+                                  "\nstdout:\n" + inputState.buffer.toString() +
+                                  "\nstderr:\n" + errorState.buffer.toString() + "\n");
         }
-        return pr;
+        return new ProcessState(pr, inputState, errorState);
     }
 
-    private static int waitForExitValue(Process pr) {
+    static class ProcessState {
+
+        private final Process process;
+        private final InputStreamPumpState inputState;
+        private final InputStreamPumpState errorState;
+
+        ProcessState(Process process, InputStreamPumpState inputState,
+            InputStreamPumpState errorState) {
+            this.process = process;
+            this.inputState = inputState;
+            this.errorState = errorState;
+        }
+
+        private String output() {
+            return inputState.buffer.toString();
+        }
+
+    }
+
+    private static class InputStreamPumpState {
+
+        private final BufferedReader reader;
+        private final StringBuilder buffer;
+
+        private InputStreamPumpState(InputStream in) {
+            this.reader = new BufferedReader(new InputStreamReader(in));
+            this.buffer = new StringBuilder();
+        }
+
+        void pump() throws IOException {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                buffer.append(line).append("\n");
+            }
+        }
+
+    }
+
+    private static int waitForExitValue(Process pr, InputStreamPumpState inputState,
+            InputStreamPumpState errorState) throws IOException {
         while(true) {
             try {
+                inputState.pump();
+                errorState.pump();
                 pr.waitFor();
                 break;
             } catch (InterruptedException ignored) {}
@@ -83,6 +126,10 @@ public class Host {
     public static Process executeCommandIgnoringErrors(String command) throws IOException
     {
         Process pr = executeCommandProcess(command);
+        InputStreamPumpState inputState = new InputStreamPumpState(pr.getInputStream());
+        InputStreamPumpState errorState = new InputStreamPumpState(pr.getErrorStream());
+        inputState.pump();
+        errorState.pump();
         boolean exited = false;
         try {
             exited = pr.waitFor(30, TimeUnit.SECONDS);
@@ -118,7 +165,7 @@ public class Host {
         return exitValue == 0;
     }
 
-    public static Process rabbitmqctl(String command) throws IOException {
+    public static ProcessState rabbitmqctl(String command) throws IOException {
         return executeCommand(rabbitmqctlCommand() +
                               rabbitmqctlNodenameArgument() +
                               " " + command);
@@ -142,7 +189,7 @@ public class Host {
         rabbitmqctl("eval 'rabbit_alarm:clear_alarm({resource_limit, " + source + ", node()}).'");
     }
 
-    public static Process invokeMakeTarget(String command) throws IOException {
+    public static ProcessState invokeMakeTarget(String command) throws IOException {
         File rabbitmqctl = new File(rabbitmqctlCommand());
         return executeCommand(makeCommand() +
                               " -C \'" + rabbitmqDir() + "\'" +
@@ -307,7 +354,7 @@ public class Host {
     }
 
     public static List<ConnectionInfo> listConnections() throws IOException {
-        String output = capture(rabbitmqctl("list_connections -q pid peer_port client_properties").getInputStream());
+        String output = rabbitmqctl("list_connections -q pid peer_port client_properties").output();
         // output (header line presence depends on broker version):
         // pid	peer_port
         // <rabbit@mercurio.1.11491.0>	58713
