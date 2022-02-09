@@ -210,7 +210,7 @@ public class ConnectionFactoryConfigurator {
         }
         String topologyRecovery = lookUp(TOPOLOGY_RECOVERY_ENABLED, properties, prefix);
         if (topologyRecovery != null) {
-            cf.setTopologyRecoveryEnabled(Boolean.getBoolean(topologyRecovery));
+            cf.setTopologyRecoveryEnabled(Boolean.valueOf(topologyRecovery));
         }
         String networkRecoveryInterval = lookUp(CONNECTION_RECOVERY_INTERVAL, properties, prefix);
         if (networkRecoveryInterval != null) {
