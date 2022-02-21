@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -19,11 +19,18 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.tools.Host;
+import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
+import org.junit.runner.Runner;
+import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.Suite;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.RunnerBuilder;
 import org.junit.runners.model.Statement;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -39,6 +46,8 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.assertTrue;
 
 public class TestUtils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
 
     public static final boolean USE_NIO = System.getProperty("use.nio") != null;
 
@@ -363,5 +372,40 @@ public class TestUtils {
         channel.basicCancel(tag);
 
         return messageReceived;
+    }
+
+    public static class DefaultTestSuite extends Suite {
+
+
+        public DefaultTestSuite(Class<?> klass, RunnerBuilder builder)
+            throws InitializationError {
+            super(klass, builder);
+        }
+
+        public DefaultTestSuite(RunnerBuilder builder, Class<?>[] classes)
+            throws InitializationError {
+            super(builder, classes);
+        }
+
+        protected DefaultTestSuite(Class<?> klass, Class<?>[] suiteClasses)
+            throws InitializationError {
+            super(klass, suiteClasses);
+        }
+
+        protected DefaultTestSuite(RunnerBuilder builder, Class<?> klass, Class<?>[] suiteClasses)
+            throws InitializationError {
+            super(builder, klass, suiteClasses);
+        }
+
+        @Override
+        protected void runChild(Runner runner, RunNotifier notifier) {
+            LOGGER.info("Running test {}", runner.getDescription().getDisplayName());
+            super.runChild(runner, notifier);
+        }
+
+        protected DefaultTestSuite(Class<?> klass, List<Runner> runners)
+            throws InitializationError {
+            super(klass, runners);
+        }
     }
 }
