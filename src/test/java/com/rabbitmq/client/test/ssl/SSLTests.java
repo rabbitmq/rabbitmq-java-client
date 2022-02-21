@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -20,12 +20,15 @@ import com.rabbitmq.client.test.AbstractRMQTestSuite;
 import com.rabbitmq.client.test.SslContextFactoryTest;
 import org.junit.runner.RunWith;
 import org.junit.runner.Runner;
+import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.Suite;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.RunnerBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RunWith(SSLTests.SslSuite.class)
 @Suite.SuiteClasses({
@@ -39,6 +42,8 @@ import java.util.List;
 	SslContextFactoryTest.class
 })
 public class SSLTests {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(SSLTests.class);
 
 	// initialize system properties
 	static{
@@ -70,10 +75,16 @@ public class SSLTests {
 		@Override
 		protected List<Runner> getChildren() {
 			if(!AbstractRMQTestSuite.requiredProperties() && !AbstractRMQTestSuite.isSSLAvailable()) {
-				return new ArrayList<Runner>();
+				return new ArrayList<>();
 			} else {
 				return super.getChildren();
 			}
+		}
+
+		@Override
+		protected void runChild(Runner runner, RunNotifier notifier) {
+			LOGGER.info("Running test {}", runner.getDescription().getDisplayName());
+			super.runChild(runner, notifier);
 		}
 	}
 

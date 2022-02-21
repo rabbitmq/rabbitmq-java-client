@@ -5,6 +5,9 @@
         </encoder>
     </appender>
 
+    <logger name="com.rabbitmq.client.test.ssl.SSLTests" level="info" />
+    <logger name="com.rabbitmq.client.test.RequiredPropertiesSuite" level="info" />
+    <logger name="com.rabbitmq.client.test.TestUtils" level="info" />
     <logger name="com.rabbitmq.client.test.BrokerTestCase" level="info" />
     <logger name="com.rabbitmq.client.test.server.TopicPermissions" level="debug" />
 
