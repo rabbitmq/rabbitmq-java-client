@@ -47,6 +47,12 @@ public class HeadersExchangeValidation extends BrokerTestCase {
 
         arguments.put("x-match", "any");
         succeedBind(queue, arguments);
+
+        arguments.put("x-match", "all-with-x");
+        succeedBind(queue, arguments);
+
+        arguments.put("x-match", "any-with-x");
+        succeedBind(queue, arguments);
     }
 
     private void failBind(String queue, HashMap<String, Object> arguments) {

@@ -170,6 +170,7 @@ public class Routing extends BrokerTestCase
         spec.put("h1", "12345");
         spec.put("h2", "bar");
         spec.put("h3", null);
+        spec.put("x-key-1", "bindings starting with x- get filtered out");
         spec.put("x-match", "all");
         channel.queueBind(Q1, "amq.match", "", spec);
         spec.put("x-match", "any");
@@ -226,6 +227,10 @@ public class Routing extends BrokerTestCase
         map.put("h2", "quux");
         channel.basicPublish("amq.match", "", props.build(), "8".getBytes());
 
+        map.clear();
+        map.put("x-key-1", "bindings starting with x- get filtered out");
+        channel.basicPublish("amq.match", "", props.build(), "9".getBytes());
+
         checkGet(Q1, true); // 4
         checkGet(Q1, false);
 
@@ -237,6 +242,46 @@ public class Routing extends BrokerTestCase
         checkGet(Q2, true); // 6
         checkGet(Q2, true); // 7
         checkGet(Q2, true); // 8
+        checkGet(Q2, false);
+    }
+
+    @Test public void headersWithXRouting() throws Exception {
+        Map<String, Object> spec = new HashMap<String, Object>();
+        spec.put("x-key-1", "value-1");
+        spec.put("x-key-2", "value-2");
+        spec.put("x-match", "all-with-x");
+        channel.queueBind(Q1, "amq.match", "", spec);
+        spec.put("x-match", "any-with-x");
+        channel.queueBind(Q2, "amq.match", "", spec);
+
+        AMQP.BasicProperties.Builder props = new AMQP.BasicProperties.Builder();
+        channel.basicPublish("amq.match", "", props.build(), "0".getBytes());
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        props.headers(map);
+
+        map.clear();
+        map.put("x-key-1", "value-1");
+        channel.basicPublish("amq.match", "", props.build(), "1".getBytes());
+
+        map.clear();
+        map.put("x-key-1", "value-1");
+        map.put("x-key-2", "value-2");
+        channel.basicPublish("amq.match", "", props.build(), "2".getBytes());
+
+        map.clear();
+        map.put("x-key-1", "value-1");
+        map.put("x-key-2", "value-2");
+        map.put("x-key-3", "value-3");
+        channel.basicPublish("amq.match", "", props.build(), "3".getBytes());
+
+        checkGet(Q1, true); // 2
+        checkGet(Q1, true); // 3
+        checkGet(Q1, false);
+
+        checkGet(Q2, true); // 1
+        checkGet(Q2, true); // 2
+        checkGet(Q2, true); // 3
         checkGet(Q2, false);
     }
 
