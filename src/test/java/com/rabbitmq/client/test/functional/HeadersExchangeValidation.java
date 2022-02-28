@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -17,6 +17,7 @@ package com.rabbitmq.client.test.functional;
 
 import static org.junit.Assert.fail;
 
+import com.rabbitmq.client.test.TestUtils;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -48,11 +49,13 @@ public class HeadersExchangeValidation extends BrokerTestCase {
         arguments.put("x-match", "any");
         succeedBind(queue, arguments);
 
-        arguments.put("x-match", "all-with-x");
-        succeedBind(queue, arguments);
+        if (TestUtils.isVersion310orLater(connection)) {
+            arguments.put("x-match", "all-with-x");
+            succeedBind(queue, arguments);
 
-        arguments.put("x-match", "any-with-x");
-        succeedBind(queue, arguments);
+            arguments.put("x-match", "any-with-x");
+            succeedBind(queue, arguments);
+        }
     }
 
     private void failBind(String queue, HashMap<String, Object> arguments) {
