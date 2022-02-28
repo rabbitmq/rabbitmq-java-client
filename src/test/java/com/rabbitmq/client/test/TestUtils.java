@@ -19,6 +19,11 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.tools.Host;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import org.assertj.core.api.Assertions;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
@@ -119,6 +124,10 @@ public class TestUtils {
 
     public static boolean isVersion38orLater(Connection connection) {
         return atLeastVersion("3.8.0", connection);
+    }
+
+    public static boolean isVersion310orLater(Connection connection) {
+        return atLeastVersion("3.10.0", connection);
     }
 
     private static boolean atLeastVersion(String expectedVersion, Connection connection) {
@@ -363,5 +372,53 @@ public class TestUtils {
         channel.basicCancel(tag);
 
         return messageReceived;
+    }
+
+    @Target({ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface TestExecutionCondition {
+
+        Class<? extends ExecutionCondition>[] value();
+
+    }
+
+    interface ExecutionCondition {
+
+        void check(Description description) throws Exception;
+
+    }
+
+    public static class BrokerAtLeast310Condition implements ExecutionCondition {
+
+        private static final String VERSION = "3.10.0";
+
+        @Override
+        public void check(Description description) throws Exception {
+            try (Connection c = TestUtils.connectionFactory().newConnection()) {
+                if (!TestUtils.atLeastVersion(VERSION, c)) {
+                    throw new AssumptionViolatedException("Broker version < " + VERSION + ", skipping.");
+                }
+            }
+        }
+    }
+
+    public static class ExecutionConditionRule implements TestRule {
+
+        @Override
+        public Statement apply(Statement base, Description description) {
+            return new Statement() {
+                @Override
+                public void evaluate() throws Throwable {
+                    Method testMethod = description.getTestClass().getDeclaredMethod(description.getMethodName());
+                    TestExecutionCondition conditionAnnotation = testMethod.getAnnotation(
+                        TestExecutionCondition.class);
+                    if (conditionAnnotation != null) {
+                       conditionAnnotation.value()[0].getConstructor().newInstance()
+                           .check(description);
+                    }
+                    base.evaluate();
+                }
+            };
+        }
     }
 }
