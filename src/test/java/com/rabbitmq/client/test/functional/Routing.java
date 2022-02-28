@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -21,6 +21,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import com.rabbitmq.client.test.TestUtils.BrokerAtLeast310Condition;
+import com.rabbitmq.client.test.TestUtils.ExecutionConditionRule;
+import com.rabbitmq.client.test.TestUtils.TestExecutionCondition;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -36,9 +40,12 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.utility.BlockingCell;
+import org.junit.rules.TestRule;
 
 public class Routing extends BrokerTestCase
 {
+
+    @Rule public TestRule executionConditionRule = new ExecutionConditionRule();
 
     protected final String E = "MRDQ";
     protected final String Q1 = "foo";
@@ -245,7 +252,9 @@ public class Routing extends BrokerTestCase
         checkGet(Q2, false);
     }
 
-    @Test public void headersWithXRouting() throws Exception {
+    @Test
+    @TestExecutionCondition(BrokerAtLeast310Condition.class)
+    public void headersWithXRouting() throws Exception {
         Map<String, Object> spec = new HashMap<String, Object>();
         spec.put("x-key-1", "value-1");
         spec.put("x-key-2", "value-2");
