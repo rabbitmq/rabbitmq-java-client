@@ -750,8 +750,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     /** private API */
     public void handleHeartbeatFailure() {
-        Exception ex = new MissedHeartbeatException("Heartbeat missing with heartbeat = " +
-            _heartbeat + " seconds");
+        Exception ex = new MissedHeartbeatException("Detected missed server heartbeats, heartbeat interval: " +
+            _heartbeat + " seconds, RabbitMQ node hostname: " + this.getHostAddress());
         try {
             _exceptionHandler.handleUnexpectedConnectionDriverException(this, ex);
             shutdown(null, false, ex, true);
