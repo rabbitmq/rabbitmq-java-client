@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -22,10 +22,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 import com.rabbitmq.client.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final public class ConsumerWorkService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerWorkService.class);
     private static final int MAX_RUNNABLE_BLOCK_SIZE = 16;
-    private static final int DEFAULT_NUM_THREADS = Runtime.getRuntime().availableProcessors() * 2;
+    private static final int DEFAULT_NUM_THREADS = Math.max(1, Utils.availableProcessors());
     private final ExecutorService executor;
     private final boolean privateExecutor;
     private final WorkPool<Channel, Runnable> workPool;
@@ -33,8 +36,12 @@ final public class ConsumerWorkService {
 
     public ConsumerWorkService(ExecutorService executor, ThreadFactory threadFactory, int queueingTimeout, int shutdownTimeout) {
         this.privateExecutor = (executor == null);
-        this.executor = (executor == null) ? Executors.newFixedThreadPool(DEFAULT_NUM_THREADS, threadFactory)
-                                           : executor;
+        if (executor == null) {
+            LOGGER.debug("Creating executor service with {} thread(s) for consumer work service", DEFAULT_NUM_THREADS);
+            this.executor = Executors.newFixedThreadPool(DEFAULT_NUM_THREADS, threadFactory);
+        } else {
+            this.executor = executor;
+        }
         this.workPool = new WorkPool<>(queueingTimeout);
         this.shutdownTimeout = shutdownTimeout;
     }
