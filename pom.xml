@@ -58,11 +58,11 @@
     <metrics.version>4.2.9</metrics.version>
     <micrometer.version>1.8.4</micrometer.version>
     <jackson.version>2.13.2.2</jackson.version>
-    <logback.version>1.2.10</logback.version>
+    <logback.version>1.2.11</logback.version>
     <junit.version>4.13.2</junit.version>
-    <mockito.version>4.3.1</mockito.version>
+    <mockito.version>4.4.0</mockito.version>
     <assertj.version>3.22.0</assertj.version>
-    <jetty.version>9.4.45.v20220203</jetty.version>
+    <jetty.version>9.4.46.v20220331</jetty.version>
     <bouncycastle.version>1.70</bouncycastle.version>
     <netcrusher.version>0.10</netcrusher.version>
 
