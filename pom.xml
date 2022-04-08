@@ -55,9 +55,9 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <slf4j.version>1.7.36</slf4j.version>
-    <metrics.version>4.2.8</metrics.version>
-    <micrometer.version>1.8.2</micrometer.version>
-    <jackson.version>2.13.1</jackson.version>
+    <metrics.version>4.2.9</metrics.version>
+    <micrometer.version>1.8.4</micrometer.version>
+    <jackson.version>2.13.2.2</jackson.version>
     <logback.version>1.2.10</logback.version>
     <junit.version>4.13.2</junit.version>
     <mockito.version>4.3.1</mockito.version>
