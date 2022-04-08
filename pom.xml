@@ -66,24 +66,24 @@
     <bouncycastle.version>1.70</bouncycastle.version>
     <netcrusher.version>0.10</netcrusher.version>
 
-    <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
+    <maven.javadoc.plugin.version>3.3.2</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
-    <versions.maven.plugin.version>2.3</versions.maven.plugin.version>
-    <maven.resources.plugin.version>3.1.0</maven.resources.plugin.version>
-    <maven.source.plugin.version>3.0.1</maven.source.plugin.version>
+    <versions.maven.plugin.version>2.10.0</versions.maven.plugin.version>
+    <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
+    <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
     <groovy.maven.plugin.version>2.1.1</groovy.maven.plugin.version>
-    <groovy.all.version>2.4.8</groovy.all.version>
+    <groovy.all.version>2.4.21</groovy.all.version>
     <keytool.maven.plugin.version>1.5</keytool.maven.plugin.version>
-    <build.helper.maven-plugin.version>1.12</build.helper.maven-plugin.version>
-    <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+    <build.helper.maven-plugin.version>3.3.0</build.helper.maven-plugin.version>
+    <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
     <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
-    <maven.gpg.plugin.version>1.6</maven.gpg.plugin.version>
-    <maven.jar.plugin.version>3.0.2</maven.jar.plugin.version>
-    <maven.bundle.plugin.version>3.2.0</maven.bundle.plugin.version>
+    <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
+    <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
+    <maven.bundle.plugin.version>5.1.4</maven.bundle.plugin.version>
     <maven.packagecloud.wagon.version>0.0.6</maven.packagecloud.wagon.version>
-    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
-    <checksum.maven.plugin.version>1.8</checksum.maven.plugin.version>
+    <nexus-staging-maven-plugin.version>1.6.12</nexus-staging-maven-plugin.version>
+    <checksum.maven.plugin.version>1.11</checksum.maven.plugin.version>
     <jshell-maven-plugin.version>1.3</jshell-maven-plugin.version>
 
     <!--
@@ -776,7 +776,7 @@
         <plugin>
           <groupId>org.sonarsource.scanner.maven</groupId>
           <artifactId>sonar-maven-plugin</artifactId>
-          <version>3.5.0.1254</version>
+          <version>3.9.2184</version>
         </plugin>
       </plugins>
     </pluginManagement>
