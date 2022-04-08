@@ -1,0 +1,13 @@
+# Please see the documentation for all configuration options:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 20
+    target-branch: "5.x.x-stable"
+    ignore:
+      - dependency-name: "org.eclipse.jetty:jetty-servlet"
+        versions: ["[10.0,)"]
