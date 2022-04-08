@@ -82,7 +82,7 @@
     <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
     <maven.bundle.plugin.version>5.1.4</maven.bundle.plugin.version>
     <maven.packagecloud.wagon.version>0.0.6</maven.packagecloud.wagon.version>
-    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
+    <nexus-staging-maven-plugin.version>1.6.12</nexus-staging-maven-plugin.version>
     <checksum.maven.plugin.version>1.11</checksum.maven.plugin.version>
     <jshell-maven-plugin.version>1.3</jshell-maven-plugin.version>
 
