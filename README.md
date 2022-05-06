@@ -92,7 +92,7 @@ make deps
 ./mvnw clean package -Dmaven.test.skip -P '!setup-test-cluster'
 ```
 
-### Launching Tests with the Broker Running In a Docker Container
+### Launching Tests with the Broker Running in a Docker Container
 
 Run the broker:
 
@@ -154,7 +154,7 @@ for the support timeline of this library.
 
 This package, the RabbitMQ Java client library, is [triple-licensed](https://www.rabbitmq.com/api-guide.html#license) under
 the Mozilla Public License 2.0 ("MPL"), the GNU General Public License
-version 2 ("GPL") and the Apache License version 2 ("ASL").
+version 2 ("GPL") and the Apache License version 2 ("AL").
 
 This means that the user can consider the library to be licensed under **any of the licenses from the list** above.
 For example, you may choose the Apache Public License 2.0 and include this client into a commercial product.
