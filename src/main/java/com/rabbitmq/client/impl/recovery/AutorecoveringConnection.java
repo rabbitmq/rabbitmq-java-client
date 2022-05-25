@@ -809,9 +809,9 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             if (!oldName.equals(newName)) {
                 // make sure queues are re-added with
                 // their new names, if applicable. MK.
+                propagateQueueNameChangeToBindings(oldName, newName);
+                propagateQueueNameChangeToConsumers(oldName, newName);
                 synchronized (this.recordedQueues) {
-                    this.propagateQueueNameChangeToBindings(oldName, newName);
-                    this.propagateQueueNameChangeToConsumers(oldName, newName);
                     // bug26552:
                     // remove old name after we've updated the bindings and consumers,
                     deleteRecordedQueue(oldName);
