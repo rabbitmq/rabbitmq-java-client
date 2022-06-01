@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -36,7 +36,9 @@ import javax.net.ssl.SSLSocket;
 
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.TestUtils;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -44,6 +46,9 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class VerifiedConnection extends UnverifiedConnection {
+
+    @ClassRule
+    public static TestRule atLeastJava11TestRule = TestUtils.atLeastJava11();
 
     public void openConnection()
             throws IOException, TimeoutException {
