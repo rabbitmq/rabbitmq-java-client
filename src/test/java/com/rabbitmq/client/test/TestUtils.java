@@ -331,7 +331,6 @@ public class TestUtils {
 
     private static class BrokerIsNotOnDocker implements TestRule {
 
-
         @Override
         public Statement apply(Statement base, Description description) {
             return new Statement() {
@@ -464,5 +463,68 @@ public class TestUtils {
                 }
             };
         }
+    }
+
+    public static TestRule atLeastJava11() {
+        return new AtLeastJavaVersion(11);
+    }
+
+    private static class AtLeastJavaVersion implements TestRule {
+
+        private final int expectedMinVersion;
+
+        private AtLeastJavaVersion(int expectedMinVersion) {
+            this.expectedMinVersion = expectedMinVersion;
+        }
+
+        @Override
+        public Statement apply(Statement base, Description description) {
+            return new Statement() {
+                @Override
+                public void evaluate() throws Throwable {
+                    try {
+                        int javaMajorVersion = javaMajorVersion();
+                        if (javaMajorVersion < expectedMinVersion) {
+                            throw new AssumptionViolatedException("Java version is " + javaMajorVersion
+                                + ", expecting at least " + expectedMinVersion);
+                        }
+                    } catch (AssumptionViolatedException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        throw new AssumptionViolatedException("Could determine Java version", e);
+                    }
+                    base.evaluate();
+                }
+            };
+        }
+    }
+
+    private static int javaMajorVersion() {
+        String javaVersion = System.getProperty("java.version");
+        if (javaVersion == null || javaVersion.trim().isEmpty()) {
+            throw new IllegalStateException("JVM system property 'java.version' is undefined");
+        }
+
+        if (javaVersion.startsWith("1.8")) {
+            return 8;
+        }
+
+        try {
+            // from JUnit 5 JRE class
+            // java.lang.Runtime.version() is a static method available on Java 9+
+            // that returns an instance of java.lang.Runtime.Version which has the
+            // following method: public int major()
+            Method versionMethod = Runtime.class.getMethod("version");
+            Object version = versionMethod.invoke(null);
+            Method majorMethod = version.getClass().getMethod("major");
+            int major = (int) majorMethod.invoke(version);
+            if (major < 9) {
+                throw new IllegalStateException("Invalid Java major version: " + major);
+            }
+            return major;
+        } catch (Exception ex) {
+            LOGGER.warn("Error while computing Java major version", ex);
+        }
+        throw new IllegalStateException("Could not determine Java major version");
     }
 }
