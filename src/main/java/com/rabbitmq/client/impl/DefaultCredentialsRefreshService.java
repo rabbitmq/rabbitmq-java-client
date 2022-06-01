@@ -34,7 +34,7 @@ import java.util.function.Supplier;
  * <p>
  * This implementation keeps track of entities (typically AMQP connections) that need
  * to renew credentials. Token renewal is scheduled based on token expiration, using
- * a <code>Function<Duration, Long> refreshDelayStrategy</code>. Once credentials
+ * a <code>Function&lt;Duration, Long&gt; refreshDelayStrategy</code>. Once credentials
  * for a {@link CredentialsProvider} have been renewed, the callback registered
  * by each entity/connection is performed. This callback typically propagates
  * the new credentials in the entity state, e.g. sending the new password to the
@@ -140,7 +140,7 @@ public class DefaultCredentialsRefreshService implements CredentialsRefreshServi
     }
 
     /**
-     * Advise to refresh credentials if <code>TTL <= limit</code>.
+     * Advise to refresh credentials if <code>TTL &lt;= limit</code>.
      *
      * @param limitBeforeExpiration
      * @return true if credentials should be refreshed, false otherwise
