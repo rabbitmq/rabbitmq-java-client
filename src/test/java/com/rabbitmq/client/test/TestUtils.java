@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -29,6 +29,7 @@ import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -44,6 +45,8 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.assertTrue;
 
 public class TestUtils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
 
     public static final boolean USE_NIO = System.getProperty("use.nio") != null;
 
