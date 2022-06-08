@@ -20,8 +20,7 @@ public class SanityCheck {
   private static final Logger LOGGER = LoggerFactory.getLogger("rabbitmq");
 
   public static void main(String[] args) {
-    try {
-      Connection connection = new ConnectionFactory().newConnection();
+    try (Connection connection = new ConnectionFactory().newConnection()) {
       Channel ch = connection.createChannel();
       String queue = ch.queueDeclare().getQueue();
       CountDownLatch latch = new CountDownLatch(1);
