@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 final public class ConsumerWorkService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsumerWorkService.class);
-    private static final int MAX_RUNNABLE_BLOCK_SIZE = 16;
+    private static final int MAX_RUNNABLE_BLOCK_SIZE = 256;
     private static final int DEFAULT_NUM_THREADS = Math.max(1, Utils.availableProcessors());
     private final ExecutorService executor;
     private final boolean privateExecutor;
