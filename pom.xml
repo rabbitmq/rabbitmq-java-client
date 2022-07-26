@@ -57,6 +57,7 @@
     <slf4j.version>1.7.36</slf4j.version>
     <metrics.version>4.2.10</metrics.version>
     <micrometer.version>1.9.2</micrometer.version>
+    <opentelemetry.version>1.16.0</opentelemetry.version>
     <jackson.version>2.13.3</jackson.version>
     <logback.version>1.2.11</logback.version>
     <junit.version>4.13.2</junit.version>
@@ -705,6 +706,12 @@
       <optional>true</optional>
     </dependency>
     <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-api</artifactId>
+      <version>${opentelemetry.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>${jackson.version}</version>
@@ -750,6 +757,12 @@
       <groupId>com.github.netcrusherorg</groupId>
       <artifactId>netcrusher-core</artifactId>
       <version>${netcrusher.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-sdk-testing</artifactId>
+      <version>${opentelemetry.version}</version>
       <scope>test</scope>
     </dependency>
 
