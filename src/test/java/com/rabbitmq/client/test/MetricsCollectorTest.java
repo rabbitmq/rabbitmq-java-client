@@ -20,13 +20,20 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.MetricsCollector;
 import com.rabbitmq.client.impl.AbstractMetricsCollector;
 import com.rabbitmq.client.impl.MicrometerMetricsCollector;
+import com.rabbitmq.client.impl.OpenTelemetryMetricsCollector;
 import com.rabbitmq.client.impl.StandardMetricsCollector;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.opentelemetry.sdk.metrics.data.LongPointData;
+import io.opentelemetry.sdk.metrics.data.MetricData;
+import io.opentelemetry.sdk.testing.junit4.OpenTelemetryRule;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -38,16 +45,25 @@ import static org.mockito.Mockito.when;
 @RunWith(Parameterized.class)
 public class MetricsCollectorTest {
 
+    @ClassRule
+    public static final OpenTelemetryRule openTelemetryRule = OpenTelemetryRule.create();
+
     @Parameterized.Parameters
     public static Object[] data() {
         // need to resort to a factory, as this method is called only once
         // if creating the collector instance, it's reused across the test methods
         // and this doesn't work (it cannot be reset)
-        return new Object[] { new StandardMetricsCollectorFactory(), new MicrometerMetricsCollectorFactory() };
+        return new Object[]{new StandardMetricsCollectorFactory(), new MicrometerMetricsCollectorFactory(), new OpenTelemetryMetricsCollectorFactory()};
     }
 
     @Parameterized.Parameter
     public MetricsCollectorFactory factory;
+
+    @Before
+    public void reset() {
+        // reset metrics
+        openTelemetryRule.clearMetrics();
+    }
 
     @Test
     public void basicGetAndAck() {
@@ -248,72 +264,108 @@ public class MetricsCollectorTest {
     long publishAck(MetricsCollector metrics) {
         if (metrics instanceof StandardMetricsCollector) {
             return ((StandardMetricsCollector) metrics).getPublishAcknowledgedMessages().getCount();
-        } else {
-            return (long) ((MicrometerMetricsCollector) metrics).getAckedPublishedMessages().count();
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
+            return (long)((MicrometerMetricsCollector) metrics).getAckedPublishedMessages().count();
+        }
+        else {
+            return getOpenTelemetryCounterMeterValue("rabbitmq.acknowledged_published");
         }
     }
 
     long publishNack(MetricsCollector metrics) {
         if (metrics instanceof StandardMetricsCollector) {
             return ((StandardMetricsCollector) metrics).getPublishNotAcknowledgedMessages().getCount();
-        } else {
-            return (long) ((MicrometerMetricsCollector) metrics).getNackedPublishedMessages().count();
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
+            return (long)((MicrometerMetricsCollector) metrics).getNackedPublishedMessages().count();
+        }
+        else {
+            return getOpenTelemetryCounterMeterValue("rabbitmq.not_acknowledged_published");
         }
     }
 
     long publishUnrouted(MetricsCollector metrics) {
         if (metrics instanceof StandardMetricsCollector) {
             return ((StandardMetricsCollector) metrics).getPublishUnroutedMessages().getCount();
-        } else {
-            return (long) ((MicrometerMetricsCollector) metrics).getUnroutedPublishedMessages().count();
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
+            return (long)((MicrometerMetricsCollector) metrics).getUnroutedPublishedMessages().count();
+        }
+        else {
+            return getOpenTelemetryCounterMeterValue("rabbitmq.unrouted_published");
         }
     }
 
     long publishedMessages(MetricsCollector metrics) {
         if (metrics instanceof StandardMetricsCollector) {
             return ((StandardMetricsCollector) metrics).getPublishedMessages().getCount();
-        } else {
-            return (long) ((MicrometerMetricsCollector) metrics).getPublishedMessages().count();
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
+            return (long)((MicrometerMetricsCollector) metrics).getPublishedMessages().count();
+        }
+        else {
+            return getOpenTelemetryCounterMeterValue("rabbitmq.published");
         }
     }
 
     long failedToPublishMessages(MetricsCollector metrics) {
         if (metrics instanceof StandardMetricsCollector) {
             return ((StandardMetricsCollector) metrics).getFailedToPublishMessages().getCount();
-        } else {
-            return (long) ((MicrometerMetricsCollector) metrics).getFailedToPublishMessages().count();
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
+            return (long)((MicrometerMetricsCollector) metrics).getFailedToPublishMessages().count();
+        }
+        else {
+            return getOpenTelemetryCounterMeterValue("rabbitmq.failed_to_publish");
         }
     }
 
     long consumedMessages(MetricsCollector metrics) {
         if (metrics instanceof StandardMetricsCollector) {
             return ((StandardMetricsCollector) metrics).getConsumedMessages().getCount();
-        } else {
-            return (long) ((MicrometerMetricsCollector) metrics).getConsumedMessages().count();
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
+            return (long)((MicrometerMetricsCollector) metrics).getConsumedMessages().count();
+        }
+        else {
+            return getOpenTelemetryCounterMeterValue("rabbitmq.consumed");
         }
     }
 
     long acknowledgedMessages(MetricsCollector metrics) {
         if (metrics instanceof StandardMetricsCollector) {
             return ((StandardMetricsCollector) metrics).getAcknowledgedMessages().getCount();
-        } else {
-            return (long) ((MicrometerMetricsCollector) metrics).getAcknowledgedMessages().count();
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
+            return (long)((MicrometerMetricsCollector) metrics).getAcknowledgedMessages().count();
+        }
+        else {
+            return getOpenTelemetryCounterMeterValue("rabbitmq.acknowledged");
         }
     }
 
     long connections(MetricsCollector metrics) {
         if (metrics instanceof StandardMetricsCollector) {
             return ((StandardMetricsCollector) metrics).getConnections().getCount();
-        } else {
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
             return ((MicrometerMetricsCollector) metrics).getConnections().get();
+        }
+        else {
+            return ((OpenTelemetryMetricsCollector)metrics).getConnections().get();
         }
     }
 
     long channels(MetricsCollector metrics) {
         if (metrics instanceof StandardMetricsCollector) {
             return ((StandardMetricsCollector) metrics).getChannels().getCount();
-        } else {
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
             return ((MicrometerMetricsCollector) metrics).getChannels().get();
+        }
+        else {
+            return ((OpenTelemetryMetricsCollector)metrics).getChannels().get();
         }
     }
 
@@ -335,4 +387,23 @@ public class MetricsCollectorTest {
         }
     }
 
+    static class OpenTelemetryMetricsCollectorFactory implements MetricsCollectorFactory {
+        @Override
+        public AbstractMetricsCollector create() {
+            return new OpenTelemetryMetricsCollector(openTelemetryRule.getOpenTelemetry());
+        }
+    }
+
+    static long getOpenTelemetryCounterMeterValue(String name) {
+        // open telemetry metrics
+        List<MetricData> metrics = openTelemetryRule.getMetrics();
+        // metric value
+        return metrics.stream()
+            .filter(metric -> metric.getName().equals(name))
+            .flatMap(metric -> metric.getData().getPoints().stream())
+            .map(point -> (LongPointData)point)
+            .map(LongPointData::getValue)
+            .mapToLong(value -> value)
+            .sum();
+    }
 }
