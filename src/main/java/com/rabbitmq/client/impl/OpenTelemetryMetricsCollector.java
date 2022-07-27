@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -26,10 +26,10 @@ import io.opentelemetry.api.metrics.Meter;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * OpenTelemetry implementation of {@link MetricsCollector}.
+ * <a href="https://opentelemetry.io/">OpenTelemetry</a> implementation of {@link MetricsCollector}.
  *
  * @see MetricsCollector
- * @since 5.15.1
+ * @since 5.16.0
  */
 public class OpenTelemetryMetricsCollector extends AbstractMetricsCollector {
 
