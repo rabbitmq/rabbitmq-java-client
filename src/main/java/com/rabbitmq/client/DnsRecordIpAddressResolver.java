@@ -72,9 +72,9 @@ public class DnsRecordIpAddressResolver implements AddressResolver {
 
         InetAddress[] inetAddresses = resolveIpAddresses(hostName);
 
-        List<Address> addresses = new ArrayList<Address>();
+        List<Address> addresses = new ArrayList<>();
         for (InetAddress inetAddress : inetAddresses) {
-            addresses.add(new Address(inetAddress.getHostAddress(), portNumber));
+            addresses.add(new ResolvedInetAddress(inetAddress, portNumber));
         }
         return addresses;
     }

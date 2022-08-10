@@ -1339,7 +1339,11 @@ public class ConnectionFactory implements Cloneable {
     }
 
     protected AddressResolver createAddressResolver(List<Address> addresses) {
-        return new ListAddressResolver(addresses);
+        if (addresses.size() > 1) {
+            return new ListAddressResolver(addresses);
+        } else {
+            return new DnsRecordIpAddressResolver(addresses.get(0), isSSL());
+        }
     }
 
     @Override public ConnectionFactory clone(){

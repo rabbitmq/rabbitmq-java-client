@@ -17,6 +17,7 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ResolvedInetAddress;
 import com.rabbitmq.client.SocketConfigurator;
 import com.rabbitmq.client.SslContextFactory;
 
@@ -51,14 +52,13 @@ public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
     }
 
     public FrameHandler create(Address addr, String connectionName) throws IOException {
-        String hostName = addr.getHost();
         int portNumber = ConnectionFactory.portOrDefault(addr.getPort(), ssl);
         Socket socket = null;
         try {
             socket = createSocket(connectionName);
             configurator.configure(socket);
-            socket.connect(new InetSocketAddress(hostName, portNumber),
-                    connectionTimeout);
+
+            socket.connect(addr.toInetSocketAddress(portNumber), connectionTimeout);
             return create(socket);
         } catch (IOException ioe) {
             quietTrySocketClose(socket);

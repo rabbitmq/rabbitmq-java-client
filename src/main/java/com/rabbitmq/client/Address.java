@@ -16,6 +16,7 @@
 
 package com.rabbitmq.client;
 
+import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -162,6 +163,13 @@ public class Address {
     }
 
     /**
+     * Construct an InetSocketAddress for this address with a specific port
+     */
+    public InetSocketAddress toInetSocketAddress(int port) {
+        return new InetSocketAddress(getHost(), port);
+    }
+
+    /**
      * Array-based factory method: takes an array of formatted address strings as construction parameter
      * @param addresses array of strings of form "host[:port],..."
      * @return a list of {@link Address} values
@@ -191,5 +199,4 @@ public class Address {
     @Override public String toString() {
         return _port == -1 ? _host : _host + ":" + _port;
     }
-
 }
