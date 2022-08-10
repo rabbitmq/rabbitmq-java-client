@@ -96,7 +96,7 @@ public class ConnectionFactoryTest {
     }
 
     @Test
-    public void shouldNotUseDnsResolutionWhenOneAddressAndNoTls() throws Exception {
+    public void shouldUseDnsResolutionWhenOneAddressAndNoTls() throws Exception {
         AMQConnection connection = mock(AMQConnection.class);
         AtomicReference<AddressResolver> addressResolver = new AtomicReference<>();
 
@@ -123,12 +123,11 @@ public class ConnectionFactoryTest {
 
         doNothing().when(connection).start();
         connectionFactory.newConnection();
-
         assertThat(addressResolver.get()).isNotNull().isInstanceOf(DnsRecordIpAddressResolver.class);
     }
 
     @Test
-    public void shouldNotUseDnsResolutionWhenOneAddressAndTls() throws Exception {
+    public void shouldUseDnsResolutionWhenOneAddressAndTls() throws Exception {
         AMQConnection connection = mock(AMQConnection.class);
         AtomicReference<AddressResolver> addressResolver = new AtomicReference<>();
 
@@ -157,7 +156,7 @@ public class ConnectionFactoryTest {
         connectionFactory.useSslProtocol();
         connectionFactory.newConnection();
 
-        assertThat(addressResolver.get()).isNotNull().isInstanceOf(ListAddressResolver.class);
+        assertThat(addressResolver.get()).isNotNull().isInstanceOf(DnsRecordIpAddressResolver.class);
     }
 
     @Test
