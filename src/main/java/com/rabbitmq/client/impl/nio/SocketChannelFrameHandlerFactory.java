@@ -85,7 +85,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                 }
             }
 
-            SocketAddress address = new InetSocketAddress(addr.getHost(), portNumber);
+            SocketAddress address = addr.toInetSocketAddress(portNumber);
             // No Sonar: the channel is closed in case of error and it cannot
             // be closed here because it's part of the state of the connection
             // to be returned.
