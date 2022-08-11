@@ -6,13 +6,13 @@ import java.net.InetSocketAddress;
 public class ResolvedInetAddress extends Address {
     private final InetAddress inetAddress;
 
-    public ResolvedInetAddress(InetAddress inetAddress, int port) {
-        super(inetAddress.getHostAddress(), port);
+    public ResolvedInetAddress(String originalHostname, InetAddress inetAddress, int port) {
+        super(originalHostname, port);
         this.inetAddress = inetAddress;
     }
 
-    public ResolvedInetAddress(InetAddress inetAddress) {
-        super(inetAddress.getHostAddress());
+    public ResolvedInetAddress(String originalHostname, InetAddress inetAddress) {
+        super(originalHostname);
         this.inetAddress = inetAddress;
     }
 

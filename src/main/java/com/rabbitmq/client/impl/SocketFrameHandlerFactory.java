@@ -17,13 +17,11 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.ResolvedInetAddress;
 import com.rabbitmq.client.SocketConfigurator;
 import com.rabbitmq.client.SslContextFactory;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 
