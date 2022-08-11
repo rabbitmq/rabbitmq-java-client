@@ -11,11 +11,6 @@ public class ResolvedInetAddress extends Address {
         this.inetAddress = inetAddress;
     }
 
-    public ResolvedInetAddress(String originalHostname, InetAddress inetAddress) {
-        super(originalHostname);
-        this.inetAddress = inetAddress;
-    }
-
     @Override
     public InetSocketAddress toInetSocketAddress(int port) {
         return new InetSocketAddress(inetAddress, port);
