@@ -11,6 +11,10 @@ updates:
     ignore:
       - dependency-name: "org.eclipse.jetty:jetty-servlet"
         versions: [ "[10.0,)" ]
+      - dependency-name: "org.slf4j:slf4j-api"
+        versions: [ "[2.0,)" ]
+      - dependency-name: "ch.qos.logback:logback-classic"
+        versions: [ "[1.3,)" ]
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
@@ -20,3 +24,9 @@ updates:
     ignore:
       - dependency-name: "org.eclipse.jetty:jetty-servlet"
         versions: ["[10.0,)"]
+      - dependency-name: "org.eclipse.jetty:jetty-servlet"
+        versions: [ "[10.0,)" ]
+      - dependency-name: "org.slf4j:slf4j-api"
+        versions: [ "[2.0,)" ]
+      - dependency-name: "ch.qos.logback:logback-classic"
+        versions: [ "[1.3,)" ]
