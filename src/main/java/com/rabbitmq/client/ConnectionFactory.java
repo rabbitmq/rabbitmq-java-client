@@ -205,6 +205,12 @@ public class ConnectionFactory implements Cloneable {
 
     private CredentialsRefreshService credentialsRefreshService;
 
+    private int consumerWorkServiceBlockSize = -1;
+
+    public void setConsumerWorkServiceBlockSize(int consumerWorkServiceBlockSize) {
+        this.consumerWorkServiceBlockSize = consumerWorkServiceBlockSize;
+    }
+
     /** @return the default host to use for connections */
     public String getHost() {
         return host;
@@ -1273,6 +1279,7 @@ public class ConnectionFactory implements Cloneable {
         result.setRecoveredQueueNameSupplier(recoveredQueueNameSupplier);
         result.setTrafficListener(trafficListener);
         result.setCredentialsRefreshService(credentialsRefreshService);
+        result.setConsumerWorkServiceBlockSize(consumerWorkServiceBlockSize);
         return result;
     }
 

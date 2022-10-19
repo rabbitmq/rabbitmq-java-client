@@ -64,6 +64,8 @@ public class ConnectionParams {
 
     private CredentialsRefreshService credentialsRefreshService;
 
+    private int consumerWorkServiceBlockSize = -1;
+
     public ConnectionParams() {}
 
     public CredentialsProvider getCredentialsProvider() {
@@ -296,5 +298,13 @@ public class ConnectionParams {
 
     public CredentialsRefreshService getCredentialsRefreshService() {
         return credentialsRefreshService;
+    }
+
+    public void setConsumerWorkServiceBlockSize(int consumerWorkServiceBlockSize) {
+        this.consumerWorkServiceBlockSize = consumerWorkServiceBlockSize;
+    }
+
+    public int getConsumerWorkServiceBlockSize() {
+        return consumerWorkServiceBlockSize;
     }
 }

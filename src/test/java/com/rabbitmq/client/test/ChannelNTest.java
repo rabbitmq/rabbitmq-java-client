@@ -39,7 +39,7 @@ public class ChannelNTest {
     @Before
     public void init() {
         executorService = Executors.newSingleThreadExecutor();
-        consumerWorkService = new ConsumerWorkService(executorService, null, 1000, 1000);
+        consumerWorkService = new ConsumerWorkService(executorService, null, 1000, 1000, -1);
     }
 
     @After

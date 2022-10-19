@@ -144,6 +144,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final boolean channelShouldCheckRpcResponseType;
     private final TrafficListener trafficListener;
     private final CredentialsRefreshService credentialsRefreshService;
+    private final int consumerWorkServiceBlockSize;
 
     /* State modified after start - all volatile */
 
@@ -257,6 +258,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
             (connection, exception) -> { throw exception; }; // we just propagate the exception for non-recoverable connections
         this.workPoolTimeout = params.getWorkPoolTimeout();
+        this.consumerWorkServiceBlockSize = params.getConsumerWorkServiceBlockSize();
     }
 
     AMQChannel createChannel0() {
@@ -268,7 +270,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     private void initializeConsumerWorkService() {
-        this._workService  = new ConsumerWorkService(consumerWorkServiceExecutor, threadFactory, workPoolTimeout, shutdownTimeout);
+        this._workService  = new ConsumerWorkService(
+            consumerWorkServiceExecutor, threadFactory, workPoolTimeout, shutdownTimeout,
+            this.consumerWorkServiceBlockSize);
     }
 
     private void initializeHeartbeatSender() {

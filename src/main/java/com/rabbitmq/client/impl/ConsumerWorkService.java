@@ -33,8 +33,10 @@ final public class ConsumerWorkService {
     private final boolean privateExecutor;
     private final WorkPool<Channel, Runnable> workPool;
     private final int shutdownTimeout;
+    private final int blockSize;
 
-    public ConsumerWorkService(ExecutorService executor, ThreadFactory threadFactory, int queueingTimeout, int shutdownTimeout) {
+    public ConsumerWorkService(ExecutorService executor, ThreadFactory threadFactory,
+        int queueingTimeout, int shutdownTimeout, int blockSize) {
         this.privateExecutor = (executor == null);
         if (executor == null) {
             LOGGER.debug("Creating executor service with {} thread(s) for consumer work service", DEFAULT_NUM_THREADS);
@@ -44,10 +46,11 @@ final public class ConsumerWorkService {
         }
         this.workPool = new WorkPool<>(queueingTimeout);
         this.shutdownTimeout = shutdownTimeout;
+        this.blockSize = blockSize <= 0 ? MAX_RUNNABLE_BLOCK_SIZE : blockSize;
     }
 
     public ConsumerWorkService(ExecutorService executor, ThreadFactory threadFactory, int shutdownTimeout) {
-        this(executor, threadFactory, -1, shutdownTimeout);
+        this(executor, threadFactory, -1, shutdownTimeout, MAX_RUNNABLE_BLOCK_SIZE);
     }
 
     public int getShutdownTimeout() {
@@ -101,7 +104,7 @@ final public class ConsumerWorkService {
 
         @Override
         public void run() {
-            int size = MAX_RUNNABLE_BLOCK_SIZE;
+            int size = blockSize;
             List<Runnable> block = new ArrayList<Runnable>(size);
             try {
                 Channel key = ConsumerWorkService.this.workPool.nextWorkBlock(block, size);
