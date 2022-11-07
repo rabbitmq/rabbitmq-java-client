@@ -73,6 +73,10 @@ public class TestUtils {
 
     }
 
+    public static void waitAtMost(CallableBooleanSupplier condition) {
+       waitAtMost(Duration.ofSeconds(10), condition);
+    }
+
     public static void waitAtMost(Duration timeout, CallableBooleanSupplier condition) {
         try {
             if (condition.getAsBoolean()) {
