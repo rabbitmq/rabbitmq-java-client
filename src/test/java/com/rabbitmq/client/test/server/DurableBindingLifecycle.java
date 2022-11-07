@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,12 +16,14 @@
 
 package com.rabbitmq.client.test.server;
 
-import static org.junit.Assert.assertNotNull;
+import static com.rabbitmq.client.test.TestUtils.waitAtMost;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import com.rabbitmq.client.GetResponse;
@@ -71,7 +73,16 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
             basicPublishVolatile(X, K);
         }
 
-        assertDelivered(Q, N);
+        AtomicInteger receivedCount = new AtomicInteger(0);
+        waitAtMost(() -> {
+            GetResponse r;
+            r = basicGet(Q);
+            if (r != null) {
+                assertThat(r.getEnvelope().isRedeliver()).isFalse();
+                receivedCount.incrementAndGet();
+            }
+            return receivedCount.get() == N;
+        });
 
         deleteQueue(Q);
         deleteExchange(X);
@@ -130,8 +141,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
 
         basicPublishVolatile("", Q);
 
-        GetResponse response = channel.basicGet(Q, true);
-        assertNotNull("The initial response SHOULD NOT be null", response);
+        waitAtMost(() -> channel.basicGet(Q, true) != null);
 
         deleteQueue(Q);
     }
@@ -152,7 +162,15 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
             restartPrimary();
 
             basicPublishVolatile("transientX", "");
-            assertDelivered("durableQ", 1);
+            waitAtMost(() -> {
+                GetResponse response = channel.basicGet("durableQ", true);
+                if (response == null) {
+                    return false;
+                } else {
+                    assertThat(response.getEnvelope().isRedeliver()).isFalse();
+                    return true;
+                }
+            });
 
             deleteExchange("transientX");
             deleteQueue("durableQ");
