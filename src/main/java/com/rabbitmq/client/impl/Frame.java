@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -22,7 +22,6 @@ import com.rabbitmq.client.MalformedFrameException;
 import java.io.*;
 import java.math.BigDecimal;
 import java.net.SocketTimeoutException;
-import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -268,7 +267,7 @@ public class Frame {
         else if(value instanceof BigDecimal) {
             acc += 5;
         }
-        else if(value instanceof Date || value instanceof Timestamp) {
+        else if(value instanceof Date) {
             acc += 8;
         }
         else if(value instanceof Map) {
