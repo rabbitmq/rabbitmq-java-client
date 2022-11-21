@@ -55,7 +55,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <slf4j.version>1.7.36</slf4j.version>
-    <metrics.version>4.2.12</metrics.version>
+    <metrics.version>4.2.13</metrics.version>
     <micrometer.version>1.10.1</micrometer.version>
     <opentelemetry.version>1.20.1</opentelemetry.version>
     <jackson.version>2.14.0</jackson.version>
