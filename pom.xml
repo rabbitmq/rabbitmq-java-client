@@ -58,7 +58,7 @@
     <metrics.version>4.2.13</metrics.version>
     <micrometer.version>1.10.1</micrometer.version>
     <opentelemetry.version>1.20.1</opentelemetry.version>
-    <jackson.version>2.14.0</jackson.version>
+    <jackson.version>2.14.1</jackson.version>
     <logback.version>1.2.11</logback.version>
     <junit.version>4.13.2</junit.version>
     <mockito.version>4.9.0</mockito.version>
