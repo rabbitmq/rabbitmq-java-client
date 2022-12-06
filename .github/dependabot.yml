@@ -28,3 +28,13 @@ updates:
         versions: [ "[2.0,)" ]
       - dependency-name: "ch.qos.logback:logback-classic"
         versions: [ "[1.3,)" ]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    target-branch: "main"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    target-branch: "5.x.x-stable"
