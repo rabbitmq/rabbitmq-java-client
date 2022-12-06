@@ -1,0 +1,64 @@
+name: Test against RabbitMQ 3.11 alpha
+
+on:
+  push:
+    branches:
+      - 5.x.x-stable
+
+env:
+  RABBITMQ_IMAGE_TAG: 3.11
+  RABBITMQ_IMAGE: pivotalrabbitmq/rabbitmq-dev
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Checkout tls-gen
+        uses: actions/checkout@v3
+        with:
+          repository: rabbitmq/tls-gen
+          path: './tls-gen'
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Start broker
+        run: ci/start-broker.sh
+      - name: Get dependencies
+        run: make deps
+      - name: Test with NIO
+        run: |
+          ./mvnw verify -P '!setup-test-cluster,use-nio' -Drabbitmqctl.bin=DOCKER:rabbitmq \
+            -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
+            -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
+            -Dit.test=ClientTests,FunctionalTests,ServerTests,SSLTests \
+            --no-transfer-progress
+      - name: Test with blocking IO
+        run: |
+          ./mvnw verify -P '!setup-test-cluster' -Drabbitmqctl.bin=DOCKER:rabbitmq \
+          -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
+          -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
+          -Dit.test=ClientTests,FunctionalTests,ServerTests,SSLTests \
+          --no-transfer-progress
+      - name: Stop broker
+        run: docker stop rabbitmq && docker rm rabbitmq
+      - name: Publish snapshot
+        if: ${{ github.event_name != 'pull_request' }}
+        run: ./mvnw clean deploy -Psnapshots -DskipITs -DskipTests --no-transfer-progress
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
