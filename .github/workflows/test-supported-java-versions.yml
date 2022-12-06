@@ -39,6 +39,8 @@ jobs:
         run: ci/start-broker.sh
       - name: Get dependencies
         run: make deps
+      - name: Show version
+        run: ./mvnw --version
       - name: Test with NIO
         run: |
           ./mvnw verify -P '!setup-test-cluster,use-nio' -Drabbitmqctl.bin=DOCKER:rabbitmq \
