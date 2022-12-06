@@ -30,7 +30,7 @@ cp target/test-classes/rabbit@localhost.config rabbitmq-configuration/rabbitmq.c
 echo "Running RabbitMQ ${RABBITMQ_IMAGE}:${RABBITMQ_IMAGE_TAG}"
 
 docker rm -f rabbitmq 2>/dev/null || echo "rabbitmq was not running"
-docker run --name rabbitmq \
+docker run -d --name rabbitmq \
     --network host \
     -v "${PWD}"/rabbitmq-configuration:/etc/rabbitmq \
     "${RABBITMQ_IMAGE}":"${RABBITMQ_IMAGE_TAG}"
