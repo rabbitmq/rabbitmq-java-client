@@ -44,16 +44,19 @@ jobs:
           ./mvnw verify -P '!setup-test-cluster,use-nio' -Drabbitmqctl.bin=DOCKER:rabbitmq \
             -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
             -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
-            -Dit.test=SSLTests \
+            -Dit.test=ClientTests,FunctionalTests,ServerTests,SSLTests \
             --no-transfer-progress
-      #      - name: Test with blocking IO
-#        run: |
-#          ./mvnw verify -P '!setup-test-cluster' -Drabbitmqctl.bin=DOCKER:rabbitmq \
-#            -Dit.test=ClientTests,FunctionalTests,ServerTests,SSLTests
+      - name: Test with blocking IO
+        run: |
+          ./mvnw verify -P '!setup-test-cluster' -Drabbitmqctl.bin=DOCKER:rabbitmq \
+          -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
+          -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
+          -Dit.test=ClientTests,FunctionalTests,ServerTests,SSLTests \
+          --no-transfer-progress
       - name: Stop broker
         run: docker stop rabbitmq && docker rm rabbitmq
       - name: Publish snapshot
-        run: ./mvnw clean deploy -Psnapshots -DskipITs -DskipTests
+        run: ./mvnw clean deploy -Psnapshots -DskipITs -DskipTests --no-transfer-progress
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
