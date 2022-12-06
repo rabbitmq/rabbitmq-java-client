@@ -3,9 +3,6 @@ name: Test against supported Java versions
 on:
   schedule:
     - cron:  '0 23 * * *'
-  push:
-    branches:
-      - main
 
 env:
   RABBITMQ_IMAGE_TAG: 3.11
@@ -26,7 +23,7 @@ jobs:
           repository: rabbitmq/tls-gen
           path: './tls-gen'
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.x'
       - name: Set up JDK
