@@ -56,6 +56,7 @@ jobs:
       - name: Stop broker
         run: docker stop rabbitmq && docker rm rabbitmq
       - name: Publish snapshot
+        if: ${{ github.event_name != 'pull_request' }}
         run: ./mvnw clean deploy -Psnapshots -DskipITs -DskipTests --no-transfer-progress
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
