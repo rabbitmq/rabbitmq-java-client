@@ -3,7 +3,7 @@ name: Test against RabbitMQ 3.11 alpha
 on:
   push:
     branches:
-      - 5.x.x-stable
+      - 5.16.x-stable
 
 env:
   RABBITMQ_IMAGE_TAG: 3.11
