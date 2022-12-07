@@ -8,6 +8,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
@@ -19,6 +23,8 @@ jobs:
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Get dependencies
+        run: make deps
       - name: Publish snapshot
         run: ./mvnw clean deploy -Psnapshots -DskipITs -DskipTests --no-transfer-progress
         env:
