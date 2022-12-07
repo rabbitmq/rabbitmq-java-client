@@ -1,13 +1,13 @@
-name: Test against RabbitMQ 3.11 alpha
+name: Test against RabbitMQ 3.11 stable
 
 on:
   push:
     branches:
-      - 5.16.x-stable
+      - main
 
 env:
   RABBITMQ_IMAGE_TAG: 3.11
-  RABBITMQ_IMAGE: pivotalrabbitmq/rabbitmq-dev
+  RABBITMQ_IMAGE: rabbitmq
 
 jobs:
   build:
@@ -55,3 +55,10 @@ jobs:
           --no-transfer-progress
       - name: Stop broker
         run: docker stop rabbitmq && docker rm rabbitmq
+      - name: Publish snapshot
+        if: ${{ github.event_name != 'pull_request' }}
+        run: ./mvnw clean deploy -Psnapshots -DskipITs -DskipTests --no-transfer-progress
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
