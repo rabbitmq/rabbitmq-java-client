@@ -137,7 +137,11 @@ public class RpcTest {
             assertEquals(noWhereRoutingKey, e.getReturnMessage().getRoutingKey());
             assertEquals(content, new String(e.getReturnMessage().getBody()));
         }
-        client.close();
+        try {
+            client.close();
+        } catch (IOException e) {
+            // OK
+        }
     }
 
     @Test
