@@ -29,11 +29,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
         with:
-          distribution: 'temurin'
+          version: 'latest'
           java-version: '17'
+          components: 'native-image'
           cache: 'maven'
       - name: Start broker
         run: ci/start-broker.sh
@@ -53,12 +54,6 @@ jobs:
       - name: Start one-time RPC server
         working-directory: rabbitmq-graal-vm-test
         run: ./mvnw -q compile exec:java -Damqp-client.version=${{ env.artefact_version }} --no-transfer-progress &
-      - name: Set up GraalVM
-        uses: graalvm/setup-graalvm@v1
-        with:
-          version: 'latest'
-          java-version: '17'
-          components: 'native-image'
       - name: Create native image
         working-directory: rabbitmq-graal-vm-test
         run: |
