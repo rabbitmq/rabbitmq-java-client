@@ -40,7 +40,7 @@ jobs:
         run: make deps
       - name: Install client JAR file
         run: |
-          ./mvnw clean install -Psnapshots -DskipITs -DskipTests --no-transfer-progress
+          ./mvnw clean install -Psnapshots -DskipITs -DskipTests -Dgpg.skip=true --no-transfer-progress
           export ARTEFACT_VERSION=$(cat pom.xml | grep -oPm1 "(?<=<version>)[^<]+")
           echo "artefact_version=$ARTEFACT_VERSION" >> $GITHUB_ENV
       - name: Package test application
@@ -48,10 +48,10 @@ jobs:
         run: |
           ./mvnw --version
           echo "Using RabbitMQ Java Client ${{ env.artefact_version }}"
-          ./mvnw -q clean package -Damqp-client.version=${{ env.artefact_version }}
+          ./mvnw -q clean package -Damqp-client.version=${{ env.artefact_version }} --no-transfer-progress
       - name: Start one-time RPC server
         working-directory: rabbitmq-graal-vm-test
-        run: ./mvnw -q compile exec:java -Damqp-client.version=${{ env.artefact_version }} &
+        run: ./mvnw -q compile exec:java -Damqp-client.version=${{ env.artefact_version }} --no-transfer-progress &
       - name: Create native image
         working-directory: rabbitmq-graal-vm-test
         run: |
