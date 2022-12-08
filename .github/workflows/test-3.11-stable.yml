@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 5.16.x-stable
+  workflow_dispatch:
 
 env:
   RABBITMQ_IMAGE_TAG: 3.11
