@@ -63,7 +63,7 @@
     <junit.version>4.13.2</junit.version>
     <mockito.version>4.9.0</mockito.version>
     <assertj.version>3.23.1</assertj.version>
-    <jetty.version>9.4.49.v20220914</jetty.version>
+    <jetty.version>9.4.50.v20221201</jetty.version>
     <bouncycastle.version>1.70</bouncycastle.version>
     <netcrusher.version>0.10</netcrusher.version>
 
