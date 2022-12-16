@@ -3,6 +3,9 @@ name: Test against RabbitMQ 3.11 alpha
 on:
   schedule:
     - cron: '0 4 * * *'
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - 5.x.x-stable
