@@ -3,7 +3,7 @@ name: Test against RabbitMQ 3.11 stable
 on:
   pull_request:
     branches:
-      - main
+      - 5.x.x-stable
   push:
     branches:
       - 5.x.x-stable
