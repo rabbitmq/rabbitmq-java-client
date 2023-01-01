@@ -4,7 +4,7 @@
 
 
 This repository contains source code of the [RabbitMQ Java client](https://www.rabbitmq.com/api-guide.html).
-The client is maintained by the [RabbitMQ team at Pivotal](https://github.com/rabbitmq/).
+The client is maintained by the [RabbitMQ team at VMWare](https://github.com/rabbitmq/).
 
 
 ## Dependency (Maven Artifact)
