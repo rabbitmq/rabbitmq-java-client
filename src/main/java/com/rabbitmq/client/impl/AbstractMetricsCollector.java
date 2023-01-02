@@ -269,10 +269,12 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
                     }
                 }
             } else {
-                if (dtags.apply(channelState).remove(deliveryTag)) {
-                    LOGGER.debug("Removed delivery tag: {}, running action", deliveryTag);
-                    action.run();
-                }
+                LOGGER.debug("Removed delivery tag: {}, running action", deliveryTag);
+                dtags.apply(channelState).remove(deliveryTag);
+                // we always run the action, whether the set contains the delivery tag
+                // the collection may not contain the tag yet, if the ack/confirm arrives very fast
+                // so checking the result of Collection#remove may not be exact.
+                action.run();
             }
         } finally {
             channelState.lock.unlock();

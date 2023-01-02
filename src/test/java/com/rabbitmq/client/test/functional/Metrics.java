@@ -179,7 +179,6 @@ public class Metrics extends BrokerTestCase {
                 (deliveryTag, multiple) -> { });
             // when
             sendMessage(channel);
-            channel.waitForConfirms(30 * 60 * 1000);
             assertThat(confirmedLatch.await(5, TimeUnit.SECONDS)).isTrue();
             // then
             waitAtMost(Duration.ofSeconds(5), () -> metrics.getPublishAcknowledgedMessages().getCount() == 1);
