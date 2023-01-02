@@ -186,9 +186,9 @@ public class MetricsCollectorTest {
         metrics.basicPublishAck(channel, 2, false);
         assertThat(publishAck(metrics)).isEqualTo(2L);
 
-        // this is idempotent
+        // it's not idempotent
         metrics.basicPublishAck(channel, 2, false);
-        assertThat(publishAck(metrics)).isEqualTo(2L);
+        assertThat(publishAck(metrics)).isEqualTo(3L);
 
         // multi-ack
         metrics.basicPublish(channel, 3);
@@ -196,18 +196,18 @@ public class MetricsCollectorTest {
         metrics.basicPublish(channel, 5);
         // ack-ing in the middle
         metrics.basicPublishAck(channel, 4, false);
-        assertThat(publishAck(metrics)).isEqualTo(3L);
+        assertThat(publishAck(metrics)).isEqualTo(4L);
         // ack-ing several at once
         metrics.basicPublishAck(channel, 5, true);
-        assertThat(publishAck(metrics)).isEqualTo(5L);
+        assertThat(publishAck(metrics)).isEqualTo(6L);
 
         // ack-ing non existent doesn't affect metrics
         metrics.basicPublishAck(channel, 123, true);
-        assertThat(publishAck(metrics)).isEqualTo(5L);
+        assertThat(publishAck(metrics)).isEqualTo(6L);
 
         // cleaning stale state doesn't affect the metric
         metrics.cleanStaleState();
-        assertThat(publishAck(metrics)).isEqualTo(5L);
+        assertThat(publishAck(metrics)).isEqualTo(6L);
     }
 
     @Test public void publishingNotAcknowledgements() {
