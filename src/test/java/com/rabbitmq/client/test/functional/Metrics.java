@@ -17,6 +17,7 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConfirmCallback;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultConsumer;
@@ -173,9 +174,13 @@ public class Metrics extends BrokerTestCase {
             assertThat(metrics.getPublishAcknowledgedMessages().getCount()).isEqualTo(0L);
             MultipleAckConsumer consumer = new MultipleAckConsumer(channel, false);
             channel.basicConsume(QUEUE, false, consumer);
+            CountDownLatch confirmedLatch = new CountDownLatch(1);
+            channel.addConfirmListener((deliveryTag, multiple) -> confirmedLatch.countDown(),
+                (deliveryTag, multiple) -> { });
             // when
             sendMessage(channel);
             channel.waitForConfirms(30 * 60 * 1000);
+            assertThat(confirmedLatch.await(5, TimeUnit.SECONDS)).isTrue();
             // then
             waitAtMost(Duration.ofSeconds(5), () -> metrics.getPublishAcknowledgedMessages().getCount() == 1);
             waitAtMost(() -> consumer.ackedCount() == 1);

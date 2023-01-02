@@ -10,6 +10,7 @@
     <logger name="com.rabbitmq.client.test.TestUtils" level="info" />
     <logger name="com.rabbitmq.client.test.BrokerTestCase" level="info" />
     <logger name="com.rabbitmq.client.test.server.TopicPermissions" level="debug" />
+    <logger name="com.rabbitmq.client.impl.AbstractMetricsCollector" level="debug" />
 
     <root level="warn">
         <appender-ref ref="STDOUT" />
