@@ -176,7 +176,7 @@ public class Metrics extends BrokerTestCase {
             sendMessage(channel);
             channel.waitForConfirms(30 * 60 * 1000);
             // then
-            assertThat(metrics.getPublishAcknowledgedMessages().getCount()).isEqualTo(1L);
+            waitAtMost(Duration.ofSeconds(5), () -> metrics.getPublishAcknowledgedMessages().getCount() == 1);
         } finally {
             safeClose(connection);
         }
