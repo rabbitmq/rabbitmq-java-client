@@ -342,7 +342,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
         final Set<Long> unackedMessageDeliveryTags = new HashSet<>();
         final Set<String> consumersWithManualAck = new HashSet<>();
-        final Set<Long> unconfirmedMessageDeliveryTags = ConcurrentHashMap.newKeySet();
+        final Set<Long> unconfirmedMessageDeliveryTags = new HashSet<>();
 
         final Channel channel;
 
