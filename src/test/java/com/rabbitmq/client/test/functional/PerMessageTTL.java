@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -71,7 +71,6 @@ public class PerMessageTTL extends TTLHandling {
                         .builder()
                         .expiration(expiryDelay)
                         .build(), new byte[]{});
-        long expiryStartTime = System.currentTimeMillis();
         restart();
         Thread.sleep(Integer.parseInt(expiryDelay));
         try {
