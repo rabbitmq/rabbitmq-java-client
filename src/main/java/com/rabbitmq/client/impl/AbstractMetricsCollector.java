@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -134,7 +134,6 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
         try {
             updateChannelStateAfterAckReject(channel, deliveryTag, multiple, GET_UNCONFIRMED_DTAGS, markMessagePublishAcknowledgedAction);
         } catch (Exception e) {
-            e.printStackTrace();
             LOGGER.info("Error while computing metrics in basicPublishAck: " + e.getMessage());
         }
     }
@@ -339,9 +338,9 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
         final Lock lock = new ReentrantLock();
 
-        final Set<Long> unackedMessageDeliveryTags = new HashSet<Long>();
-        final Set<String> consumersWithManualAck = new HashSet<String>();
-        final Set<Long> unconfirmedMessageDeliveryTags = new HashSet<>();
+        final Set<Long> unackedMessageDeliveryTags = new HashSet<>();
+        final Set<String> consumersWithManualAck = new HashSet<>();
+        final Set<Long> unconfirmedMessageDeliveryTags = ConcurrentHashMap.newKeySet();
 
         final Channel channel;
 

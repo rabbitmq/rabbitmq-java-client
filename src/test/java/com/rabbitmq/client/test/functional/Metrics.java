@@ -171,12 +171,14 @@ public class Metrics extends BrokerTestCase {
             Channel channel = connection.createChannel();
             channel.confirmSelect();
             assertThat(metrics.getPublishAcknowledgedMessages().getCount()).isEqualTo(0L);
-            channel.basicConsume(QUEUE, false, new MultipleAckConsumer(channel, false));
+            MultipleAckConsumer consumer = new MultipleAckConsumer(channel, false);
+            channel.basicConsume(QUEUE, false, consumer);
             // when
             sendMessage(channel);
             channel.waitForConfirms(30 * 60 * 1000);
             // then
             waitAtMost(Duration.ofSeconds(5), () -> metrics.getPublishAcknowledgedMessages().getCount() == 1);
+            waitAtMost(() -> consumer.ackedCount() == 1);
         } finally {
             safeClose(connection);
         }
@@ -632,6 +634,7 @@ public class Metrics extends BrokerTestCase {
     private static class MultipleAckConsumer extends DefaultConsumer {
 
         final boolean multiple;
+        private AtomicInteger ackedCount = new AtomicInteger(0);
 
         public MultipleAckConsumer(Channel channel, boolean multiple) {
             super(channel);
@@ -646,6 +649,11 @@ public class Metrics extends BrokerTestCase {
                 throw new RuntimeException("Error during randomized wait",e);
             }
             getChannel().basicAck(envelope.getDeliveryTag(), multiple);
+            ackedCount.incrementAndGet();
+        }
+
+        int ackedCount() {
+            return this.ackedCount.get();
         }
     }
 
