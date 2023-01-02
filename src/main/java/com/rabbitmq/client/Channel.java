@@ -763,7 +763,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * Reject one or several received messages.
      *
      * Supply the <code>deliveryTag</code> from the {@link com.rabbitmq.client.AMQP.Basic.GetOk}
-     * or {@link com.rabbitmq.client.AMQP.Basic.GetOk} method containing the message to be rejected.
+     * or {@link com.rabbitmq.client.AMQP.Basic.Deliver} method containing the message to be rejected.
      * @see com.rabbitmq.client.AMQP.Basic.Nack
      * @param deliveryTag the tag from the received {@link com.rabbitmq.client.AMQP.Basic.GetOk} or {@link com.rabbitmq.client.AMQP.Basic.Deliver}
      * @param multiple true to reject all messages up to and including
