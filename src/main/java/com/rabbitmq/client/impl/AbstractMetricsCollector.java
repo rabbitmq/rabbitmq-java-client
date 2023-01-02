@@ -131,7 +131,6 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     @Override
     public void basicPublishAck(Channel channel, long deliveryTag, boolean multiple) {
-        LOGGER.debug("Publish confirm, delivery tag = {}, multiple = {}", deliveryTag, multiple);
         try {
             updateChannelStateAfterAckReject(channel, deliveryTag, multiple, GET_UNCONFIRMED_DTAGS, markMessagePublishAcknowledgedAction);
         } catch (Exception e) {
@@ -255,7 +254,6 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     private void updateChannelStateAfterAckReject(Channel channel, long deliveryTag, boolean multiple,
                                                   Function<ChannelState, Set<Long>> dtags, Runnable action) {
         ChannelState channelState = channelState(channel);
-        LOGGER.debug("Delivery tags: {}", dtags.apply(channelState));
         channelState.lock.lock();
         try {
             if(multiple) {
@@ -264,12 +262,10 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
                     long messageDeliveryTag = iterator.next();
                     if(messageDeliveryTag <= deliveryTag) {
                         iterator.remove();
-                        LOGGER.debug("Removed delivery tag: {}, running action", messageDeliveryTag);
                         action.run();
                     }
                 }
             } else {
-                LOGGER.debug("Removed delivery tag: {}, running action", deliveryTag);
                 dtags.apply(channelState).remove(deliveryTag);
                 // we always run the action, whether the set contains the delivery tag
                 // the collection may not contain the tag yet, if the ack/confirm arrives very fast
