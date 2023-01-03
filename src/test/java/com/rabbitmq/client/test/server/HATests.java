@@ -17,10 +17,7 @@ package com.rabbitmq.client.test.server;
 
 import com.rabbitmq.client.test.AbstractRMQTestSuite;
 import com.rabbitmq.client.test.RequiredPropertiesSuite;
-import com.rabbitmq.client.test.functional.DeadLetterExchange;
-import com.rabbitmq.client.test.functional.DurableOnTransient;
 import com.rabbitmq.client.test.functional.FunctionalTests;
-import com.rabbitmq.client.test.functional.QosTests;
 import com.rabbitmq.tools.Host;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,10 +26,8 @@ import org.junit.runners.Suite;
 @RunWith(RequiredPropertiesSuite.class)
 @Suite.SuiteClasses({
     HATests.SetUp.class,
-//    FunctionalTests.class,
-//    ServerTests.class,
-    ExclusiveQueueDurability.class,
-    DeadLetterExchange.class,
+    FunctionalTests.class,
+    ServerTests.class,
     HATests.TearDown.class
 })
 public class HATests {
