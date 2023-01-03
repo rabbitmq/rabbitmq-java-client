@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -13,11 +13,11 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.nio.NioParams;
+import com.rabbitmq.client.test.TestUtils.TestDescription;
 import com.rabbitmq.tools.Host;
 import org.junit.After;
 import org.junit.Before;
@@ -37,6 +37,9 @@ import static org.junit.Assert.*;
 import static org.junit.Assume.*;
 
 public class BrokerTestCase {
+
+    @Rule
+    public TestDescription testDescription = new TestDescription();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BrokerTestCase.class);
 
@@ -339,11 +342,22 @@ public class BrokerTestCase {
     }
 
     protected String generateQueueName() {
-        return "queue" + UUID.randomUUID().toString();
+        return name("queue", this.testDescription.getDescription().getTestClass(),
+            this.testDescription.getDescription().getMethodName());
     }
 
     protected String generateExchangeName() {
-        return "exchange" + UUID.randomUUID().toString();
+        return name("exchange", this.testDescription.getDescription().getTestClass(),
+            this.testDescription.getDescription().getMethodName());
     }
+
+    private static String name(String prefix, Class<?> testClass, String testMethodName) {
+        String uuid = UUID.randomUUID().toString();
+        return String.format(
+            "%s_%s_%s%s",
+            prefix, testClass.getSimpleName(), testMethodName, uuid.substring(uuid.length() / 2));
+    }
+
+
 
 }
