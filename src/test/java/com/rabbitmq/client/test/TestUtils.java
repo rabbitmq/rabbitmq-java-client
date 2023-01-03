@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -28,6 +28,7 @@ import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
 import org.junit.runner.notification.RunNotifier;
@@ -531,4 +532,30 @@ public class TestUtils {
         }
         throw new IllegalStateException("Could not determine Java major version");
     }
+
+    public static void safeDelete(Connection connection, String queue) {
+        try {
+            Channel ch = connection.createChannel();
+            ch.queueDelete(queue);
+            ch.close();
+        } catch (Exception e) {
+            // OK
+        }
+    }
+
+    public static class TestDescription extends TestWatcher {
+
+        private volatile Description description;
+
+        @Override
+        protected void starting(Description d) {
+            description = d;
+        }
+
+        public Description getDescription() {
+            return description;
+        }
+    }
+
+
 }
