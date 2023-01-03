@@ -36,23 +36,27 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: 'maven'
-      - name: Start broker
-        run: ci/start-broker.sh
+      - name: Start cluster
+        run: ci/start-cluster.sh
       - name: Get dependencies
         run: make deps
       - name: Test with NIO
         run: |
           ./mvnw verify -P '!setup-test-cluster,use-nio' -Drabbitmqctl.bin=DOCKER:rabbitmq \
-            -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
+            -Dtest-broker.A.nodename=rabbit@$(hostname) -Dtest-broker.B.nodename=hare@$(hostname) \
+            -Dmaven.javadoc.skip=true \
             -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
-            -Dit.test=ClientTests,FunctionalTests,ServerTests,SSLTests \
+            -Dit.test=HATests \
             --no-transfer-progress
       - name: Test with blocking IO
         run: |
           ./mvnw verify -P '!setup-test-cluster' -Drabbitmqctl.bin=DOCKER:rabbitmq \
-          -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
+          -Dtest-broker.A.nodename=rabbit@$(hostname) -Dtest-broker.B.nodename=hare@$(hostname) \
+          -Dmaven.javadoc.skip=true \
           -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
-          -Dit.test=ClientTests,FunctionalTests,ServerTests,SSLTests \
+          -Dit.test=HATests \
           --no-transfer-progress
-      - name: Stop broker
+      - name: Stop broker A
         run: docker stop rabbitmq && docker rm rabbitmq
+      - name: Stop broker B
+        run: docker stop hare && docker rm hare
