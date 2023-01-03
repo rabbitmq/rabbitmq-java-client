@@ -46,7 +46,6 @@ jobs:
             -Dtest-broker.A.nodename=rabbit@$(hostname) -Dtest-broker.B.nodename=hare@$(hostname) \
             -Dmaven.javadoc.skip=true \
             -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
-            -Dit.test=HATests \
             --no-transfer-progress
       - name: Test with blocking IO
         run: |
@@ -54,7 +53,6 @@ jobs:
           -Dtest-broker.A.nodename=rabbit@$(hostname) -Dtest-broker.B.nodename=hare@$(hostname) \
           -Dmaven.javadoc.skip=true \
           -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
-          -Dit.test=HATests \
           --no-transfer-progress
       - name: Stop broker A
         run: docker stop rabbitmq && docker rm rabbitmq
