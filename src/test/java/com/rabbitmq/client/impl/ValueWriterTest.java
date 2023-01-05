@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2019-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,49 +15,43 @@
 
 package com.rabbitmq.client.impl;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ValueWriterTest {
 
-    @Test(expected = IllegalArgumentException.class)
-    public void writingOverlyLargeBigDecimalShouldFail()
-            throws IOException {
-
-        OutputStream outputStream = new OutputStream() {
-            @Override
-            public void write(int b) {
-            }
-        };
-
-        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-
-        ValueWriter valueWriter = new ValueWriter(dataOutputStream);
-
-        valueWriter.writeFieldValue(new BigDecimal(Integer.MAX_VALUE).add(new BigDecimal(1)));
-
+    @Test
+    public void writingOverlyLargeBigDecimalShouldFail() {
+        assertThatThrownBy(() -> {
+            OutputStream outputStream = new OutputStream() {
+                @Override
+                public void write(int b) {
+                }
+            };
+            DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+            ValueWriter valueWriter = new ValueWriter(dataOutputStream);
+            valueWriter.writeFieldValue(new BigDecimal(Integer.MAX_VALUE).add(new BigDecimal(1)));
+        }).isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void writingOverlyLargeScaleInBigDecimalShouldFail()
-            throws IOException {
-
-        OutputStream outputStream = new OutputStream() {
-            @Override
-            public void write(int b) {
-            }
-        };
-
-        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-
-        ValueWriter valueWriter = new ValueWriter(dataOutputStream);
-
-        valueWriter.writeFieldValue(new BigDecimal(BigInteger.ONE, 500));
+    @Test
+    public void writingOverlyLargeScaleInBigDecimalShouldFail() {
+        assertThatThrownBy(() -> {
+            OutputStream outputStream = new OutputStream() {
+                @Override
+                public void write(int b) {
+                }
+            };
+            DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+            ValueWriter valueWriter = new ValueWriter(dataOutputStream);
+            valueWriter.writeFieldValue(new BigDecimal(BigInteger.ONE, 500));
+        }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

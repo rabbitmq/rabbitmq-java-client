@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2018-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -17,9 +17,6 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQImpl;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -27,20 +24,18 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static com.rabbitmq.client.test.TestUtils.closeAndWaitForRecovery;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(Parameterized.class)
 public class RpcTopologyRecordingTest extends BrokerTestCase {
 
-    @Parameterized.Parameter
-    public RpcCall rpcCall;
     String exchange, queue, routingKey;
     String exchange2, queue2, routingKey2;
 
-    @Parameterized.Parameters
     public static Object[] data() {
         return new Object[]{
                 (RpcCall) (channel, method) -> channel.asyncCompletableRpc(method).get(5, TimeUnit.SECONDS),
@@ -73,9 +68,10 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
         channel.exchangeDelete(exchange2);
     }
 
-    @Test
-    public void topologyRecovery() throws Exception {
-        createTopology();
+    @ParameterizedTest
+    @MethodSource("data")
+    public void topologyRecovery(RpcCall rpcCall) throws Exception {
+        createTopology(rpcCall);
 
         AtomicReference<CountDownLatch> latch = new AtomicReference<>(new CountDownLatch(2));
         DeliverCallback countDown = (ctag, message) -> latch.get().countDown();
@@ -98,9 +94,10 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
         assertTrue(latch.get().await(5, TimeUnit.SECONDS));
     }
 
-    @Test
-    public void deletionAreProperlyRecorded() throws Exception {
-        createTopology();
+    @ParameterizedTest
+    @MethodSource("data")
+    public void deletionAreProperlyRecorded(RpcCall rpcCall) throws Exception {
+        createTopology(rpcCall);
 
         AtomicReference<CountDownLatch> latch = new AtomicReference<>(new CountDownLatch(2));
         DeliverCallback countDown = (ctag, message) -> latch.get().countDown();
@@ -151,9 +148,10 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
         }
     }
 
-    @Test
-    public void bindingDeletionAreProperlyRecorded() throws Exception {
-        createTopology();
+    @ParameterizedTest
+    @MethodSource("data")
+    public void bindingDeletionAreProperlyRecorded(RpcCall rpcCall) throws Exception {
+        createTopology(rpcCall);
 
         AtomicReference<CountDownLatch> latch = new AtomicReference<>(new CountDownLatch(2));
         DeliverCallback countDown = (ctag, message) -> latch.get().countDown();
@@ -167,7 +165,7 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
 
         assertTrue(latch.get().await(5, TimeUnit.SECONDS));
 
-        unbind();
+        unbind(rpcCall);
 
         latch.set(new CountDownLatch(2));
 
@@ -178,9 +176,9 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
         assertFalse(latch.get().await(2, TimeUnit.SECONDS));
     }
 
-    private void createTopology() throws Exception {
-        createAndBind(exchange, queue, routingKey);
-        createAndBind(exchange2, queue2, routingKey2);
+    private void createTopology(RpcCall rpcCall) throws Exception {
+        createAndBind(rpcCall, exchange, queue, routingKey);
+        createAndBind(rpcCall, exchange2, queue2, routingKey2);
         rpcCall.call(channel, new AMQImpl.Exchange.Bind.Builder()
                 .source(exchange)
                 .destination(exchange2)
@@ -189,7 +187,7 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
                 .build());
     }
 
-    private void createAndBind(String e, String q, String rk) throws Exception {
+    private void createAndBind(RpcCall rpcCall, String e, String q, String rk) throws Exception {
         rpcCall.call(channel, new AMQImpl.Queue.Declare.Builder()
                 .queue(q)
                 .durable(false)
@@ -212,7 +210,7 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
                 .build());
     }
 
-    private void unbind() throws Exception {
+    private void unbind(RpcCall rpcCall) throws Exception {
         rpcCall.call(channel, new AMQImpl.Queue.Unbind.Builder()
                 .exchange(exchange)
                 .queue(queue)

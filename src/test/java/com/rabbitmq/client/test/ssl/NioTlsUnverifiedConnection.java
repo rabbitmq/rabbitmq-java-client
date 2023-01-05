@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -17,8 +17,8 @@ package com.rabbitmq.client.test.ssl;
 
 import static com.rabbitmq.client.test.TestUtils.basicGetBasicConsume;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -42,7 +42,7 @@ import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.netcrusher.core.reactor.NioReactor;
 import org.netcrusher.tcp.TcpCrusher;
 import org.netcrusher.tcp.TcpCrusherBuilder;
@@ -90,7 +90,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
         CountDownLatch latch = new CountDownLatch(1);
         basicGetBasicConsume(connection, QUEUE, latch, 100 * 1000);
         boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
-        assertTrue("Message has not been received", messagesReceived);
+        assertTrue(messagesReceived, "Message has not been received");
     }
 
     @Test
@@ -113,7 +113,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
                 CountDownLatch latch = new CountDownLatch(1);
                 basicGetBasicConsume(c, QUEUE, latch, 100);
                 boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
-                assertTrue("Message has not been received", messagesReceived);
+                assertTrue(messagesReceived, "Message has not been received");
                 assertThat(engine.get()).isNotNull();
                 assertThat(engine.get().getEnabledProtocols()).contains(protocol);
             }
@@ -133,7 +133,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
         Connection connection = null;
         try {
             connection = connectionFactory.newConnection();
-            assertTrue("The SSL engine configurator should have called", sslEngineHasBeenCalled.get());
+            assertTrue(sslEngineHasBeenCalled.get(), "The SSL engine configurator should have called");
         } finally {
             if (connection != null) {
                 connection.close();
@@ -213,7 +213,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
     private void sendAndVerifyMessage(int size) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         boolean messageReceived = basicGetBasicConsume(connection, QUEUE, latch, size);
-        assertTrue("Message has not been received", messageReceived);
+        assertTrue(messageReceived, "Message has not been received");
     }
 
 }

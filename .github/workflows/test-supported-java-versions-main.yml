@@ -1,0 +1,57 @@
+name: Test against supported Java versions (main)
+
+on:
+  schedule:
+    - cron:  '0 4 * * *'
+  workflow_dispatch:
+
+env:
+  RABBITMQ_IMAGE_TAG: 3.11
+  RABBITMQ_IMAGE: rabbitmq
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        java: [ '8', '11', '17', '19', '20-ea' ]
+    name:  Test against Java ${{ matrix.java }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Checkout tls-gen
+        uses: actions/checkout@v3
+        with:
+          repository: rabbitmq/tls-gen
+          path: './tls-gen'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+      - name: Start broker
+        run: ci/start-broker.sh
+      - name: Get dependencies
+        run: make deps
+      - name: Show version
+        run: ./mvnw --version
+      - name: Test with NIO
+        run: |
+          ./mvnw verify -P '!setup-test-cluster,use-nio' -Drabbitmqctl.bin=DOCKER:rabbitmq \
+            -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
+            -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
+            -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
+            --no-transfer-progress
+      - name: Test with blocking IO
+        run: |
+          ./mvnw verify -P '!setup-test-cluster' -Drabbitmqctl.bin=DOCKER:rabbitmq \
+          -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
+          -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
+          -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
+          --no-transfer-progress
+      - name: Stop broker
+        run: docker stop rabbitmq && docker rm rabbitmq

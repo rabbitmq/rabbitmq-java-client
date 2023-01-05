@@ -60,7 +60,7 @@
     <opentelemetry.version>1.21.0</opentelemetry.version>
     <jackson.version>2.14.1</jackson.version>
     <logback.version>1.2.11</logback.version>
-    <junit.version>4.13.2</junit.version>
+    <junit.jupiter.version>5.9.1</junit.jupiter.version>
     <mockito.version>4.11.0</mockito.version>
     <assertj.version>3.24.0</assertj.version>
     <jetty.version>9.4.50.v20221201</jetty.version>
@@ -77,8 +77,8 @@
     <keytool.maven.plugin.version>1.6</keytool.maven.plugin.version>
     <build.helper.maven-plugin.version>3.3.0</build.helper.maven-plugin.version>
     <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
-    <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
-    <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
+    <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
+    <maven.failsafe.plugin.version>3.0.0-M7</maven.failsafe.plugin.version>
     <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
     <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
     <maven.bundle.plugin.version>5.1.8</maven.bundle.plugin.version>
@@ -422,11 +422,11 @@
               </environmentVariables>
               <failIfNoTests>true</failIfNoTests>
               <includes>
-                <include>**/ClientTests.*</include>
-                <include>**/FunctionalTests.*</include>
-                <include>**/SSLTests.*</include>
-                <include>**/ServerTests.*</include>
-                <include>**/HATests.*</include>
+                <include>**/ClientTestSuite.*</include>
+                <include>**/FunctionalTestSuite.*</include>
+                <include>**/SslTestSuite.*</include>
+                <include>**/ServerTestSuite.*</include>
+                <include>**/HaTestSuite.*</include>
               </includes>
               <!--
                 needed because of bug in OpenJDK 8 u181 on Debian distros
@@ -718,9 +718,19 @@
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- for parameterized tests -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -768,6 +778,18 @@
 
   </dependencies>
 
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.jupiter.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <build>
 
     <pluginManagement>

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -23,9 +23,9 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.AMQImpl.Basic.Publish;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -35,19 +35,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BrokenFramesTest {
 
     private MyFrameHandler myFrameHandler;
     private ConnectionFactory factory;
 
-    @Before public void setUp() {
+    @BeforeEach public void setUp() {
         myFrameHandler = new MyFrameHandler();
         factory = TestUtils.connectionFactory();
     }
 
-    @After public void tearDown() {
+    @AfterEach public void tearDown() {
         factory = null;
         myFrameHandler = null;
     }

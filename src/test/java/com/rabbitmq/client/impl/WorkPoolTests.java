@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,15 +15,15 @@
 
 package com.rabbitmq.client.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for {@link WorkPool}
@@ -34,9 +34,8 @@ public class WorkPoolTests {
 
     /**
      * Test unknown key tolerated silently
-     * @throws Exception untested
      */
-    @Test public void unknownKey() throws Exception{
+    @Test public void unknownKey() {
         assertFalse(this.pool.addWorkItem("test", new Object()));
     }
 
@@ -58,16 +57,15 @@ public class WorkPoolTests {
         assertEquals(1, workList.size());
         assertEquals(one, workList.get(0));
 
-        assertTrue("Should be made ready", this.pool.finishWorkBlock(key));
+        assertTrue(this.pool.finishWorkBlock(key), "Should be made ready");
 
         workList.clear();
         key = this.pool.nextWorkBlock(workList, 1);
-        assertEquals("Work client key wrong", "test", key);
-        assertEquals("Wrong work delivered", two, workList.get(0));
+        assertEquals("test", key, "Work client key wrong");
+        assertEquals(two, workList.get(0), "Wrong work delivered");
 
-        assertFalse("Should not be made ready after this.", this.pool.finishWorkBlock(key));
-
-        assertNull("Shouldn't be more work", this.pool.nextWorkBlock(workList, 1));
+        assertFalse(this.pool.finishWorkBlock(key), "Should not be made ready after this.");
+        assertNull(this.pool.nextWorkBlock(workList, 1), "Shouldn't be more work");
     }
 
     /**

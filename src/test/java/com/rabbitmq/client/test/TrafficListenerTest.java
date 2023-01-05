@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2018-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -21,9 +21,8 @@ import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.TrafficListener;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,20 +31,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
  */
-@RunWith(Parameterized.class)
 public class TrafficListenerTest {
 
-    @Parameterized.Parameter
-    public Consumer<ConnectionFactory> configurator;
 
-    @Parameterized.Parameters
-    public static Object[] data() {
+    static Object[] trafficListenerIsCalled() {
         return new Object[] { automaticRecoveryEnabled(), automaticRecoveryDisabled() };
     }
 
@@ -57,8 +52,9 @@ public class TrafficListenerTest {
         return cf -> cf.setAutomaticRecoveryEnabled(false);
     }
 
-    @Test
-    public void trafficListenerIsCalled() throws Exception {
+    @ParameterizedTest
+    @MethodSource
+    public void trafficListenerIsCalled(Consumer<ConnectionFactory> configurator) throws Exception {
         ConnectionFactory cf = TestUtils.connectionFactory();
         TestTrafficListener testTrafficListener = new TestTrafficListener();
         cf.setTrafficListener(testTrafficListener);

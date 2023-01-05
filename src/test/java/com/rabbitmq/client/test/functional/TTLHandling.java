@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,15 +15,15 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.rabbitmq.client.ShutdownSignalException;
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
@@ -112,7 +112,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         Thread.sleep(1000);
 
         String what = get();
-        assertNull("expected message " + what + " to have been removed", what);
+        assertNull(what, "expected message " + what + " to have been removed");
     }
 
     @Test public void publishAndGetWithExpiry() throws Exception {
@@ -183,7 +183,7 @@ public abstract class TTLHandling extends BrokerTestCase {
         Thread.sleep(150);
         openChannel();
 
-        assertNull("Re-queued message not expired", get());
+        assertNull(get(), "Re-queued message not expired");
     }
 
     @Test public void zeroTTLDelivery() throws Exception {

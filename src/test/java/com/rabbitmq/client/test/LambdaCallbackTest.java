@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2017-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -17,7 +17,7 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -25,7 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LambdaCallbackTest extends BrokerTestCase {
 
@@ -53,7 +53,7 @@ public class LambdaCallbackTest extends BrokerTestCase {
             Channel channel = connection.createChannel();
             channel.addShutdownListener(cause -> latch.countDown());
         }
-        assertTrue("Connection closed, shutdown listeners should have been called", latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "Connection closed, shutdown listeners should have been called");
     }
 
     @Test public void confirmListener() throws Exception {
@@ -64,14 +64,14 @@ public class LambdaCallbackTest extends BrokerTestCase {
             (deliveryTag, multiple) -> {}
         );
         channel.basicPublish("", "whatever", null, "dummy".getBytes());
-        assertTrue("Should have received publisher confirm", latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "Should have received publisher confirm");
     }
 
     @Test public void returnListener() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         channel.addReturnListener(returnMessage -> latch.countDown());
         channel.basicPublish("", "notlikelytoexist", true, null, "dummy".getBytes());
-        assertTrue("Should have received returned message", latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(1, TimeUnit.SECONDS), "Should have received returned message");
     }
 
     @Test public void blockedListener() throws Exception {
@@ -90,7 +90,7 @@ public class LambdaCallbackTest extends BrokerTestCase {
             block();
             Channel ch = connection.createChannel();
             ch.basicPublish("", "", null, "dummy".getBytes());
-            assertTrue("Should have been blocked and unblocked", latch.await(10, TimeUnit.SECONDS));
+            assertTrue(latch.await(10, TimeUnit.SECONDS), "Should have been blocked and unblocked");
         }
     }
 
@@ -104,9 +104,9 @@ public class LambdaCallbackTest extends BrokerTestCase {
                 consumerTag -> cancelLatch.countDown()
             );
             this.channel.basicPublish("", queue, null, "dummy".getBytes());
-            assertTrue("deliver callback should have been called", consumingLatch.await(1, TimeUnit.SECONDS));
+            assertTrue(consumingLatch.await(1, TimeUnit.SECONDS), "deliver callback should have been called");
             this.channel.queueDelete(queue);
-            assertTrue("cancel callback should have been called", cancelLatch.await(1, TimeUnit.SECONDS));
+            assertTrue(cancelLatch.await(1, TimeUnit.SECONDS), "cancel callback should have been called");
         }
     }
 
@@ -120,9 +120,9 @@ public class LambdaCallbackTest extends BrokerTestCase {
                 (consumerTag, sig) -> shutdownLatch.countDown()
             );
             this.channel.basicPublish("", queue, null, "dummy".getBytes());
-            assertTrue("deliver callback should have been called", consumingLatch.await(1, TimeUnit.SECONDS));
+            assertTrue(consumingLatch.await(1, TimeUnit.SECONDS), "deliver callback should have been called");
         }
-        assertTrue("shutdown callback should have been called", shutdownLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(shutdownLatch.await(1, TimeUnit.SECONDS), "shutdown callback should have been called");
     }
 
     @Test public void basicConsumeCancelDeliverShutdown() throws Exception {
@@ -138,9 +138,9 @@ public class LambdaCallbackTest extends BrokerTestCase {
                 (consumerTag, sig) -> shutdownLatch.countDown()
             );
             this.channel.basicPublish("", queue, null, "dummy".getBytes());
-            assertTrue("deliver callback should have been called", consumingLatch.await(1, TimeUnit.SECONDS));
+            assertTrue(consumingLatch.await(1, TimeUnit.SECONDS), "deliver callback should have been called");
         }
-        assertTrue("shutdown callback should have been called", shutdownLatch.await(1, TimeUnit.SECONDS));
+        assertTrue(shutdownLatch.await(1, TimeUnit.SECONDS), "shutdown callback should have been called");
     }
 
 }

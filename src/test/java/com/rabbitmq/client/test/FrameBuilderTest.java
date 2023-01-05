@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -19,10 +19,11 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.nio.FrameBuilder;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -34,7 +35,6 @@ import static org.assertj.core.api.Assertions.fail;
 /**
  *
  */
-@RunWith(MockitoJUnitRunner.class)
 public class FrameBuilderTest {
 
     @Mock
@@ -43,6 +43,18 @@ public class FrameBuilderTest {
     ByteBuffer buffer;
 
     FrameBuilder builder;
+
+    AutoCloseable mocks;
+
+    @BeforeEach
+    void init() {
+        this.mocks = MockitoAnnotations.openMocks(this);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        mocks.close();
+    }
 
     @Test
     public void buildFrameInOneGo() throws IOException {

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -14,12 +14,12 @@
 // info@rabbitmq.com.
 package com.rabbitmq.client.test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Method;
@@ -38,7 +38,7 @@ public class AMQBuilderApiTest extends BrokerTestCase
                            .build()
                            ).getMethod();
 
-        assertTrue("Channel should still be open.", channel.isOpen());
+        assertTrue(channel.isOpen(), "Channel should still be open.");
         assertTrue(retVal instanceof AMQP.Exchange.DeclareOk);
 
         retVal = channel.rpc(new AMQP.Exchange.Delete.Builder()
@@ -46,7 +46,7 @@ public class AMQBuilderApiTest extends BrokerTestCase
                             .build()
                             ).getMethod();
         
-        assertTrue("Channel should still be open.", channel.isOpen());
+        assertTrue(channel.isOpen(), "Channel should still be open.");
         assertTrue(retVal instanceof AMQP.Exchange.DeleteOk);
     }
 
@@ -59,14 +59,14 @@ public class AMQBuilderApiTest extends BrokerTestCase
                         .build()
                         );
 
-        assertTrue("Channel should still be open.", channel.isOpen());
+        assertTrue(channel.isOpen(), "Channel should still be open.");
 
         channel.asyncRpc(new AMQP.Exchange.Delete.Builder()
                         .exchange(XCHG_NAME)
                         .build()
                         );
 
-        assertTrue("Channel should still be open.", channel.isOpen());
+        assertTrue(channel.isOpen(), "Channel should still be open.");
     }
 
     @Test public void illFormedBuilder()

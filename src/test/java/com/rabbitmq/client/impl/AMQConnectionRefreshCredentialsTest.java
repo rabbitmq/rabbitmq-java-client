@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2019-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -18,12 +18,13 @@ package com.rabbitmq.client.impl;
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.test.TestUtils;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.junit.runner.RunWith;
+import com.rabbitmq.client.test.TestUtils.BrokerVersion;
+import com.rabbitmq.client.test.TestUtils.BrokerVersionAtLeast;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -38,17 +39,26 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@BrokerVersionAtLeast(BrokerVersion.RABBITMQ_3_8)
 public class AMQConnectionRefreshCredentialsTest {
-
-    @ClassRule
-    public static TestRule brokerVersionTestRule = TestUtils.atLeast38();
 
     @Mock
     CredentialsProvider credentialsProvider;
 
     @Mock
     CredentialsRefreshService refreshService;
+
+    AutoCloseable mocks;
+
+    @BeforeEach
+    void init() {
+        mocks = MockitoAnnotations.openMocks(this);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        mocks.close();
+    }
 
     private static ConnectionFactory connectionFactoryThatSendsGarbageAfterUpdateSecret() {
         ConnectionFactory cf = new ConnectionFactory() {

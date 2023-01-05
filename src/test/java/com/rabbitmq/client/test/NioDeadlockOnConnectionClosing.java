@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -18,9 +18,9 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.nio.NioParams;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static com.rabbitmq.client.test.TestUtils.closeAllConnectionsAndWaitForRecovery;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -44,7 +44,7 @@ public class NioDeadlockOnConnectionClosing {
     ConnectionFactory cf;
     List<Connection> connections;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         nioExecutorService = Executors.newFixedThreadPool(2);
         connectionShutdownExecutorService = Executors.newFixedThreadPool(2);
@@ -60,7 +60,7 @@ public class NioDeadlockOnConnectionClosing {
         connections = new ArrayList<>();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         for (Connection connection : connections) {
             try {

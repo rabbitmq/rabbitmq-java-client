@@ -5,13 +5,13 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.test.BrokerTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -27,7 +27,7 @@ public class BasicConsume extends BrokerTestCase {
         channel.basicConsume(q, new CountDownLatchConsumer(channel, latch));
 
         boolean nbOfExpectedMessagesHasBeenConsumed = latch.await(1, TimeUnit.SECONDS);
-        assertTrue("Not all the messages have been received", nbOfExpectedMessagesHasBeenConsumed);
+        assertTrue(nbOfExpectedMessagesHasBeenConsumed, "Not all the messages have been received");
     }
 
     static class CountDownLatchConsumer extends DefaultConsumer {

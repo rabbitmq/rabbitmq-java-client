@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2018-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -17,11 +17,12 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.stubbing.OngoingStubbing;
 
@@ -29,16 +30,13 @@ import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
-@RunWith(Parameterized.class)
 public class ConnectionTest {
 
-    @Parameterized.Parameter
-    public TestConfigurator configurator;
     @Mock
     MyConnection c = mock(MyConnection.class);
     @Mock
@@ -46,23 +44,23 @@ public class ConnectionTest {
 
     AutoCloseable mocks;
 
-    @Parameterized.Parameters
     public static Object[] configurators() {
         return new Object[]{new NotNumberedChannelCreationCallback(), new NumberedChannelCreationCallback()};
     }
 
-    @Before
+    @BeforeEach
     public void init() {
         mocks = openMocks(this);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         mocks.close();
     }
 
-    @Test
-    public void openChannelWithNonNullChannelShouldReturnNonEmptyOptional() throws Exception {
+    @ParameterizedTest
+    @MethodSource("configurators")
+    public void openChannelWithNonNullChannelShouldReturnNonEmptyOptional(TestConfigurator configurator) throws Exception {
         configurator.mockAndWhenChannel(c).thenReturn(ch);
         configurator.mockAndWhenOptional(c).thenCallRealMethod();
         Optional<Channel> optional = configurator.open(c);
@@ -70,20 +68,24 @@ public class ConnectionTest {
         assertSame(ch, optional.get());
     }
 
-    @Test(expected = NoSuchElementException.class)
-    public void openChannelWithNullChannelShouldReturnEmptyOptional() throws Exception {
+    @ParameterizedTest
+    @MethodSource("configurators")
+    public void openChannelWithNullChannelShouldReturnEmptyOptional(TestConfigurator configurator) throws Exception {
         configurator.mockAndWhenChannel(c).thenReturn(null);
         configurator.mockAndWhenOptional(c).thenCallRealMethod();
-        Optional<Channel> optional = configurator.open(c);
-        assertFalse(optional.isPresent());
-        optional.get();
+        Assertions.assertThatThrownBy(() -> {
+            Optional<Channel> optional = configurator.open(c);
+            assertFalse(optional.isPresent());
+            optional.get();
+        }).isInstanceOf(NoSuchElementException.class);
     }
 
-    @Test(expected = IOException.class)
-    public void openChannelShouldPropagateIoException() throws Exception {
+    @ParameterizedTest
+    @MethodSource("configurators")
+    public void openChannelShouldPropagateIoException(TestConfigurator configurator) throws Exception {
         configurator.mockAndWhenChannel(c).thenThrow(IOException.class);
         configurator.mockAndWhenOptional(c).thenCallRealMethod();
-        configurator.open(c);
+        Assertions.assertThatThrownBy(() -> configurator.open(c)).isInstanceOf(IOException.class);
     }
 
     interface TestConfigurator {

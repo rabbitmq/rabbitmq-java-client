@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -13,7 +13,6 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.JacksonJsonRpcTest;
@@ -24,11 +23,12 @@ import com.rabbitmq.client.impl.RefreshProtectedCredentialsProviderTest;
 import com.rabbitmq.client.impl.ValueWriterTest;
 import com.rabbitmq.client.impl.*;
 import com.rabbitmq.utility.IntAllocatorTests;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
 
-@RunWith(TestUtils.DefaultTestSuite.class)
-@Suite.SuiteClasses({
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
+
+@Suite
+@SelectClasses({
     TableTest.class,
     LongStringTest.class,
     BlockingCellTest.class,
@@ -83,11 +83,6 @@ import org.junit.runners.Suite;
     RefreshCredentialsTest.class,
     AMQConnectionRefreshCredentialsTest.class
 })
-public class ClientTests {
-
-    // initialize system properties
-    static{
-        new AbstractRMQTestSuite(){};
-    }
+public class ClientTestSuite {
 
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,14 +16,13 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import com.rabbitmq.client.test.TestUtils.BrokerAtLeast310Condition;
-import com.rabbitmq.client.test.TestUtils.ExecutionConditionRule;
-import com.rabbitmq.client.test.TestUtils.TestExecutionCondition;
+import com.rabbitmq.client.test.TestUtils.BrokerVersion;
+import com.rabbitmq.client.test.TestUtils.BrokerVersionAtLeast;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,8 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
@@ -40,12 +38,9 @@ import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.utility.BlockingCell;
-import org.junit.rules.TestRule;
 
 public class Routing extends BrokerTestCase
 {
-
-    @Rule public TestRule executionConditionRule = new ExecutionConditionRule();
 
     protected final String E = "MRDQ";
     protected final String Q1 = "foo";
@@ -253,7 +248,7 @@ public class Routing extends BrokerTestCase
     }
 
     @Test
-    @TestExecutionCondition(BrokerAtLeast310Condition.class)
+    @BrokerVersionAtLeast(BrokerVersion.RABBITMQ_3_10)
     public void headersWithXRouting() throws Exception {
         Map<String, Object> spec = new HashMap<String, Object>();
         spec.put("x-key-1", "value-1");

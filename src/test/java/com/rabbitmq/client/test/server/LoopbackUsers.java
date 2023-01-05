@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,7 +15,7 @@
 
 package com.rabbitmq.client.test.server;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -26,9 +26,9 @@ import java.util.Enumeration;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.test.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AuthenticationFailureException;
 import com.rabbitmq.client.ConnectionFactory;
@@ -36,12 +36,12 @@ import com.rabbitmq.tools.Host;
 
 public class LoopbackUsers {
     
-	@Before public void setUp() throws IOException {
+	@BeforeEach public void setUp() throws IOException {
         Host.rabbitmqctl("add_user test test");
         Host.rabbitmqctl("set_permissions test '.*' '.*' '.*'");
     }
 
-    @After public void tearDown() throws IOException {
+    @AfterEach public void tearDown() throws IOException {
         Host.rabbitmqctl("delete_user test");
     }
 

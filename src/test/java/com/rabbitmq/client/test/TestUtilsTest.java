@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2017-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -17,7 +17,7 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Connection;
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;

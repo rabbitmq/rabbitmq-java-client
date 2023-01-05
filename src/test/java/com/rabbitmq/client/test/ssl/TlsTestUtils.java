@@ -15,7 +15,7 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.FileInputStream;
 import java.security.KeyStore;
