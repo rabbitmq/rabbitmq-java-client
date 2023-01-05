@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,18 +15,21 @@
 
 package com.rabbitmq.client.test.server;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
+import org.junit.jupiter.api.TestInfo;
 
 public class MemoryAlarms extends BrokerTestCase {
 
@@ -35,18 +38,20 @@ public class MemoryAlarms extends BrokerTestCase {
     private Connection connection2;
     private Channel channel2;
 
+    @BeforeEach
     @Override
-    public void setUp() throws IOException, TimeoutException {
+    public void setUp(TestInfo info) throws IOException, TimeoutException {
         connectionFactory.setRequestedHeartbeat(1);
-        super.setUp();
+        super.setUp(info);
         if (connection2 == null) {
             connection2 = connectionFactory.newConnection();
         }
         channel2 = connection2.createChannel();
     }
 
+    @AfterEach
     @Override
-    public void tearDown() throws IOException, TimeoutException {
+    public void tearDown(TestInfo info) throws IOException, TimeoutException {
         clearAllResourceAlarms();
         if (channel2 != null) {
             channel2.abort();
@@ -56,7 +61,7 @@ public class MemoryAlarms extends BrokerTestCase {
             connection2.abort();
             connection2 = null;
         }
-        super.tearDown();
+        super.tearDown(info);
         connectionFactory.setRequestedHeartbeat(0);
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2018-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,12 +15,14 @@
 
 package com.rabbitmq.client.test;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.rabbitmq.client.impl.MicrometerMetricsCollector;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.assertj.core.api.Assertions;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -31,7 +33,7 @@ public class MicrometerMetricsCollectorTest {
 
     MicrometerMetricsCollector collector;
 
-    @Before
+    @BeforeEach
     public void init() {
         registry = new SimpleMeterRegistry();
     }
@@ -52,9 +54,10 @@ public class MicrometerMetricsCollectorTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void tagsMustBeKeyValuePairs() {
-        collector = new MicrometerMetricsCollector(registry, "rabbitmq", "uri");
+        assertThatThrownBy(() -> new MicrometerMetricsCollector(registry, "rabbitmq", "uri"))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
 }

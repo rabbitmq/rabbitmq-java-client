@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2018-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -27,9 +27,9 @@ import com.rabbitmq.client.impl.recovery.RecordedConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
@@ -39,7 +39,7 @@ import java.util.function.Consumer;
 
 import static com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryLogic.RETRY_ON_QUEUE_NOT_FOUND_RETRY_HANDLER;
 import static com.rabbitmq.client.test.TestUtils.closeAllConnectionsAndWaitForRecovery;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -48,7 +48,7 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
 
     private volatile Consumer<Integer> backoffConsumer;
 
-    @Before
+    @BeforeEach
     public void init() {
         this.backoffConsumer = attempt -> { };
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -19,32 +19,25 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.TestUtils;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import java.util.function.Consumer;
 
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(Parameterized.class)
+@EnabledForJreRange(min = JRE.JAVA_11)
 public class HostnameVerification {
 
-    @ClassRule
-    public static TestRule atLeastJava11TestRule = TestUtils.atLeastJava11();
-
     static SSLContext sslContext;
-    @Parameterized.Parameter
-    public Consumer<ConnectionFactory> customizer;
 
-    @Parameterized.Parameters
     public static Object[] data() {
         return new Object[] {
             blockingIo(enableHostnameVerification()),
@@ -70,23 +63,26 @@ public class HostnameVerification {
         return connectionFactory -> connectionFactory.enableHostnameVerification();
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void initCrypto() throws Exception {
         sslContext = TlsTestUtils.verifiedSslContext();
     }
 
-    @Test(expected = SSLHandshakeException.class)
-    public void hostnameVerificationFailsBecauseCertificateNotIssuedForLoopbackInterface() throws Exception {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void hostnameVerificationFailsBecauseCertificateNotIssuedForLoopbackInterface(Consumer<ConnectionFactory> customizer) throws Exception {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         connectionFactory.useSslProtocol(sslContext);
         customizer.accept(connectionFactory);
-        connectionFactory.newConnection(
-            () -> singletonList(new Address("127.0.0.1", ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT)));
-        fail("The server certificate isn't issued for 127.0.0.1, the TLS handshake should have failed");
+        Assertions.assertThatThrownBy(() -> connectionFactory.newConnection(
+            () -> singletonList(new Address("127.0.0.1", ConnectionFactory.DEFAULT_AMQP_OVER_SSL_PORT))))
+            .isInstanceOf(SSLHandshakeException.class)
+            .as("The server certificate isn't issued for 127.0.0.1, the TLS handshake should have failed");
     }
 
-    @Test
-    public void hostnameVerificationSucceeds() throws Exception {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void hostnameVerificationSucceeds(Consumer<ConnectionFactory> customizer) throws Exception {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         connectionFactory.useSslProtocol(sslContext);
         customizer.accept(connectionFactory);

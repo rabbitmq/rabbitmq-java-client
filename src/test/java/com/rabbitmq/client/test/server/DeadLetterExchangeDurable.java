@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,13 +15,13 @@
 
 package com.rabbitmq.client.test.server;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -51,7 +51,7 @@ public class DeadLetterExchangeDurable extends BrokerTestCase {
 
     @Test public void deadLetterQueueTTLExpiredWhileDown() throws Exception {
         // This test is nonsensical (and often breaks) in HA mode.
-        if (HATests.HA_TESTS_RUNNING) return;
+        if (ha()) return;
 
         for(int x = 0; x < DeadLetterExchange.MSG_COUNT; x++) {
             channel.basicPublish("amq.direct", "test", MessageProperties.MINIMAL_PERSISTENT_BASIC, "test message".getBytes());

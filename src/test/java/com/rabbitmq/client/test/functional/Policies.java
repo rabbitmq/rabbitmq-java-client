@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,9 +15,9 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -25,12 +25,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.test.server.HATests;
 import com.rabbitmq.tools.Host;
 
 public class Policies extends BrokerTestCase {
@@ -184,7 +183,7 @@ public class Policies extends BrokerTestCase {
         // We need to override the HA policy that we use in HATests, so
         // priority 1. But we still want a valid test of HA, so add the
         // ha-mode definition.
-        if (HATests.HA_TESTS_RUNNING) {
+        if (ha()) {
             definition += ",\"ha-mode\":\"all\"";
         }
         Host.rabbitmqctl("set_policy --priority 1 " + name + " " + pattern +

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2018-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -19,8 +19,8 @@ import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.jsonrpc.JsonRpcClient;
 import com.rabbitmq.tools.jsonrpc.JsonRpcMapper;
 import com.rabbitmq.tools.jsonrpc.JsonRpcServer;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Date;
 
@@ -35,7 +35,7 @@ public abstract class AbstractJsonRpcTest {
 
     abstract JsonRpcMapper createMapper();
 
-    @Before
+    @BeforeEach
     public void init() throws Exception {
         clientConnection = TestUtils.connectionFactory().newConnection();
         clientChannel = clientConnection.createChannel();
@@ -57,7 +57,7 @@ public abstract class AbstractJsonRpcTest {
         service = client.createProxy(RpcService.class);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (server != null) {
             server.terminateMainloop();

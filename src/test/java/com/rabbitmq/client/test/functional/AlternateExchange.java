@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,7 +16,7 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -24,12 +24,14 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.ReturnListener;
 import com.rabbitmq.client.test.BrokerTestCase;
+import org.junit.jupiter.api.TestInfo;
 
 public class AlternateExchange extends BrokerTestCase
 {
@@ -59,8 +61,9 @@ public class AlternateExchange extends BrokerTestCase
         return expected;
     }
 
-    @Override public void setUp() throws IOException, TimeoutException {
-        super.setUp();
+    @BeforeEach
+    @Override public void setUp(TestInfo info) throws IOException, TimeoutException {
+        super.setUp(info);
         channel.addReturnListener(new ReturnListener() {
                 public void handleReturn(int replyCode,
                                          String replyText,
@@ -131,7 +134,7 @@ public class AlternateExchange extends BrokerTestCase
         for (int i = 0; i < resources.length; i++) {
             String q = resources[i];
             GetResponse r = channel.basicGet(q, true);
-            assertEquals("check " + q , expected[i], r != null);
+            assertEquals(expected[i], r != null, "check " + q);
         }
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,7 +16,7 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.test.TestUtils;
@@ -24,19 +24,16 @@ import com.rabbitmq.client.test.TestUtils.CallableFunction;
 import java.util.Collections;
 
 import java.util.UUID;
-import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class Reject extends AbstractRejectTest
 {
 
-    @Parameterized.Parameters
-    public static Object[] queueCreators() {
+    public static Object[] reject() {
         return new Object[] {
             (CallableFunction<Channel, String>) channel -> {
                 String q = UUID.randomUUID().toString();
@@ -50,9 +47,9 @@ public class Reject extends AbstractRejectTest
             }};
     }
 
-    @Parameterized.Parameter public TestUtils.CallableFunction<Channel, String> queueCreator;
-
-    @Test public void reject()
+    @ParameterizedTest
+    @MethodSource
+    public void reject(TestUtils.CallableFunction<Channel, String> queueCreator)
         throws Exception
     {
         String q = queueCreator.apply(channel);

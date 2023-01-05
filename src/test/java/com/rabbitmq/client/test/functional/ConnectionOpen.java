@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,9 +16,9 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.net.Socket;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.test.TestUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
@@ -49,13 +49,12 @@ public class ConnectionOpen {
         while (!command.handleFrame(fh.readFrame())) { }
         Method m = command.getMethod();
 
-        assertTrue("First command must be Connection.start",
-                m instanceof AMQP.Connection.Start);
+        assertTrue(m instanceof AMQP.Connection.Start, "First command must be Connection.start");
         AMQP.Connection.Start start = (AMQP.Connection.Start) m;
-        assertTrue("Version in Connection.start is <= what we sent",
-                start.getVersionMajor() < AMQP.PROTOCOL.MAJOR ||
+        assertTrue(start.getVersionMajor() < AMQP.PROTOCOL.MAJOR ||
                         (start.getVersionMajor() == AMQP.PROTOCOL.MAJOR &&
-                                start.getVersionMinor() <= AMQP.PROTOCOL.MINOR));
+                                start.getVersionMinor() <= AMQP.PROTOCOL.MINOR),
+            "Version in Connection.start is <= what we sent");
     }
 
     @Test public void crazyProtocolHeader() throws IOException {

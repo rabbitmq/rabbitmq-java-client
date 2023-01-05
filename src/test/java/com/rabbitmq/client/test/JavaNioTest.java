@@ -5,9 +5,9 @@ import com.rabbitmq.client.impl.nio.BlockingQueueNioQueue;
 import com.rabbitmq.client.impl.nio.DefaultByteBufferFactory;
 import com.rabbitmq.client.impl.nio.NioParams;
 import org.assertj.core.api.Condition;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -16,8 +16,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -28,14 +28,14 @@ public class JavaNioTest {
 
     private Connection testConnection;
 
-    @Before
+    @BeforeEach
     public void init() throws Exception {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.useNio();
         testConnection = connectionFactory.newConnection();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (testConnection != null) {
             testConnection.createChannel().queueDelete(QUEUE);
@@ -52,7 +52,7 @@ public class JavaNioTest {
         try {
             connection = basicGetBasicConsume(connectionFactory, "nio.queue", latch);
             boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
-            assertTrue("Message has not been received", messagesReceived);
+            assertTrue(messagesReceived, "Message has not been received");
         } finally {
             safeClose(connection);
         }
@@ -71,7 +71,7 @@ public class JavaNioTest {
             connection2 = basicGetBasicConsume(connectionFactory, "nio.queue.2", latch);
 
             boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
-            assertTrue("Messages have not been received", messagesReceived);
+            assertTrue(messagesReceived, "Messages have not been received");
         } finally {
             safeClose(connection1);
             safeClose(connection2);
@@ -91,7 +91,7 @@ public class JavaNioTest {
             connection2 = basicGetBasicConsume(connectionFactory, "nio.queue.2", latch);
 
             boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
-            assertTrue("Messages have not been received", messagesReceived);
+            assertTrue(messagesReceived, "Messages have not been received");
         } finally {
             safeClose(connection1);
             safeClose(connection2);
@@ -114,7 +114,7 @@ public class JavaNioTest {
                 }
             });
             safeClose(connection);
-            assertTrue("Shutdown listener should have been called", latch.await(5, TimeUnit.SECONDS));
+            assertTrue(latch.await(5, TimeUnit.SECONDS), "Shutdown listener should have been called");
         } finally {
             safeClose(connection);
         }
@@ -194,7 +194,7 @@ public class JavaNioTest {
     private void sendAndVerifyMessage(Connection connection, int size) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         boolean messageReceived = basicGetBasicConsume(connection, QUEUE, latch, size);
-        assertTrue("Message has not been received", messageReceived);
+        assertTrue(messageReceived, "Message has not been received");
     }
 
     private Connection basicGetBasicConsume(ConnectionFactory connectionFactory, String queue, final CountDownLatch latch)

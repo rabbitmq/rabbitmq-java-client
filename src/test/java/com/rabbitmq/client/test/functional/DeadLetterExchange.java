@@ -20,7 +20,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.*;
@@ -29,7 +29,7 @@ import java.util.concurrent.*;
 import static com.rabbitmq.client.test.TestUtils.safeDelete;
 import static com.rabbitmq.client.test.TestUtils.waitAtMost;
 import static java.time.Duration.ofSeconds;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DeadLetterExchange extends BrokerTestCase {
 
@@ -424,8 +424,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                 return responseRefeference.get() != null;
         });
         GetResponse getResponse = responseRefeference.get();
-        assertNotNull("Message not dead-lettered",
-            getResponse);
+        assertNotNull(getResponse, "Message not dead-lettered");
         assertEquals("test message", new String(getResponse.getBody()));
         BasicProperties props = getResponse.getProps();
         Map<String, Object> headers = props.getHeaders();
@@ -459,7 +458,7 @@ public class DeadLetterExchange extends BrokerTestCase {
                 return responseRefeference.get() != null;
             });
         getResponse = responseRefeference.get();
-        assertNotNull("Message not dead-lettered", getResponse);
+        assertNotNull(getResponse, "Message not dead-lettered");
         assertEquals("test message", new String(getResponse.getBody()));
         headers = getResponse.getProps().getHeaders();
         assertNotNull(headers);
@@ -488,7 +487,7 @@ public class DeadLetterExchange extends BrokerTestCase {
             });
         getResponse = responseRefeference.get();
 
-        assertNotNull("Message not dead-lettered", getResponse);
+        assertNotNull(getResponse, "Message not dead-lettered");
         assertEquals("test message", new String(getResponse.getBody()));
         headers = getResponse.getProps().getHeaders();
         assertNotNull(headers);
@@ -587,14 +586,14 @@ public class DeadLetterExchange extends BrokerTestCase {
         long epsilon = TTL / 5;
         for (int i = 0; i < count; i++) {
             byte[] body = c.nextDelivery(TTL + TTL + latency + epsilon);
-            assertNotNull("message #" + i + " did not expire", body);
+            assertNotNull(body, "message #" + i + " did not expire");
             long now = System.currentTimeMillis();
             long publishTime = Long.valueOf(new String(body));
             long targetTime = publishTime + TTL + latency;
-            assertTrue("expiry outside bounds (+/- " + epsilon + "): " +
-                       (now - targetTime),
-                       (now >= targetTime - epsilon) &&
-                       (now <= targetTime + epsilon));
+            assertTrue((now >= targetTime - epsilon) &&
+                       (now <= targetTime + epsilon),
+                "expiry outside bounds (+/- " + epsilon + "): " +
+                    (now - targetTime));
         }
     }
 
@@ -666,13 +665,12 @@ public class DeadLetterExchange extends BrokerTestCase {
         for(int x = 0; x < n; x++) {
             GetResponse getResponse =
                 channel.basicGet(queue, true);
-            assertNotNull("Messages not dead-lettered (" + (n-x) + " left)",
-                          getResponse);
+            assertNotNull(getResponse, "Messages not dead-lettered (" + (n-x) + " left)");
             assertEquals("test message", new String(getResponse.getBody()));
             withResponse.process(getResponse);
         }
         GetResponse getResponse = channel.basicGet(queue, true);
-        assertNull("expected empty queue", getResponse);
+        assertNull(getResponse, "expected empty queue");
     }
 
     @SuppressWarnings("unchecked")

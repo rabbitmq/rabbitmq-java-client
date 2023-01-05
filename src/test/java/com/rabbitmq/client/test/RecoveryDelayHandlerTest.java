@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,7 +15,8 @@
 
 package com.rabbitmq.client.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,7 +25,7 @@ import com.rabbitmq.client.RecoveryDelayHandler;
 import com.rabbitmq.client.RecoveryDelayHandler.DefaultRecoveryDelayHandler;
 import com.rabbitmq.client.RecoveryDelayHandler.ExponentialBackoffDelayHandler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RecoveryDelayHandlerTest {
 
@@ -61,13 +62,15 @@ public class RecoveryDelayHandlerTest {
         assertEquals(2, handler.getDelay(Integer.MAX_VALUE));
     }
     
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testExponentialBackoffDelayHandlerWithNullSequence() {
-        new ExponentialBackoffDelayHandler(null);
+        assertThatThrownBy(() -> new ExponentialBackoffDelayHandler(null))
+            .isInstanceOf(IllegalArgumentException.class);
     }
     
-    @Test(expected=IllegalArgumentException.class)
+    @Test
     public void testExponentialBackoffDelayHandlerWithEmptySequence() {
-        new ExponentialBackoffDelayHandler(Collections.<Long>emptyList());
+        assertThatThrownBy(() -> new ExponentialBackoffDelayHandler(Collections.emptyList()))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 }

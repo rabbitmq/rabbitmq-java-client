@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -17,9 +17,9 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.*;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
@@ -36,12 +36,12 @@ public class ChannelRpcTimeoutIntegrationTest {
 
     ConnectionFactory factory;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         factory = TestUtils.connectionFactory();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         factory = null;
     }

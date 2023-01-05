@@ -46,14 +46,14 @@ jobs:
           ./mvnw verify -P '!setup-test-cluster,use-nio' -Drabbitmqctl.bin=DOCKER:rabbitmq \
             -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
             -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
-            -Dit.test=ClientTests,FunctionalTests,ServerTests,SSLTests \
+            -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
             --no-transfer-progress
       - name: Test with blocking IO
         run: |
           ./mvnw verify -P '!setup-test-cluster' -Drabbitmqctl.bin=DOCKER:rabbitmq \
           -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
           -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
-          -Dit.test=ClientTests,FunctionalTests,ServerTests,SSLTests \
+          -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
           --no-transfer-progress
       - name: Stop broker
         run: docker stop rabbitmq && docker rm rabbitmq

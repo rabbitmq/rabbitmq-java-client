@@ -1,10 +1,5 @@
 package com.rabbitmq.client.test;
 
-import org.junit.runner.Runner;
-import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.Suite;
-import org.junit.runners.model.InitializationError;
-import org.junit.runners.model.RunnerBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +9,9 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
-public class RequiredPropertiesSuite extends Suite {
+public class RequiredPropertiesSuite { //extends Suite {
 
+/*
     private static final Logger LOGGER = LoggerFactory.getLogger(RequiredPropertiesSuite.class);
 
     public RequiredPropertiesSuite(Class<?> klass, RunnerBuilder builder) throws InitializationError {
@@ -52,4 +48,6 @@ public class RequiredPropertiesSuite extends Suite {
         LOGGER.info("Running test {}", runner.getDescription().getDisplayName());
         super.runChild(runner, notifier);
     }
+
+ */
 }

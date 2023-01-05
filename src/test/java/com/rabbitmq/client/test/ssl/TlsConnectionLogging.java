@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2019-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -21,9 +21,8 @@ import com.rabbitmq.client.impl.TlsUtils;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.test.TestUtils;
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.*;
 import java.security.cert.X509Certificate;
@@ -31,16 +30,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@RunWith(Parameterized.class)
 public class TlsConnectionLogging {
 
-    @Parameterized.Parameter
-    public Function<ConnectionFactory, Supplier<SSLSession>> configurer;
-
-    @Parameterized.Parameters
-    public static Object[] data() {
+    public static Object[] certificateInfoAreProperlyExtracted() {
         return new Object[]{blockingIo(), nio()};
     }
 
@@ -63,8 +57,9 @@ public class TlsConnectionLogging {
         };
     }
 
-    @Test
-    public void certificateInfoAreProperlyExtracted() throws Exception {
+    @ParameterizedTest
+    @MethodSource
+    public void certificateInfoAreProperlyExtracted(Function<ConnectionFactory, Supplier<SSLSession>> configurer) throws Exception {
         SSLContext sslContext = TlsTestUtils.getSSLContext();
         sslContext.init(null, new TrustManager[]{new AlwaysTrustTrustManager()}, null);
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();

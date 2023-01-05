@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2021 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,13 +15,13 @@
 
 package com.rabbitmq.client.test;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test for bug 20004 - deadlock through internal synchronization on the channel object. This is
@@ -62,8 +62,8 @@ public class Bug20004Test extends BrokerTestCase {
 
     boolean completed = completedLatch.await(5, TimeUnit.SECONDS);
 
-    assertTrue("Deadlock detected?", completed);
-    assertNull("queueDeclare threw an exception", caughtException);
-    assertTrue("unknown sequence of events", created);
+    assertTrue(completed, "Deadlock detected?");
+    assertNull(caughtException, "queueDeclare threw an exception");
+    assertTrue(created, "unknown sequence of events");
   }
 }

@@ -17,12 +17,12 @@
 package com.rabbitmq.client.test.server;
 
 import static com.rabbitmq.client.test.TestUtils.safeDelete;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -69,7 +69,7 @@ public class ExclusiveQueueDurability extends BrokerTestCase {
         connection = null;
         channel = null;
         bareRestart();
-        setUp();
+        setUp(this.testInfo);
     }
 
     /*
