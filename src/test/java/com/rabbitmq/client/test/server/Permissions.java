@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -22,14 +22,17 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import org.junit.jupiter.api.TestInfo;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Permissions extends BrokerTestCase
 {
@@ -45,16 +48,20 @@ public class Permissions extends BrokerTestCase
         connectionFactory = factory;
     }
 
-    public void setUp()
+    @BeforeEach
+    @Override
+    public void setUp(TestInfo info)
             throws IOException, TimeoutException {
         deleteRestrictedAccount();
         addRestrictedAccount();
-        super.setUp();
+        super.setUp(info);
     }
 
-    public void tearDown()
+    @AfterEach
+    @Override
+    public void tearDown(TestInfo info)
             throws IOException, TimeoutException {
-        super.tearDown();
+        super.tearDown(info);
         deleteRestrictedAccount();
     }
 
@@ -124,8 +131,7 @@ public class Permissions extends BrokerTestCase
         } catch (IOException e) {
             assertTrue(e instanceof AuthenticationFailureException);
             String msg = e.getMessage();
-            assertTrue("Exception message should contain 'auth'",
-                       msg.toLowerCase().contains("auth"));
+            assertTrue(msg.toLowerCase().contains("auth"), "Exception message should contain 'auth'");
         }
     }
 
@@ -366,13 +372,13 @@ public class Permissions extends BrokerTestCase
         String msg = "'" + name + "' -> " + exp;
         try {
             test.with(name);
-            assertTrue(msg, exp);
+            assertTrue(exp, msg);
         } catch (IOException e) {
-            assertFalse(msg, exp);
+            assertFalse(exp, msg);
             checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
             openChannel();
         } catch (AlreadyClosedException e) {
-            assertFalse(msg, exp);
+            assertFalse(exp, msg);
             checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
             openChannel();
         }

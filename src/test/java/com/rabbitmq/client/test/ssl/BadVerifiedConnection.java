@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,26 +15,23 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import com.rabbitmq.client.test.TestUtils;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
-import org.junit.rules.TestRule;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for bug 19356 - SSL Support in rabbitmq
  *
  */
+@EnabledForJreRange(min = JRE.JAVA_11)
 public class BadVerifiedConnection extends UnverifiedConnection {
-
-    @ClassRule
-    public static TestRule atLeastJava11TestRule = TestUtils.atLeastJava11();
 
     public void openConnection()
             throws IOException, TimeoutException {

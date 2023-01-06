@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,8 +16,10 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.*;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 
 import com.rabbitmq.client.AMQP;
@@ -35,6 +37,7 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeoutException;
+import org.junit.jupiter.api.TestInfo;
 
 public class Confirm extends BrokerTestCase
 {
@@ -42,9 +45,10 @@ public class Confirm extends BrokerTestCase
 
     private static final String TTL_ARG = "x-message-ttl";
 
+    @BeforeEach
     @Override
-    public void setUp() throws IOException, TimeoutException {
-        super.setUp();
+    public void setUp(TestInfo info) throws IOException, TimeoutException {
+        super.setUp(info);
         channel.confirmSelect();
         channel.queueDeclare("confirm-test", true, true, false, null);
         channel.queueDeclare("confirm-durable-nonexclusive", true, false,

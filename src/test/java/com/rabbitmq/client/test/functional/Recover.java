@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,10 +16,10 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.rabbitmq.client.*;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.test.BrokerTestCase;
 
@@ -56,14 +56,12 @@ public class Recover extends BrokerTestCase {
         channel.basicConsume(queue, false, consumer); // require acks.
         channel.basicPublish("", queue, new AMQP.BasicProperties.Builder().build(), body);
         QueueingConsumer.Delivery delivery = consumer.nextDelivery();
-        assertTrue("consumed message body not as sent",
-                   Arrays.equals(body, delivery.getBody()));
+        assertTrue(Arrays.equals(body, delivery.getBody()), "consumed message body not as sent");
         // Don't ack it, and get it redelivered to the same consumer
         call.recover(channel);
         QueueingConsumer.Delivery secondDelivery = consumer.nextDelivery(5000);
-        assertNotNull("timed out waiting for redelivered message", secondDelivery);
-        assertTrue("consumed (redelivered) message body not as sent",
-                   Arrays.equals(body, delivery.getBody()));
+        assertNotNull(secondDelivery, "timed out waiting for redelivered message");
+        assertTrue(Arrays.equals(body, delivery.getBody()), "consumed (redelivered) message body not as sent");
     }
 
     void verifyNoRedeliveryWithAutoAck(RecoverCallback call)
@@ -80,10 +78,9 @@ public class Recover extends BrokerTestCase {
         channel.basicConsume(queue, true, consumer); // auto ack.
         channel.basicPublish("", queue, new AMQP.BasicProperties.Builder().build(), body);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
-        assertTrue("consumed message body not as sent",
-                   Arrays.equals(body, bodyReference.get()));
+        assertTrue(Arrays.equals(body, bodyReference.get()), "consumed message body not as sent");
         call.recover(channel);
-        assertNull("should be no message available", channel.basicGet(queue, true));
+        assertNull(channel.basicGet(queue, true), "should be no message available");
     }
 
     final RecoverCallback recoverSync = new RecoverCallback() {

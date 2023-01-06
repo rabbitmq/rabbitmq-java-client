@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,8 +15,8 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.*;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -84,9 +84,9 @@ public abstract class RequeueOnClose
             close();
             open();
             if (doAck) {
-                assertNull("Expected missing second basicGet (repeat="+repeat+")", getMessage());
+                assertNull(getMessage(), "Expected missing second basicGet (repeat="+repeat+")");
             } else {
-                assertNotNull("Expected present second basicGet (repeat="+repeat+")", getMessage());
+                assertNotNull(getMessage(), "Expected present second basicGet (repeat="+repeat+")");
             }
             close();
         }
@@ -146,10 +146,10 @@ public abstract class RequeueOnClose
         close();
         open();
         for (int i = 0; i < MESSAGE_COUNT; i++) {
-            assertNotNull("only got " + i + " out of " + MESSAGE_COUNT +
-                          " messages", channel.basicGet(Q, true));
+            assertNotNull(channel.basicGet(Q, true), "only got " + i + " out of " + MESSAGE_COUNT +
+                " messages");
         }
-        assertNull("got more messages than " + MESSAGE_COUNT + " expected", channel.basicGet(Q, true));
+        assertNull(channel.basicGet(Q, true), "got more messages than " + MESSAGE_COUNT + " expected");
         channel.queueDelete(Q);
         close();
         closeConnection();
@@ -232,14 +232,13 @@ public abstract class RequeueOnClose
         open();
         int requeuedMsgCount = (ack) ? MESSAGE_COUNT - MESSAGES_TO_CONSUME : MESSAGE_COUNT;
         for (int i = 0; i < requeuedMsgCount; i++) {
-            assertNotNull("only got " + i + " out of " + requeuedMsgCount + " messages",
-                    channel.basicGet(Q, true));
+            assertNotNull(channel.basicGet(Q, true), "only got " + i + " out of " + requeuedMsgCount + " messages");
         }
         int countMoreMsgs = 0;
         while (null != channel.basicGet(Q, true)) {
             countMoreMsgs++;
         }
-        assertTrue("got " + countMoreMsgs + " more messages than " + requeuedMsgCount + " expected", 0==countMoreMsgs);
+        assertTrue(0==countMoreMsgs, "got " + countMoreMsgs + " more messages than " + requeuedMsgCount + " expected");
         channel.queueDelete(Q);
         close();
         closeConnection();

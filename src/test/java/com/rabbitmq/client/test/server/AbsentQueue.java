@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -19,14 +19,17 @@ package com.rabbitmq.client.test.server;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.test.functional.ClusteredTestBase;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
+import org.junit.jupiter.api.TestInfo;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This tests whether 'absent' queues - durable queues whose home node
@@ -36,16 +39,18 @@ public class AbsentQueue extends ClusteredTestBase {
 
     private static final String Q = "absent-queue";
 
-    @Override public void setUp() throws IOException, TimeoutException {
-        super.setUp();
+    @BeforeEach
+    @Override public void setUp(TestInfo info) throws IOException, TimeoutException {
+        super.setUp(info);
         if (clusteredConnection != null)
             stopSecondary();
     }
 
-    @Override public void tearDown() throws IOException, TimeoutException {
+    @AfterEach
+    @Override public void tearDown(TestInfo info) throws IOException, TimeoutException {
         if (clusteredConnection != null)
             startSecondary();
-        super.tearDown();
+        super.tearDown(info);
     }
 
     @Override protected void createResources() throws IOException {
@@ -57,7 +62,7 @@ public class AbsentQueue extends ClusteredTestBase {
     }
 
     @Test public void notFound() throws Exception {
-        if (!HATests.HA_TESTS_RUNNING) {
+        if (!ha()) {
             // we don't care about this test in normal mode
             return;
         }
@@ -73,9 +78,9 @@ public class AbsentQueue extends ClusteredTestBase {
         if (clusteredChannel == null) return;
         try {
             t.call();
-            if (!HATests.HA_TESTS_RUNNING) fail("expected not_found");
+            if (!ha()) fail("expected not_found");
         } catch (IOException ioe) {
-            assertFalse(HATests.HA_TESTS_RUNNING);
+            assertFalse(ha());
             checkShutdownSignal(AMQP.NOT_FOUND, ioe);
             channel = connection.createChannel();
         }
@@ -84,7 +89,7 @@ public class AbsentQueue extends ClusteredTestBase {
 
     private void waitPropagationInHa() throws IOException, InterruptedException {
         // can be necessary to wait a bit in HA mode
-        if (HATests.HA_TESTS_RUNNING) {
+        if (ha()) {
             long waited = 0;
             while(waited < 5000) {
                 Channel tempChannel = connection.createChannel();

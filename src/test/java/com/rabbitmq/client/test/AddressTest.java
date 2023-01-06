@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2018-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,11 +16,12 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Address;
-import org.junit.Test;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -73,10 +74,11 @@ public class AddressTest {
         assertEquals(addr("[::1]", 5673), Address.parseAddress("[::1]:5673"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void parseUnquotedIPv6() {
         // using a non-quoted IPv6 addresses with a port
-        Address.parseAddress("::1:5673");
+        Assertions.assertThatThrownBy(() -> Address.parseAddress("::1:5673"))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     private Address addr(String addr) {

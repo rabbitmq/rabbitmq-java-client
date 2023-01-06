@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,28 +16,27 @@
 package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.ConnectionFactory;
-import junit.framework.TestCase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class ConnectionFactoryDefaultTlsVersion {
 
     @Test public void defaultTlsVersionJdk16ShouldTakeFallback() {
         String [] supportedProtocols = {"SSLv2Hello", "SSLv3", "TLSv1"};
         String tlsProtocol = ConnectionFactory.computeDefaultTlsProtocol(supportedProtocols);
-        Assert.assertEquals("TLSv1",tlsProtocol);
+        Assertions.assertEquals("TLSv1",tlsProtocol);
     }
 
     @Test public void defaultTlsVersionJdk17ShouldTakePrefered() {
         String [] supportedProtocols = {"SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"};
         String tlsProtocol = ConnectionFactory.computeDefaultTlsProtocol(supportedProtocols);
-        Assert.assertEquals("TLSv1.2",tlsProtocol);
+        Assertions.assertEquals("TLSv1.2",tlsProtocol);
     }
 
     @Test public void defaultTlsVersionJdk18ShouldTakePrefered() {
         String [] supportedProtocols = {"SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"};
         String tlsProtocol = ConnectionFactory.computeDefaultTlsProtocol(supportedProtocols);
-        Assert.assertEquals("TLSv1.2",tlsProtocol);
+        Assertions.assertEquals("TLSv1.2",tlsProtocol);
     }
 
 }

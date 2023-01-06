@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2018-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -23,9 +23,9 @@ import com.rabbitmq.client.impl.recovery.RecordedExchange;
 import com.rabbitmq.client.impl.recovery.RecordedQueue;
 import com.rabbitmq.client.impl.recovery.RetryContext;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.verification.VerificationMode;
 
@@ -33,8 +33,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.intThat;
@@ -75,12 +75,12 @@ public class DefaultRetryHandlerTest {
 
     AutoCloseable mocks;
 
-    @Before
+    @BeforeEach
     public void init() {
         mocks = openMocks(this);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         mocks.close();
     }

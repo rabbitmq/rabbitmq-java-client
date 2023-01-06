@@ -19,23 +19,17 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.NetworkConnection;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.tools.Host;
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
-import java.util.List;
+import java.util.function.Function;
 import org.assertj.core.api.Assertions;
-import org.junit.AssumptionViolatedException;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
-import org.junit.runner.Runner;
-import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.Suite;
-import org.junit.runners.model.InitializationError;
-import org.junit.runners.model.RunnerBuilder;
-import org.junit.runners.model.Statement;
+import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +43,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestUtils {
 
@@ -124,14 +118,6 @@ public class TestUtils {
         }
     }
 
-    public static TestRule atLeast38() {
-        return new BrokerVersionTestRule("3.8.0");
-    }
-
-    public static TestRule brokerIsNotRunningOnDocker() {
-        return new BrokerIsNotOnDocker();
-    }
-
     public static boolean isVersion37orLater(Connection connection) {
         return atLeastVersion("3.7.0", connection);
     }
@@ -145,11 +131,11 @@ public class TestUtils {
     }
 
     private static boolean atLeastVersion(String expectedVersion, Connection connection) {
-        String currentVersion = null;
+        return atLeastVersion(expectedVersion, currentVersion(connection.getServerProperties().get("version").toString()));
+    }
+
+    private static boolean atLeastVersion(String expectedVersion, String currentVersion) {
         try {
-            currentVersion = currentVersion(
-                    connection.getServerProperties().get("version").toString()
-            );
             return "0.0.0".equals(currentVersion) || versionCompare(currentVersion, expectedVersion) >= 0;
         } catch (RuntimeException e) {
             LoggerFactory.getLogger(TestUtils.class).warn("Unable to parse broker version {}", currentVersion, e);
@@ -310,52 +296,6 @@ public class TestUtils {
         return port;
     }
 
-    private static class BrokerVersionTestRule implements TestRule {
-
-        private final String version;
-
-        public BrokerVersionTestRule(String version) {
-            this.version = version;
-        }
-
-        @Override
-        public Statement apply(Statement base, Description description) {
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    try (Connection c = TestUtils.connectionFactory().newConnection()) {
-                        if (!TestUtils.atLeastVersion(version, c)) {
-                            throw new AssumptionViolatedException("Broker version < " + version + ", skipping.");
-                        }
-                    }
-                    base.evaluate();
-                }
-            };
-        }
-    }
-
-    private static class BrokerIsNotOnDocker implements TestRule {
-
-        @Override
-        public Statement apply(Statement base, Description description) {
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    try {
-                        if (Host.isOnDocker()) {
-                            throw new AssumptionViolatedException("Broker is running on Docker");
-                        }
-                    } catch (AssumptionViolatedException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        throw new AssumptionViolatedException("Could not check whether broker is running on Docker or not", e);
-                    }
-                    base.evaluate();
-                }
-            };
-        }
-    }
-
     @FunctionalInterface
     public interface CallableFunction<T, R> {
 
@@ -387,6 +327,7 @@ public class TestUtils {
         return messageReceived;
     }
 
+    /*
     public static class DefaultTestSuite extends Suite {
 
 
@@ -422,116 +363,7 @@ public class TestUtils {
         }
     }
 
-    @Target({ElementType.METHOD})
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface TestExecutionCondition {
-
-        Class<? extends ExecutionCondition>[] value();
-
-    }
-
-    interface ExecutionCondition {
-
-        void check(Description description) throws Exception;
-
-    }
-
-    public static class BrokerAtLeast310Condition implements ExecutionCondition {
-
-        private static final String VERSION = "3.10.0";
-
-        @Override
-        public void check(Description description) throws Exception {
-            try (Connection c = TestUtils.connectionFactory().newConnection()) {
-                if (!TestUtils.atLeastVersion(VERSION, c)) {
-                    throw new AssumptionViolatedException("Broker version < " + VERSION + ", skipping.");
-                }
-            }
-        }
-    }
-
-    public static class ExecutionConditionRule implements TestRule {
-
-        @Override
-        public Statement apply(Statement base, Description description) {
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    Method testMethod = description.getTestClass().getDeclaredMethod(description.getMethodName());
-                    TestExecutionCondition conditionAnnotation = testMethod.getAnnotation(
-                        TestExecutionCondition.class);
-                    if (conditionAnnotation != null) {
-                       conditionAnnotation.value()[0].getConstructor().newInstance()
-                           .check(description);
-                    }
-                    base.evaluate();
-                }
-            };
-        }
-    }
-
-    public static TestRule atLeastJava11() {
-        return new AtLeastJavaVersion(11);
-    }
-
-    private static class AtLeastJavaVersion implements TestRule {
-
-        private final int expectedMinVersion;
-
-        private AtLeastJavaVersion(int expectedMinVersion) {
-            this.expectedMinVersion = expectedMinVersion;
-        }
-
-        @Override
-        public Statement apply(Statement base, Description description) {
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    try {
-                        int javaMajorVersion = javaMajorVersion();
-                        if (javaMajorVersion < expectedMinVersion) {
-                            throw new AssumptionViolatedException("Java version is " + javaMajorVersion
-                                + ", expecting at least " + expectedMinVersion);
-                        }
-                    } catch (AssumptionViolatedException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        throw new AssumptionViolatedException("Could determine Java version", e);
-                    }
-                    base.evaluate();
-                }
-            };
-        }
-    }
-
-    private static int javaMajorVersion() {
-        String javaVersion = System.getProperty("java.version");
-        if (javaVersion == null || javaVersion.trim().isEmpty()) {
-            throw new IllegalStateException("JVM system property 'java.version' is undefined");
-        }
-
-        if (javaVersion.startsWith("1.8")) {
-            return 8;
-        }
-
-        try {
-            // from JUnit 5 JRE class
-            // java.lang.Runtime.version() is a static method available on Java 9+
-            // that returns an instance of java.lang.Runtime.Version which has the
-            // following method: public int major()
-            Method versionMethod = Runtime.class.getMethod("version");
-            Object version = versionMethod.invoke(null);
-            Method majorMethod = version.getClass().getMethod("major");
-            int major = (int) majorMethod.invoke(version);
-            if (major < 9) {
-                throw new IllegalStateException("Invalid Java major version: " + major);
-            }
-            return major;
-        } catch (Exception ex) {
-            LOGGER.warn("Error while computing Java major version", ex);
-        }
-        throw new IllegalStateException("Could not determine Java major version");
-    }
+     */
 
     public static void safeDelete(Connection connection, String queue) {
         try {
@@ -543,19 +375,120 @@ public class TestUtils {
         }
     }
 
-    public static class TestDescription extends TestWatcher {
+    private static class BaseBrokerVersionAtLeastCondition implements
+        org.junit.jupiter.api.extension.ExecutionCondition {
 
-        private volatile Description description;
+        private final Function<ExtensionContext, String> versionProvider;
 
-        @Override
-        protected void starting(Description d) {
-            description = d;
+        private BaseBrokerVersionAtLeastCondition(Function<ExtensionContext, String> versionProvider) {
+            this.versionProvider = versionProvider;
         }
 
-        public Description getDescription() {
-            return description;
+        @Override
+        public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
+            if (!context.getTestMethod().isPresent()) {
+                return ConditionEvaluationResult.enabled("Apply only to methods");
+            }
+            String expectedVersion = versionProvider.apply(context);
+            if (expectedVersion == null) {
+                return ConditionEvaluationResult.enabled("No broker version requirement");
+            } else {
+                String brokerVersion =
+                    context
+                        .getRoot()
+                        .getStore(Namespace.GLOBAL)
+                        .getOrComputeIfAbsent(
+                            "brokerVersion",
+                            k -> {
+                                try (Connection c = TestUtils.connectionFactory().newConnection()) {
+                                    return currentVersion(
+                                        c.getServerProperties().get("version").toString()
+                                    );
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            },
+                            String.class);
+
+                if (atLeastVersion(expectedVersion, brokerVersion)) {
+                    return ConditionEvaluationResult.enabled(
+                        "Broker version requirement met, expected "
+                            + expectedVersion
+                            + ", actual "
+                            + brokerVersion);
+                } else {
+                    return ConditionEvaluationResult.disabled(
+                        "Broker version requirement not met, expected "
+                            + expectedVersion
+                            + ", actual "
+                            + brokerVersion);
+                }
+            }
         }
     }
 
+    private static class AnnotationBrokerVersionAtLeastCondition
+        extends BaseBrokerVersionAtLeastCondition {
+
+        private AnnotationBrokerVersionAtLeastCondition() {
+            super(
+                context -> {
+                    BrokerVersionAtLeast annotation =
+                        context.getElement().get().getAnnotation(BrokerVersionAtLeast.class);
+                    return annotation == null ? null : annotation.value().toString();
+                });
+        }
+    }
+
+    static class BrokerVersionAtLeast310Condition extends BaseBrokerVersionAtLeastCondition {
+
+        private BrokerVersionAtLeast310Condition() {
+            super(context -> "3.10.0");
+        }
+    }
+
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @ExtendWith(AnnotationBrokerVersionAtLeastCondition.class)
+    public @interface BrokerVersionAtLeast {
+
+        BrokerVersion value();
+    }
+
+    public enum BrokerVersion {
+        RABBITMQ_3_8("3.8.0"),
+        RABBITMQ_3_10("3.10.0");
+
+        final String value;
+
+        BrokerVersion(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return this.value;
+        }
+    }
+
+    static class DisabledIfBrokerRunningOnDockerCondition implements
+        org.junit.jupiter.api.extension.ExecutionCondition {
+
+        @Override
+        public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
+            if (Host.isOnDocker()) {
+                return ConditionEvaluationResult.disabled("Broker running on Docker");
+            } else {
+                return ConditionEvaluationResult.enabled("Broker not running on Docker");
+            }
+        }
+    }
+
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @ExtendWith(DisabledIfBrokerRunningOnDockerCondition.class)
+    @interface DisabledIfBrokerRunningOnDocker {}
 
 }

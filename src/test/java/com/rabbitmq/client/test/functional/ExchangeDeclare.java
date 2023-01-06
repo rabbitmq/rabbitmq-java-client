@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,7 +16,7 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.test.TestUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
@@ -101,7 +101,7 @@ public class ExchangeDeclare extends ExchangeEquivalenceBase {
     }
 
     private void doTestExchangeDeclaredWithEnumerationEquivalent(Channel channel) throws IOException, InterruptedException {
-        assertEquals("There are 4 standard exchange types", 4, BuiltinExchangeType.values().length);
+        assertEquals(4, BuiltinExchangeType.values().length, "There are 4 standard exchange types");
         for (BuiltinExchangeType exchangeType : BuiltinExchangeType.values()) {
             channel.exchangeDeclare(NAME, exchangeType);
             verifyEquivalent(NAME, exchangeType.getType(), false, false, null);

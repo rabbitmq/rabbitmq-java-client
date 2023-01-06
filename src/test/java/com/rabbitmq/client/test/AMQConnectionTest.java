@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -20,9 +20,9 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -36,8 +36,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test suite for AMQConnection.
@@ -51,14 +51,14 @@ public class AMQConnectionTest {
     private ConnectionFactory factory;
     private MyExceptionHandler exceptionHandler;
 
-    @Before public void setUp() {
+    @BeforeEach public void setUp() {
         _mockFrameHandler = new MockFrameHandler();
         factory = TestUtils.connectionFactory();
         exceptionHandler = new MyExceptionHandler();
         factory.setExceptionHandler(exceptionHandler);
     }
 
-    @After public void tearDown() {
+    @AfterEach public void tearDown() {
         factory = null;
         _mockFrameHandler = null;
     }
@@ -159,8 +159,8 @@ public class AMQConnectionTest {
         }
         assertEquals(1, this._mockFrameHandler.countHeadersSent());
         List<Throwable> exceptionList = exceptionHandler.getHandledExceptions();
-        assertEquals("Only one exception expected", 1, exceptionList.size());
-        assertEquals("Wrong type of exception returned.", SocketTimeoutException.class, exceptionList.get(0).getClass());
+        assertEquals(1, exceptionList.size(), "Only one exception expected");
+        assertEquals(SocketTimeoutException.class, exceptionList.get(0).getClass(), "Wrong type of exception returned.");
     }
 
     @Test public void clientProvidedConnectionName() throws IOException, TimeoutException {

@@ -17,7 +17,6 @@ package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConfirmCallback;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultConsumer;
@@ -32,9 +31,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
 import java.util.UUID;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -50,6 +47,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static com.rabbitmq.client.test.TestUtils.waitAtMost;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,16 +56,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  *
  */
-@RunWith(Parameterized.class)
 public class Metrics extends BrokerTestCase {
 
-    @Parameterized.Parameters
     public static Object[] data() {
         return new Object[] { createConnectionFactory(), createAutoRecoveryConnectionFactory() };
     }
-
-    @Parameterized.Parameter
-    public ConnectionFactory connectionFactory;
 
     static final String QUEUE = "metrics.queue";
 
@@ -80,7 +74,9 @@ public class Metrics extends BrokerTestCase {
         channel.queueDelete(QUEUE);
     }
 
-    @Test public void metrics() throws IOException, TimeoutException {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void metrics(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
         Connection connection1 = null;
@@ -139,7 +135,9 @@ public class Metrics extends BrokerTestCase {
         }
     }
 
-    @Test public void metricsPublisherUnrouted() throws IOException, TimeoutException {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void metricsPublisherUnrouted(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
         Connection connection = null;
@@ -163,7 +161,9 @@ public class Metrics extends BrokerTestCase {
         }
     }
 
-    @Test public void metricsPublisherAck() throws IOException, TimeoutException, InterruptedException {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void metricsPublisherAck(ConnectionFactory connectionFactory) throws IOException, TimeoutException, InterruptedException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
         Connection connection = null;
@@ -188,7 +188,9 @@ public class Metrics extends BrokerTestCase {
         }
     }
 
-    @Test public void metricsAck() throws IOException, TimeoutException {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void metricsAck(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
 
@@ -254,7 +256,9 @@ public class Metrics extends BrokerTestCase {
         }
     }
 
-    @Test public void metricsReject() throws IOException, TimeoutException {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void metricsReject(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
 
@@ -281,7 +285,9 @@ public class Metrics extends BrokerTestCase {
         }
     }
 
-    @Test public void multiThreadedMetricsStandardConnection() throws InterruptedException, TimeoutException, IOException {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void multiThreadedMetricsStandardConnection(ConnectionFactory connectionFactory) throws InterruptedException, TimeoutException, IOException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
         int nbConnections = 3;
@@ -391,7 +397,9 @@ public class Metrics extends BrokerTestCase {
         }
     }
 
-    @Test public void errorInChannel() throws IOException, TimeoutException {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void errorInChannel(ConnectionFactory connectionFactory) throws IOException, TimeoutException {
         StandardMetricsCollector metrics = new StandardMetricsCollector();
         connectionFactory.setMetricsCollector(metrics);
 

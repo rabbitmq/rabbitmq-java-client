@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,8 +16,8 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -87,18 +87,17 @@ public class Tables extends BrokerTestCase
             Object va = a.get(k);
             Object vb = b.get(k);
             if (va instanceof byte[] && vb instanceof byte[]) {
-                assertTrue("unequal entry for key " + k,
-                           Arrays.equals((byte[])va, (byte[])vb));
+                assertTrue(Arrays.equals((byte[])va, (byte[])vb), "unequal entry for key " + k);
             }
             else if (va instanceof List && vb instanceof List) {
                 Iterator<?> vbi = ((List<?>)vb).iterator();
                 for (Object vaEntry : (List<?>)va) {
                     Object vbEntry = vbi.next();
-                    assertEquals("arrays unequal at key " + k, vaEntry, vbEntry);
+                    assertEquals(vaEntry, vbEntry, "arrays unequal at key " + k);
                 }
             }
             else {
-                assertEquals("unequal entry for key " + k, va, vb);
+                assertEquals(va, vb, "unequal entry for key " + k);
             }
         }
     }

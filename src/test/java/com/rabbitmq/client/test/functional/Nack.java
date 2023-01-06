@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,8 +16,8 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.test.TestUtils;
@@ -27,17 +27,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 import java.util.UUID;
-import org.junit.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.QueueingConsumer;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class Nack extends AbstractRejectTest {
 
-    @Parameterized.Parameters
     public static Object[] queueCreators() {
         return new Object[] {
             (CallableFunction<Channel, String>) channel -> {
@@ -52,9 +49,9 @@ public class Nack extends AbstractRejectTest {
             }};
         }
 
-    @Parameterized.Parameter public TestUtils.CallableFunction<Channel, String> queueCreator;
-
-    @Test public void singleNack() throws Exception {
+    @ParameterizedTest
+    @MethodSource("queueCreators")
+    public void singleNack(TestUtils.CallableFunction<Channel, String> queueCreator) throws Exception {
         String q = queueCreator.apply(channel);
 
         byte[] m1 = "1".getBytes();
@@ -89,7 +86,9 @@ public class Nack extends AbstractRejectTest {
         expectError(AMQP.PRECONDITION_FAILED);
     }
 
-    @Test public void multiNack() throws Exception {
+    @ParameterizedTest
+    @MethodSource("queueCreators")
+    public void multiNack(TestUtils.CallableFunction<Channel, String> queueCreator) throws Exception {
         String q = queueCreator.apply(channel);
 
         byte[] m1 = "1".getBytes();
@@ -134,7 +133,9 @@ public class Nack extends AbstractRejectTest {
         expectError(AMQP.PRECONDITION_FAILED);
     }
 
-    @Test public void nackAll() throws Exception {
+    @ParameterizedTest
+    @MethodSource("queueCreators")
+    public void nackAll(TestUtils.CallableFunction<Channel, String> queueCreator) throws Exception {
         String q = queueCreator.apply(channel);
 
         byte[] m1 = "1".getBytes();
@@ -173,7 +174,7 @@ public class Nack extends AbstractRejectTest {
         for(int x = 0; x < messages.length; x++) {
             QueueingConsumer.Delivery delivery = c.nextDelivery();
             String m = new String(delivery.getBody());
-            assertTrue("Unexpected message", msgSet.remove(m));
+            assertTrue(msgSet.remove(m), "Unexpected message");
             checkDelivery(delivery, m.getBytes(), true);
             lastTag = delivery.getEnvelope().getDeliveryTag();
         }

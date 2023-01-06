@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2019-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,10 +15,11 @@
 
 package com.rabbitmq.client.impl;
 
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
@@ -38,7 +39,6 @@ import static java.time.Duration.ofSeconds;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class DefaultCredentialsRefreshServiceTest {
 
     @Mock
@@ -49,11 +49,19 @@ public class DefaultCredentialsRefreshServiceTest {
 
     DefaultCredentialsRefreshService refreshService;
 
-    @After
-    public void tearDown() {
+    AutoCloseable mocks;
+
+    @BeforeEach
+    void init() {
+        this.mocks = MockitoAnnotations.openMocks(this);
+    }
+
+    @AfterEach
+    public void tearDown() throws Exception {
         if (refreshService != null) {
             refreshService.close();
         }
+        mocks.close();
     }
 
     @Test

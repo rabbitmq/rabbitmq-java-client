@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2018-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -27,10 +27,10 @@ import com.rabbitmq.client.RecoveryListener;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import com.rabbitmq.client.test.TestUtils.DisabledIfBrokerRunningOnDocker;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -42,7 +42,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import org.junit.rules.TestRule;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,10 +65,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * to the socket fails.
  * </p>
  */
+@DisabledIfBrokerRunningOnDocker
 public class NoAutoRecoveryWhenTcpWindowIsFullTest {
-
-    @ClassRule
-    public static TestRule brokerOnDockerTestRule = TestUtils.brokerIsNotRunningOnDocker();
 
     private static final int NUM_MESSAGES_TO_PRODUCE = 50000;
     private static final int MESSAGE_PROCESSING_TIME_MS = 3000;
@@ -83,7 +80,7 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
 
     private CountDownLatch consumerOkLatch;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // we need several threads to publish, dispatch deliveries, handle RPC responses, etc.
         executorService = Executors.newFixedThreadPool(10);
@@ -123,7 +120,7 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
         consumerOkLatch = new CountDownLatch(2);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws IOException {
         closeConnectionIfOpen(consumingConnection);
         closeConnectionIfOpen(producingConnection);

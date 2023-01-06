@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -18,7 +18,8 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.impl.*;
 import java.sql.Timestamp;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -26,12 +27,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TableTest
 {
 
-    public byte [] marshal(Map<String, Object> table) 
+    public byte [] marshal(Map<String, Object> table)
         throws IOException
     {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();

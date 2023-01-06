@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -26,11 +26,11 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.opentelemetry.sdk.metrics.data.LongPointData;
 import io.opentelemetry.sdk.metrics.data.MetricData;
 import io.opentelemetry.sdk.testing.junit4.OpenTelemetryRule;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,13 +42,11 @@ import static org.mockito.Mockito.when;
 /**
  *
  */
-@RunWith(Parameterized.class)
 public class MetricsCollectorTest {
 
-    @ClassRule
-    public static final OpenTelemetryRule openTelemetryRule = OpenTelemetryRule.create();
+    @RegisterExtension
+    static final OpenTelemetryExtension otelTesting = OpenTelemetryExtension.create();
 
-    @Parameterized.Parameters
     public static Object[] data() {
         // need to resort to a factory, as this method is called only once
         // if creating the collector instance, it's reused across the test methods
@@ -56,17 +54,15 @@ public class MetricsCollectorTest {
         return new Object[]{new StandardMetricsCollectorFactory(), new MicrometerMetricsCollectorFactory(), new OpenTelemetryMetricsCollectorFactory()};
     }
 
-    @Parameterized.Parameter
-    public MetricsCollectorFactory factory;
-
-    @Before
+    @BeforeEach
     public void reset() {
         // reset metrics
-        openTelemetryRule.clearMetrics();
+        otelTesting.clearMetrics();
     }
 
-    @Test
-    public void basicGetAndAck() {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void basicGetAndAck(MetricsCollectorFactory factory) {
         AbstractMetricsCollector metrics = factory.create();
         Connection connection = mock(Connection.class);
         when(connection.getId()).thenReturn("connection-1");
@@ -97,7 +93,9 @@ public class MetricsCollectorTest {
         assertThat(acknowledgedMessages(metrics)).isEqualTo(1L+2L+1L);
     }
 
-    @Test public void basicConsumeAndAck() {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void basicConsumeAndAck(MetricsCollectorFactory factory) {
         AbstractMetricsCollector metrics = factory.create();
         Connection connection = mock(Connection.class);
         when(connection.getId()).thenReturn("connection-1");
@@ -136,7 +134,9 @@ public class MetricsCollectorTest {
         assertThat(acknowledgedMessages(metrics)).isEqualTo(1L+2L+1L);
     }
 
-    @Test public void publishingAndPublishingFailures() {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void publishingAndPublishingFailures(MetricsCollectorFactory factory) {
         AbstractMetricsCollector metrics = factory.create();
         Channel channel = mock(Channel.class);
 
@@ -164,7 +164,9 @@ public class MetricsCollectorTest {
         assertThat(publishedMessages(metrics)).isEqualTo(2L);
     }
 
-    @Test public void publishingAcknowledgements() {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void publishingAcknowledgements(MetricsCollectorFactory factory) {
         AbstractMetricsCollector metrics = factory.create();
         Connection connection = mock(Connection.class);
         when(connection.getId()).thenReturn("connection-1");
@@ -210,7 +212,9 @@ public class MetricsCollectorTest {
         assertThat(publishAck(metrics)).isEqualTo(6L);
     }
 
-    @Test public void publishingNotAcknowledgements() {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void publishingNotAcknowledgements(MetricsCollectorFactory factory) {
         AbstractMetricsCollector metrics = factory.create();
         Connection connection = mock(Connection.class);
         when(connection.getId()).thenReturn("connection-1");
@@ -251,7 +255,9 @@ public class MetricsCollectorTest {
         assertThat(publishNack(metrics)).isEqualTo(5L);
     }
 
-    @Test public void publishingUnrouted() {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void publishingUnrouted(MetricsCollectorFactory factory) {
         AbstractMetricsCollector metrics = factory.create();
         Channel channel = mock(Channel.class);
         // begins with no messages not-acknowledged
@@ -267,7 +273,9 @@ public class MetricsCollectorTest {
         assertThat(publishUnrouted(metrics)).isEqualTo(2L);
     }
 
-    @Test public void cleanStaleState() {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void cleanStaleState(MetricsCollectorFactory factory) {
         AbstractMetricsCollector metrics = factory.create();
         Connection openConnection = mock(Connection.class);
         when(openConnection.getId()).thenReturn("connection-1");
@@ -437,13 +445,13 @@ public class MetricsCollectorTest {
     static class OpenTelemetryMetricsCollectorFactory implements MetricsCollectorFactory {
         @Override
         public AbstractMetricsCollector create() {
-            return new OpenTelemetryMetricsCollector(openTelemetryRule.getOpenTelemetry());
+            return new OpenTelemetryMetricsCollector(otelTesting.getOpenTelemetry());
         }
     }
 
     static long getOpenTelemetryCounterMeterValue(String name) {
         // open telemetry metrics
-        List<MetricData> metrics = openTelemetryRule.getMetrics();
+        List<MetricData> metrics = otelTesting.getMetrics();
         // metric value
         return metrics.stream()
             .filter(metric -> metric.getName().equals(name))

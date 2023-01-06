@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2022 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,8 +16,8 @@
 package com.rabbitmq.client.test.ssl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.impl.nio.NioParams;
@@ -36,19 +36,17 @@ import javax.net.ssl.SSLSocket;
 
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.TestUtils;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test for bug 19356 - SSL Support in rabbitmq
  *
  */
+@EnabledForJreRange(min = JRE.JAVA_11)
 public class VerifiedConnection extends UnverifiedConnection {
-
-    @ClassRule
-    public static TestRule atLeastJava11TestRule = TestUtils.atLeastJava11();
 
     public void openConnection()
             throws IOException, TimeoutException {
@@ -102,7 +100,7 @@ public class VerifiedConnection extends UnverifiedConnection {
                 CountDownLatch latch = new CountDownLatch(1);
                 TestUtils.basicGetBasicConsume(c, VerifiedConnection.class.getName(), latch, 100);
                 boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
-                assertTrue("Message has not been received", messagesReceived);
+                assertTrue(messagesReceived, "Message has not been received");
                 assertThat(protocolsSupplier.get()).isNotNull();
                 assertThat(protocolsSupplier.get().get()).contains(protocol);
             }

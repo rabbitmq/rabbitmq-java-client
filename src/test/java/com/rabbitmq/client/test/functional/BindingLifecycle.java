@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,16 +16,16 @@
 
 package com.rabbitmq.client.test.functional;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
@@ -53,7 +53,7 @@ public class BindingLifecycle extends BindingLifecycleBase {
         channel.queuePurge(binding.q);
 
         GetResponse response = channel.basicGet(binding.q, true);
-        assertNull("The response SHOULD BE null", response);
+        assertNull(response, "The response SHOULD BE null");
 
         deleteExchangeAndQueue(binding);
     }
@@ -71,24 +71,24 @@ public class BindingLifecycle extends BindingLifecycleBase {
 
         GetResponse response = channel.basicGet(binding.q, false);
         assertFalse(response.getEnvelope().isRedeliver());
-        assertNotNull("The response SHOULD NOT BE null", response);
+        assertNotNull(response, "The response SHOULD NOT BE null");
 
         // If we purge the queue the unacked message should still be there on
         // recover.
         channel.queuePurge(binding.q);
         response = channel.basicGet(binding.q, true);
-        assertNull("The response SHOULD BE null", response);
+        assertNull(response, "The response SHOULD BE null");
 
         channel.basicRecover();
         response = channel.basicGet(binding.q, false);
         channel.basicRecover();
         assertTrue(response.getEnvelope().isRedeliver());
-        assertNotNull("The response SHOULD NOT BE null", response);
+        assertNotNull(response, "The response SHOULD NOT BE null");
 
         // If we recover then purge the message should go away
         channel.queuePurge(binding.q);
         response = channel.basicGet(binding.q, true);
-        assertNull("The response SHOULD BE null", response);
+        assertNull(response, "The response SHOULD BE null");
 
         deleteExchangeAndQueue(binding);
     }

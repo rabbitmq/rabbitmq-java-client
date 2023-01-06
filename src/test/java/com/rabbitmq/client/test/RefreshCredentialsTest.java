@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2019-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -20,10 +20,10 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.DefaultCredentialsRefreshService;
 import com.rabbitmq.client.impl.RefreshProtectedCredentialsProvider;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
+import com.rabbitmq.client.test.TestUtils.BrokerVersion;
+import com.rabbitmq.client.test.TestUtils.BrokerVersionAtLeast;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,13 +33,12 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@BrokerVersionAtLeast(BrokerVersion.RABBITMQ_3_8)
 public class RefreshCredentialsTest {
 
-    @ClassRule
-    public static TestRule brokerVersionTestRule = TestUtils.atLeast38();
     DefaultCredentialsRefreshService refreshService;
 
-    @Before
+    @BeforeEach
     public void tearDown() {
         if (refreshService != null) {
             refreshService.close();

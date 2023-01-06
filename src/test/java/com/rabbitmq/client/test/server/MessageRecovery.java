@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -17,12 +17,12 @@ package com.rabbitmq.client.test.server;
 
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MessageProperties;
 import com.rabbitmq.client.test.ConfirmBase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MessageRecovery extends ConfirmBase
 {
@@ -56,7 +56,7 @@ public class MessageRecovery extends ConfirmBase
         // with slave(s).
         // NB: this wont work when running against a single node broker
         // and running the test individually outside of the HA suite
-        boolean expectDelivered = HATests.HA_TESTS_RUNNING;
+        boolean expectDelivered = ha();
         try {
             channel.queueDeclarePassive(Q2);
             channel.queueDelete(Q2);

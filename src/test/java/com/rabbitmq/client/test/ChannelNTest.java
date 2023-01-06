@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2019-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -17,9 +17,9 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.impl.*;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.concurrent.ExecutorService;
@@ -32,13 +32,13 @@ public class ChannelNTest {
     ConsumerWorkService consumerWorkService;
     ExecutorService executorService;
 
-    @Before
+    @BeforeEach
     public void init() {
         executorService = Executors.newSingleThreadExecutor();
         consumerWorkService = new ConsumerWorkService(executorService, null, 1000, 1000);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         consumerWorkService.shutdown();
         executorService.shutdownNow();

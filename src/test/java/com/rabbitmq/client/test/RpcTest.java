@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2017-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -25,9 +25,9 @@ import com.rabbitmq.client.impl.recovery.RecordedQueue;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import com.rabbitmq.tools.Host;
 import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.rabbitmq.client.test.TestUtils.waitAtMost;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RpcTest {
 
@@ -49,7 +49,7 @@ public class RpcTest {
     String queue = "rpc.queue";
     RpcServer rpcServer;
 
-    @Before
+    @BeforeEach
     public void init() throws Exception {
         clientConnection = TestUtils.connectionFactory().newConnection();
         clientChannel = clientConnection.createChannel();
@@ -58,7 +58,7 @@ public class RpcTest {
         serverChannel.queueDeclare(queue, false, false, false, null);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (rpcServer != null) {
             rpcServer.terminateMainloop();
@@ -241,7 +241,7 @@ public class RpcTest {
                 }
             });
             Host.closeConnection((NetworkConnection) connection);
-            assertTrue("Connection should have recovered by now", recoveryLatch.await(10, TimeUnit.SECONDS));
+            assertTrue(recoveryLatch.await(10, TimeUnit.SECONDS), "Connection should have recovered by now");
             client = new RpcClient(new RpcClientParams()
                     .channel(channel).exchange("").routingKey(queue).timeout(1000));
             response = client.doCall(null, "hello".getBytes());
@@ -289,7 +289,7 @@ public class RpcTest {
                 }
             });
             Host.closeConnection((NetworkConnection) connection);
-            assertTrue("Connection should have recovered by now", recoveryLatch.await(10, TimeUnit.SECONDS));
+            assertTrue(recoveryLatch.await(10, TimeUnit.SECONDS), "Connection should have recovered by now");
             try {
                 new RpcClient(new RpcClientParams()
                         .channel(channel).exchange("").routingKey(queue).timeout(1000));

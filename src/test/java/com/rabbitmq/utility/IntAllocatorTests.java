@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,14 +15,14 @@
 
 package com.rabbitmq.utility;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class IntAllocatorTests {
 
@@ -41,38 +41,38 @@ public class IntAllocatorTests {
                 iAll.free(trial);
                 set.remove(trial);
             } else {
-                assertTrue("Did not reserve free integer " + trial, iAll.reserve(trial));
+                assertTrue(iAll.reserve(trial), "Did not reserve free integer " + trial);
                 set.add(trial);
             }
         }
 
         for (int trial : set) {
-            assertFalse("Integer " + trial + " not allocated!", iAll.reserve(trial));
+            assertFalse(iAll.reserve(trial), "Integer " + trial + " not allocated!");
         }
     }
 
-    @Test public void allocateAndFree() throws Exception {
+    @Test public void allocateAndFree() {
         Set<Integer> set = new HashSet<Integer>();
         for (int i=0; i < TEST_ITERATIONS; ++i) {
             if (getBool(rand)) {
                 int trial = iAll.allocate();
-                assertFalse("Already allocated " + trial, set.contains(trial));
+                assertFalse(set.contains(trial), "Already allocated " + trial);
                 set.add(trial);
             } else {
                 if (!set.isEmpty()) {
                     int trial = extractOne(set);
-                    assertFalse("Allocator agreed to reserve " + trial, iAll.reserve(trial));
+                    assertFalse(iAll.reserve(trial), "Allocator agreed to reserve " + trial);
                     iAll.free(trial);
                 }
             }
         }
 
         for (int trial : set) {
-            assertFalse("Integer " + trial + " should be allocated!", iAll.reserve(trial));
+            assertFalse(iAll.reserve(trial), "Integer " + trial + " should be allocated!");
         }
     }
 
-    @Test public void testToString() throws Exception {
+    @Test public void testToString() {
         IntAllocator ibs = new IntAllocator(LO_RANGE, HI_RANGE);
         assertEquals("IntAllocator{allocated = []}", ibs.toString());
         ibs.allocate();

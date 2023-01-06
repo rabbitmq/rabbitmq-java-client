@@ -17,46 +17,24 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.nio.NioParams;
-import com.rabbitmq.client.test.TestUtils.TestDescription;
 import com.rabbitmq.tools.Host;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BrokerTestCase {
 
-    @Rule
-    public TestDescription testDescription = new TestDescription();
+    private boolean ha = false;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BrokerTestCase.class);
-
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            LOGGER.info(
-                "Starting test: {}.{} (nio? {})",
-                description.getTestClass().getSimpleName(), description.getMethodName(), TestUtils.USE_NIO
-            );
-        }
-
-        @Override
-        protected void finished(Description description) {
-            LOGGER.info("Test finished: {}.{}", description.getTestClass().getSimpleName(), description.getMethodName());
-        }
-    };
+    protected volatile TestInfo testInfo;
 
     protected ConnectionFactory connectionFactory = newConnectionFactory();
 
@@ -80,16 +58,19 @@ public class BrokerTestCase {
     protected Connection connection;
     protected Channel channel;
 
-    @Before public void setUp()
-            throws IOException, TimeoutException {
-        assumeTrue(shouldRun());
+    @BeforeEach
+    public void setUp(TestInfo testInfo) throws IOException, TimeoutException {
+
+
+        Assumptions.assumeTrue(shouldRun());
+        this.testInfo = testInfo;
         openConnection();
         openChannel();
 
         createResources();
     }
 
-    @After public void tearDown()
+    @AfterEach public void tearDown(TestInfo testInfo)
             throws IOException, TimeoutException {
         if(shouldRun()) {
             closeChannel();
@@ -135,9 +116,9 @@ public class BrokerTestCase {
 
     protected void restart()
             throws IOException, TimeoutException {
-        tearDown();
+        tearDown(this.testInfo);
         bareRestart();
-        setUp();
+        setUp(this.testInfo);
     }
 
     protected void bareRestart()
@@ -342,13 +323,13 @@ public class BrokerTestCase {
     }
 
     protected String generateQueueName() {
-        return name("queue", this.testDescription.getDescription().getTestClass(),
-            this.testDescription.getDescription().getMethodName());
+        return name("queue", this.testInfo.getTestClass().get(),
+            this.testInfo.getTestMethod().get().getName());
     }
 
     protected String generateExchangeName() {
-        return name("exchange", this.testDescription.getDescription().getTestClass(),
-            this.testDescription.getDescription().getMethodName());
+        return name("exchange", this.testInfo.getTestClass().get(),
+            this.testInfo.getTestMethod().get().getName());
     }
 
     private static String name(String prefix, Class<?> testClass, String testMethodName) {
@@ -358,6 +339,8 @@ public class BrokerTestCase {
             prefix, testClass.getSimpleName(), testMethodName, uuid.substring(uuid.length() / 2));
     }
 
-
+    protected boolean ha() {
+        return this.ha;
+    }
 
 }

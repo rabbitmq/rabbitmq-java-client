@@ -3,7 +3,7 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.nio.ByteBufferOutputStream;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.DataOutputStream;
 import java.io.IOException;

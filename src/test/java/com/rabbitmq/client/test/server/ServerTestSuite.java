@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,14 +16,12 @@
 
 package com.rabbitmq.client.test.server;
 
-import com.rabbitmq.client.test.AbstractRMQTestSuite;
-import com.rabbitmq.client.test.RequiredPropertiesSuite;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(RequiredPropertiesSuite.class)
-@Suite.SuiteClasses({
-	Permissions.class,
+@Suite
+@SelectClasses({
+		Permissions.class,
     DurableBindingLifecycle.class,
     DeadLetterExchangeDurable.class,
     EffectVisibilityCrossNodeTest.class,
@@ -38,15 +36,10 @@ import org.junit.runners.Suite;
     BlockedConnection.class,
     ChannelLimitNegotiation.class,
     LoopbackUsers.class,
-	XDeathHeaderGrowth.class,
-	PriorityQueues.class,
-	TopicPermissions.class
+		XDeathHeaderGrowth.class,
+		PriorityQueues.class,
+		TopicPermissions.class
 })
-public class ServerTests {
-
-	// initialize system properties
-	static{
-		new AbstractRMQTestSuite(){};
-	}
+public class ServerTestSuite {
 
 }

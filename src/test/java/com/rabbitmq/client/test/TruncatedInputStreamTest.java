@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,15 +16,15 @@
 package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.impl.TruncatedInputStream;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Some basic (retroactive) tests for TruncatedInputStream.
@@ -40,12 +40,12 @@ public class TruncatedInputStreamTest {
     /** what length to truncate it to */
     private static final int TRUNCATED_LENGTH = 3;
 
-    @Before public void setUp() throws Exception {
+    @BeforeEach public void setUp() throws Exception {
         InputStream baseStream = new ByteArrayInputStream(TEST_BYTES);
         _truncStream = new TruncatedInputStream(baseStream, TRUNCATED_LENGTH);
     }
 
-    @After public void tearDown() throws Exception {
+    @AfterEach public void tearDown() throws Exception {
         _truncStream = null;
     }
     

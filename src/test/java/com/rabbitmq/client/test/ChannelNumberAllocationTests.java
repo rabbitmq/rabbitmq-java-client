@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -18,16 +18,16 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ChannelNumberAllocationTests {
   static final int CHANNEL_COUNT = 100;
@@ -41,11 +41,11 @@ public class ChannelNumberAllocationTests {
 
   Connection connection;
 
-  @Before public void setUp() throws Exception{
+  @BeforeEach public void setUp() throws Exception{
     connection = TestUtils.connectionFactory().newConnection();
   }
 
-  @After public void tearDown() throws Exception{
+  @AfterEach public void tearDown() throws Exception{
     connection.close();
     connection = null;
   }
@@ -81,10 +81,10 @@ public class ChannelNumberAllocationTests {
     // In the current implementation the allocated numbers need not be increasing
     Collections.sort(channels, COMPARATOR);
 
-    assertEquals("Didn't create the right number of channels!", CHANNEL_COUNT, channels.size());
+    assertEquals(CHANNEL_COUNT, channels.size(), "Didn't create the right number of channels!");
     for(int i = 1; i < CHANNEL_COUNT; ++i) {
-      assertTrue("Channel numbers should be distinct."
-          , channels.get(i-1).getChannelNumber() < channels.get(i).getChannelNumber()
+      assertTrue(channels.get(i-1).getChannelNumber() < channels.get(i).getChannelNumber(),
+          "Channel numbers should be distinct."
       );
     }
   }
