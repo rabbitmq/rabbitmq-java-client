@@ -16,16 +16,17 @@
 
 package com.rabbitmq.client.test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.rabbitmq.tools.json.JSONReader;
 import com.rabbitmq.tools.json.JSONWriter;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.junit.jupiter.api.Test;
 
 public class JSONReadWriteTest {
 
-    @Test public void readWriteSimple() throws Exception {
+    @Test
+    public void readWriteSimple() throws Exception {
 
         Object myRet;
         String myJson;

@@ -15,17 +15,17 @@
 
 package com.rabbitmq.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.rabbitmq.tools.jsonrpc.DefaultJsonRpcMapper;
 import com.rabbitmq.tools.jsonrpc.JsonRpcException;
 import com.rabbitmq.tools.jsonrpc.JsonRpcMapper;
-import org.junit.Test;
 
 import java.lang.reflect.UndeclaredThrowableException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.jupiter.api.Test;
 
 public class DefaultJsonRpcTest extends AbstractJsonRpcTest {
 

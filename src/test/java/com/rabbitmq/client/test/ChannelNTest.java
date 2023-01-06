@@ -56,11 +56,12 @@ public class ChannelNTest {
         channel.processAsync(new AMQCommand(method));
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void callingBasicCancelForUnknownConsumerThrowsException() throws Exception {
         AMQConnection connection = Mockito.mock(AMQConnection.class);
         ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
-        channel.basicCancel("does-not-exist");
+        assertThatThrownBy(() ->  channel.basicCancel("does-not-exist"))
+            .isInstanceOf(IOException.class);
     }
 
     @Test
