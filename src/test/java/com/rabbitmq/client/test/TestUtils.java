@@ -478,7 +478,7 @@ public class TestUtils {
         @Override
         public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
             if (Host.isOnDocker()) {
-                return ConditionEvaluationResult.enabled("Broker running on Docker");
+                return ConditionEvaluationResult.disabled("Broker running on Docker");
             } else {
                 return ConditionEvaluationResult.enabled("Broker not running on Docker");
             }
