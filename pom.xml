@@ -62,7 +62,7 @@
     <logback.version>1.2.11</logback.version>
     <junit.version>4.13.2</junit.version>
     <mockito.version>4.11.0</mockito.version>
-    <assertj.version>3.23.1</assertj.version>
+    <assertj.version>3.24.0</assertj.version>
     <jetty.version>9.4.50.v20221201</jetty.version>
     <bouncycastle.version>1.70</bouncycastle.version>
     <netcrusher.version>0.10</netcrusher.version>
