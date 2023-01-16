@@ -61,7 +61,7 @@
     <jackson.version>2.14.1</jackson.version>
     <logback.version>1.2.11</logback.version>
     <junit.jupiter.version>5.9.2</junit.jupiter.version>
-    <mockito.version>4.11.0</mockito.version>
+    <mockito.version>5.0.0</mockito.version>
     <assertj.version>3.24.1</assertj.version>
     <jetty.version>9.4.50.v20221201</jetty.version>
     <bouncycastle.version>1.70</bouncycastle.version>
@@ -683,6 +683,15 @@
           <url>packagecloud+https://packagecloud.io/rabbitmq/maven-milestones</url>
         </repository>
       </distributionManagement>
+    </profile>
+    <profile>
+      <id>mockito-4-on-java-8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <properties>
+        <mockito.version>4.11.0</mockito.version>
+      </properties>
     </profile>
 
   </profiles>
