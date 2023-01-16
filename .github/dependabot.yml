@@ -15,8 +15,6 @@ updates:
         versions: [ "[2.0,)" ]
       - dependency-name: "ch.qos.logback:logback-classic"
         versions: [ "[1.3,)" ]
-      - dependency-name: "org.mockito:mockito-core"
-        versions: [ "[5.0,)" ]
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
@@ -30,8 +28,6 @@ updates:
         versions: [ "[2.0,)" ]
       - dependency-name: "ch.qos.logback:logback-classic"
         versions: [ "[1.3,)" ]
-      - dependency-name: "org.mockito:mockito-core"
-        versions: [ "[5.0,)" ]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
