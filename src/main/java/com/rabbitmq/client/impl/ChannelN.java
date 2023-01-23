@@ -710,7 +710,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 .build(), props, body);
         try {
             transmit(command);
-        } catch (IOException e) {
+        } catch (IOException | AlreadyClosedException e) {
             metricsCollector.basicPublishFailure(this, e);
             throw e;
         }
@@ -1493,7 +1493,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
 
         rpc(m, k);
-        
+
         try {
             if(_rpcTimeout == NO_RPC_TIMEOUT) {
                 k.getReply(); // discard result
