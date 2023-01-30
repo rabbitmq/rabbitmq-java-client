@@ -2,7 +2,7 @@ name: Test against RabbitMQ 3.11 alpha
 
 on:
   schedule:
-    - cron: '0 4 * * *'
+    - cron: '0 4 ? * SUN,WED'
   pull_request:
     branches:
       - main
