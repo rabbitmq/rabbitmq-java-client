@@ -2,7 +2,7 @@ name: Test GraalVM native image
 
 on:
   schedule:
-    - cron: '0 4 * * *'
+    - cron: '0 4 ? * SUN,WED'
   workflow_dispatch:
 
 env:
