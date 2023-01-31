@@ -72,12 +72,14 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     @Override
     public void newChannel(final Channel channel) {
-        try {
-            incrementChannelCount(channel);
-            channel.addShutdownListener(cause -> closeChannel(channel));
-            connectionState(channel.getConnection()).channelState.put(channel.getChannelNumber(), new ChannelState(channel));
-        } catch(Exception e) {
-            LOGGER.info("Error while computing metrics in newChannel: " + e.getMessage());
+        if (channel != null) {
+            try {
+                incrementChannelCount(channel);
+                channel.addShutdownListener(cause -> closeChannel(channel));
+                connectionState(channel.getConnection()).channelState.put(channel.getChannelNumber(), new ChannelState(channel));
+            } catch(Exception e) {
+                LOGGER.info("Error while computing metrics in newChannel: " + e.getMessage());
+            }
         }
     }
 
