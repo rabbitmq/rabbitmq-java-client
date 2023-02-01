@@ -2,7 +2,7 @@ name: Test against supported Java versions (main)
 
 on:
   schedule:
-    - cron: '0 4 ? * SUN,WED'
+    - cron: '0 4 ? * SUN,THU'
   workflow_dispatch:
 
 env:
