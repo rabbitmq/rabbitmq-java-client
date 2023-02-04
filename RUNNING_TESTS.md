@@ -37,7 +37,7 @@ To run a subset of the test suite (do not forget to start a local RabbitMQ node)
 ./mvnw verify -P '!setup-test-cluster' \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
-       -Dit.test=ClientTests,FunctionalTests,ServerTests
+       -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite
 ```
 
 The test suite subset does not include TLS tests, which is fine for most
@@ -50,7 +50,7 @@ To run the tests against the NIO connector, add `-P use-nio` to the command line
 ./mvnw verify -P '!setup-test-cluster',use-nio \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
-       -Dit.test=ClientTests,FunctionalTests,ServerTests
+       -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite
 ```
 
 For details on running specific tests, see below.
@@ -67,7 +67,7 @@ top-level directory of the source tree:
 ./mvnw verify -P '!setup-test-cluster',use-nio \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
-       -Dit.test=ClientTests
+       -Dit.test=ClientTestSuite
 ```
 
 * To run the functional tests:
@@ -76,7 +76,7 @@ top-level directory of the source tree:
 ./mvnw verify -P '!setup-test-cluster',use-nio \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
-       -Dit.test=FunctionalTests
+       -Dit.test=FunctionalTestSuite
 ```
 
 * To run a single test:
@@ -103,7 +103,7 @@ Launch the tests:
 ```
 ./mvnw verify -P '!setup-test-cluster' \
     -Drabbitmqctl.bin=DOCKER:rabbitmq \
-    -Dit.test=ClientTests,FunctionalTests,ServerTests
+    -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite
 ```
 
 Note the `rabbitmqctl.bin` system property uses the syntax

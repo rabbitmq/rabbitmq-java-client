@@ -105,7 +105,7 @@ Launch "essential" tests (takes about 10 minutes):
 ```
 ./mvnw verify -P '!setup-test-cluster' \
     -Drabbitmqctl.bin=DOCKER:rabbitmq \
-    -Dit.test=ClientTests,FunctionalTests,ServerTests
+    -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite
 ```
 
 Launch a single test:
@@ -125,7 +125,7 @@ system property must point to the `rabbitmqctl` program:
 ./mvnw verify -P '!setup-test-cluster' \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
-       -Dit.test=ClientTests,FunctionalTests,ServerTests
+       -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite
 ```
 
 To launch a single test:
