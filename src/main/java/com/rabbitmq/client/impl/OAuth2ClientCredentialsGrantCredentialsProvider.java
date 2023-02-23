@@ -18,6 +18,8 @@ package com.rabbitmq.client.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.TrustEverythingTrustManager;
 
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -72,7 +74,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
 
     private final Map<String, String> parameters;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final AtomicReference<Function<String, Token>> tokenExtractor = new AtomicReference<>();
 
     private final String id;
 
@@ -214,14 +216,8 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
     }
 
     protected Token parseToken(String response) {
-        try {
-            Map<?, ?> map = objectMapper.readValue(response, Map.class);
-            int expiresIn = ((Number) map.get("expires_in")).intValue();
-            Instant receivedAt = Instant.now();
-            return new Token(map.get("access_token").toString(), expiresIn, receivedAt);
-        } catch (IOException e) {
-            throw new OAuthTokenManagementException("Error while parsing OAuth 2 token", e);
-        }
+        return this.tokenExtractor.updateAndGet(current ->
+            current == null ? new JacksonTokenLookup() : current).apply(response);
     }
 
     @Override
@@ -594,5 +590,22 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
             return null;
         }
 
+    }
+
+    private static class JacksonTokenLookup implements Function<String, Token> {
+
+        private final ObjectMapper objectMapper = new ObjectMapper();
+
+        @Override
+        public Token apply(String response) {
+            try {
+                Map<?, ?> map = objectMapper.readValue(response, Map.class);
+                int expiresIn = ((Number) map.get("expires_in")).intValue();
+                Instant receivedAt = Instant.now();
+                return new Token(map.get("access_token").toString(), expiresIn, receivedAt);
+            } catch (IOException e) {
+                throw new OAuthTokenManagementException("Error while parsing OAuth 2 token", e);
+            }
+        }
     }
 }
