@@ -15,6 +15,7 @@
 
 package com.rabbitmq.client.impl;
 
+import com.google.gson.Gson;
 import com.rabbitmq.client.test.TestUtils;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -195,12 +196,42 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
     }
 
     @Test
-    public void parseToken() {
+    public void parseTokenDefault() {
         OAuth2ClientCredentialsGrantCredentialsProvider provider = new OAuth2ClientCredentialsGrantCredentialsProvider(
                 "http://localhost:8080/uaa/oauth/token/",
                 "rabbit_client", "rabbit_secret",
                 "client_credentials"
         );
+
+        String accessToken = "18c1b1dfdda04382a8bcc14d077b71dd";
+        int expiresIn = 43199;
+        String response = sampleJsonToken(accessToken, expiresIn);
+
+        OAuth2ClientCredentialsGrantCredentialsProvider.Token token = provider.parseToken(response);
+        assertThat(token.getAccess()).isEqualTo("18c1b1dfdda04382a8bcc14d077b71dd");
+        assertThat(token.getTimeBeforeExpiration()).isBetween(Duration.ofSeconds(expiresIn - 10), Duration.ofSeconds(expiresIn + 1));
+    }
+
+    @Test
+    public void parseTokenGson() {
+        Gson gson = new Gson();
+        OAuth2ClientCredentialsGrantCredentialsProvider provider = new OAuth2ClientCredentialsGrantCredentialsProvider(
+            "http://localhost:8080/uaa/oauth/token/",
+            "rabbit_client", "rabbit_secret",
+            "client_credentials"
+        ) {
+            @Override
+            protected Token parseToken(String response) {
+                try {
+                    Map<?, ?> map = gson.fromJson(response, Map.class);
+                    int expiresIn = ((Number) map.get("expires_in")).intValue();
+                    Instant receivedAt = Instant.now();
+                    return new Token(map.get("access_token").toString(), expiresIn, receivedAt);
+                } catch (Exception e) {
+                    throw new OAuthTokenManagementException("Error while parsing OAuth 2 token", e);
+                }
+            }
+        };
 
         String accessToken = "18c1b1dfdda04382a8bcc14d077b71dd";
         int expiresIn = 43199;
