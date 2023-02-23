@@ -66,6 +66,7 @@
     <jetty.version>9.4.50.v20221201</jetty.version>
     <bouncycastle.version>1.70</bouncycastle.version>
     <netcrusher.version>0.10</netcrusher.version>
+    <gson.version>2.10.1</gson.version>
 
     <maven.javadoc.plugin.version>3.5.0</maven.javadoc.plugin.version>
     <maven.release.plugin.version>2.5.3</maven.release.plugin.version>
@@ -782,6 +783,12 @@
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-sdk-testing</artifactId>
       <version>${opentelemetry.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>${gson.version}</version>
       <scope>test</scope>
     </dependency>
 
