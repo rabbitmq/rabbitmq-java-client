@@ -1,0 +1,50 @@
+name: Release AMQP Java Client
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Evaluate release type
+        run:  ci/evaluate-release.sh
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '8'
+          cache: 'maven'
+          server-id: ${{ env.maven_server_id }}
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Get dependencies
+        run: make deps
+      - name: Release AMQP Java Client (GA)
+        if: ${{ env.ga_release == 'true' }}
+        run:  |
+          git config user.name "rabbitmq-ci"
+          git config user.email "rabbitmq-ci@users.noreply.github.com"
+          ci/release-java-client.sh
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+      - name: Release AMQP Java Client (Milestone/RC)
+        if: ${{ env.ga_release != 'true' }}
+        run:  |
+          git config user.name "rabbitmq-ci"
+          git config user.email "rabbitmq-ci@users.noreply.github.com"
+          ci/release-java-client.sh
+        env:
+          MAVEN_USERNAME: ''
+          MAVEN_PASSWORD: ${{ secrets.PACKAGECLOUD_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
