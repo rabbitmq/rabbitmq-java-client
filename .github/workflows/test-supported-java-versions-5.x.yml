@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        java: [ '8', '11', '17', '19', '20-ea' ]
+        java: [ '8', '11', '17', '19', '20-ea', '21-ea' ]
     name:  Test against Java ${{ matrix.java }}
     steps:
       - uses: actions/checkout@v3
@@ -47,13 +47,15 @@ jobs:
             -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
             -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
             -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
-            --no-transfer-progress
+            --no-transfer-progress \
+            -Dnet.bytebuddy.experimental=true
       - name: Test with blocking IO
         run: |
           ./mvnw verify -P '!setup-test-cluster' -Drabbitmqctl.bin=DOCKER:rabbitmq \
           -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
           -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
           -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
-          --no-transfer-progress
+          --no-transfer-progress \
+          -Dnet.bytebuddy.experimental=true
       - name: Stop broker
         run: docker stop rabbitmq && docker rm rabbitmq
