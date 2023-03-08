@@ -1,4 +1,4 @@
-name: Test against RabbitMQ 3.11 alpha
+name: Test against RabbitMQ alphas
 
 on:
   schedule:
