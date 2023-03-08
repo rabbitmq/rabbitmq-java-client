@@ -1,6 +1,8 @@
-name: Test against RabbitMQ 3.11 stable
+name: Test against RabbitMQ 3.11 alpha
 
 on:
+  schedule:
+    - cron: '0 4 ? * SUN,THU'
   pull_request:
     branches:
       - main
@@ -9,14 +11,13 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  RABBITMQ_IMAGE_TAG: 3.11
-  RABBITMQ_IMAGE: rabbitmq
-
 jobs:
   build:
     runs-on: ubuntu-22.04
-
+    strategy:
+      matrix:
+        rabbitmq-image: [ 'pivotalrabbitmq/rabbitmq:v3.11.x-otp-max-bazel', 'pivotalrabbitmq/rabbitmq:v3.12.x-otp-max-bazel' ]
+    name:  Test against ${{ matrix.rabbitmq-image }}
     steps:
       - uses: actions/checkout@v3
       - name: Checkout tls-gen
@@ -34,13 +35,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: 'maven'
-          server-id: ossrh
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
-          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
       - name: Start cluster
         run: ci/start-cluster.sh
+        env:
+          RABBITMQ_IMAGE: ${{ matrix.rabbitmq-image }}
       - name: Get dependencies
         run: make deps
       - name: Test with NIO
@@ -61,10 +59,3 @@ jobs:
         run: docker stop rabbitmq && docker rm rabbitmq
       - name: Stop broker B
         run: docker stop hare && docker rm hare
-      - name: Publish snapshot
-        if: ${{ github.event_name != 'pull_request' }}
-        run: ./mvnw clean deploy -Psnapshots -DskipITs -DskipTests --no-transfer-progress
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}

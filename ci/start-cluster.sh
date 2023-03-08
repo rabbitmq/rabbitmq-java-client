@@ -2,8 +2,7 @@
 
 LOCAL_SCRIPT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-RABBITMQ_IMAGE_TAG=${RABBITMQ_IMAGE_TAG:-3.11}
-RABBITMQ_IMAGE=${RABBITMQ_IMAGE:-rabbitmq}
+RABBITMQ_IMAGE=${RABBITMQ_IMAGE:-rabbitmq:3.11}
 
 wait_for_message() {
   while ! docker logs "$1" | grep -q "$2";
@@ -28,7 +27,7 @@ chmod -R o+r rabbitmq-configuration/tls/*
 cp target/test-classes/rabbit@localhost.config rabbitmq-configuration/rabbit@localhost.config
 cp target/test-classes/hare@localhost.config rabbitmq-configuration/hare@localhost.config
 
-echo "Running RabbitMQ ${RABBITMQ_IMAGE}:${RABBITMQ_IMAGE_TAG}"
+echo "Running RabbitMQ ${RABBITMQ_IMAGE}"
 
 docker rm -f rabbitmq 2>/dev/null || echo "rabbitmq was not running"
 docker run -d --name rabbitmq \
@@ -38,7 +37,7 @@ docker run -d --name rabbitmq \
     --env RABBITMQ_NODENAME=rabbit@$(hostname) \
     --env RABBITMQ_NODE_PORT=5672 \
     --env RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS="-setcookie do-not-do-this-in-production" \
-    "${RABBITMQ_IMAGE}":"${RABBITMQ_IMAGE_TAG}"
+    "${RABBITMQ_IMAGE}"
 
 # for CLI commands to share the same cookie
 docker exec rabbitmq bash -c "echo 'do-not-do-this-in-production' > /var/lib/rabbitmq/.erlang.cookie"
@@ -53,7 +52,7 @@ docker run -d --name hare \
     --env RABBITMQ_NODENAME=hare@$(hostname) \
     --env RABBITMQ_NODE_PORT=5673 \
     --env RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS="-setcookie do-not-do-this-in-production" \
-    "${RABBITMQ_IMAGE}":"${RABBITMQ_IMAGE_TAG}"
+    "${RABBITMQ_IMAGE}"
 
 # for CLI commands to share the same cookie
 docker exec hare bash -c "echo 'do-not-do-this-in-production' > /var/lib/rabbitmq/.erlang.cookie"
