@@ -11,14 +11,13 @@ on:
       - 5.x.x-stable
   workflow_dispatch:
 
-env:
-  RABBITMQ_IMAGE_TAG: 3.11
-  RABBITMQ_IMAGE: pivotalrabbitmq/rabbitmq-dev
-
 jobs:
   build:
     runs-on: ubuntu-22.04
-
+    strategy:
+      matrix:
+        rabbitmq-image: [ 'pivotalrabbitmq/rabbitmq:v3.11.x-otp-max-bazel', 'pivotalrabbitmq/rabbitmq:v3.12.x-otp-max-bazel' ]
+    name:  Test against ${{ matrix.rabbitmq-image }}
     steps:
       - uses: actions/checkout@v3
       - name: Checkout tls-gen
@@ -38,6 +37,8 @@ jobs:
           cache: 'maven'
       - name: Start cluster
         run: ci/start-cluster.sh
+        env:
+          RABBITMQ_IMAGE: ${{ matrix.rabbitmq-image }}
       - name: Get dependencies
         run: make deps
       - name: Test with NIO

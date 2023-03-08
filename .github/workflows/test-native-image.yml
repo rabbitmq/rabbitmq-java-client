@@ -6,8 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  RABBITMQ_IMAGE_TAG: 3.11
-  RABBITMQ_IMAGE: rabbitmq
+  RABBITMQ_IMAGE: 'rabbitmq:3.11'
 
 jobs:
   build:
