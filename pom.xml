@@ -75,7 +75,7 @@
     <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
     <groovy.maven.plugin.version>2.1.1</groovy.maven.plugin.version>
     <groovy.all.version>2.4.21</groovy.all.version>
-    <keytool.maven.plugin.version>1.6</keytool.maven.plugin.version>
+    <keytool.maven.plugin.version>1.7</keytool.maven.plugin.version>
     <build.helper.maven-plugin.version>3.3.0</build.helper.maven-plugin.version>
     <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>3.0.0-M9</maven.surefire.plugin.version>
