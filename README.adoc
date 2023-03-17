@@ -1,3 +1,7 @@
+:client-stable: 5.16.0
+:client-rc: 5.17.0.RC2
+:client-snapshot: 5.17.0-SNAPSHOT
+
 = RabbitMQ Java Client
 
 image:https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client/badge.svg["Maven Central", link="https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client"]
@@ -8,16 +12,12 @@ The client is maintained by the https://github.com/rabbitmq/[RabbitMQ team at VM
 
 == Dependency (Maven Artifact)
 
-This package is published to several Maven package repositories:
-
-* https://search.maven.org/#search%7Cga%7C1%7Cg%3Acom.rabbitmq%20a%3Aamqp-client[Maven Central]
-* https://packagecloud.io/rabbitmq/maven-milestones[RabbitMQ Maven Milestones repository]
-* https://oss.sonatype.org/content/repositories/snapshots/com/rabbitmq/amqp-client/[Sonatype OSS snapshot repository]
-
 This client releases are independent of RabbitMQ server releases and can be used with RabbitMQ server `3.x`.
 They require Java 8 or higher.
 
-=== Maven
+=== Stable
+
+==== Maven
 
 .pom.xml
 [source,xml,subs="attributes,specialcharacters"]
@@ -25,16 +25,121 @@ They require Java 8 or higher.
 <dependency>
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
-    <version>5.16.0</version>
+    <version>{client-stable}</version>
 </dependency>
 ----
 
-=== Gradle
+==== Gradle
 
 .build.gradle
 [source,groovy,subs="attributes,specialcharacters"]
 ----
-compile 'com.rabbitmq:amqp-client:5.16.0'
+compile 'com.rabbitmq:amqp-client:{client-stable}'
+----
+
+=== Milestones and Release Candidates
+
+==== Maven
+
+.pom.xml
+[source,xml,subs="attributes,specialcharacters"]
+----
+<dependency>
+    <groupId>com.rabbitmq</groupId>
+    <artifactId>amqp-client</artifactId>
+    <version>{client-rc}</version>
+</dependency>
+----
+
+Milestones and release candidates are available on the RabbitMQ Milestone Repository:
+
+.pom.xml
+[source,xml,subs="attributes,specialcharacters"]
+----
+<repositories>
+  <repository>
+    <id>packagecloud-rabbitmq-maven-milestones</id>
+    <url>https://packagecloud.io/rabbitmq/maven-milestones/maven2</url>
+    <releases>
+      <enabled>true</enabled>
+    </releases>
+    <snapshots>
+      <enabled>false</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+----
+
+==== Gradle
+
+.build.gradle
+[source,groovy,subs="attributes,specialcharacters"]
+----
+compile 'com.rabbitmq:amqp-client:{client-rc}'
+----
+
+Milestones and release candidates are available on the RabbitMQ Milestone Repository:
+
+.build.gradle
+[source,groovy,subs="attributes,specialcharacters"]
+----
+repositories {
+  maven {
+    url "https://packagecloud.io/rabbitmq/maven-milestones/maven2"
+  }
+}
+----
+
+=== Snapshots
+
+==== Maven
+
+.pom.xml
+[source,xml,subs="attributes,specialcharacters"]
+----
+<dependency>
+    <groupId>com.rabbitmq</groupId>
+    <artifactId>amqp-client</artifactId>
+    <version>{client-snapshot}</version>
+</dependency>
+----
+
+Snapshots are available on the Sonatype OSS snapshot repository:
+
+.pom.xml
+[source,xml,subs="attributes,specialcharacters"]
+----
+<repositories>
+  <repository>
+    <id>ossrh</id>
+    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    <snapshots>
+      <enabled>true</enabled>
+    </snapshots>
+    <releases>
+      <enabled>false</enabled>
+    </releases>
+  </repository>
+</repositories>
+----
+
+==== Gradle
+
+.build.gradle
+[source,groovy,subs="attributes,specialcharacters"]
+----
+compile 'com.rabbitmq:amqp-client:{client-snapshot}'
+----
+
+Snapshots are available on the Sonatype OSS snapshot repository:
+
+.build.gradle
+[source,groovy,subs="attributes,specialcharacters"]
+----
+repositories {
+  maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+  mavenCentral()
+}
 ----
 
 === 4.x Series
