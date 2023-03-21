@@ -1,6 +1,6 @@
-:client-stable: 5.16.0
+:client-stable: 5.17.0
 :client-rc: 5.17.0.RC2
-:client-snapshot: 5.17.0-SNAPSHOT
+:client-snapshot: 5.18.0-SNAPSHOT
 
 = RabbitMQ Java Client
 
@@ -37,6 +37,7 @@ They require Java 8 or higher.
 compile 'com.rabbitmq:amqp-client:{client-stable}'
 ----
 
+////
 === Milestones and Release Candidates
 
 ==== Maven
@@ -89,6 +90,7 @@ repositories {
   }
 }
 ----
+////
 
 === Snapshots
 
