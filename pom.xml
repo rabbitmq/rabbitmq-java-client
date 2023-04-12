@@ -61,7 +61,7 @@
     <jackson.version>2.14.1</jackson.version>
     <logback.version>1.2.12</logback.version>
     <junit.jupiter.version>5.9.2</junit.jupiter.version>
-    <mockito.version>5.2.0</mockito.version>
+    <mockito.version>5.3.0</mockito.version>
     <assertj.version>3.24.2</assertj.version>
     <jetty.version>9.4.51.v20230217</jetty.version>
     <bouncycastle.version>1.70</bouncycastle.version>
