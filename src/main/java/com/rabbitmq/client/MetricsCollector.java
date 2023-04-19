@@ -15,6 +15,12 @@
 
 package com.rabbitmq.client;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import com.rabbitmq.client.impl.AMQCommand;
+
 /**
  * Interface to gather execution data of the client.
  * Note transactions are not supported: they deal with
@@ -64,6 +70,71 @@ public interface MetricsCollector {
 
     void basicConsume(Channel channel, String consumerTag, boolean autoAck);
 
+    default Consumer basicPreConsume(Channel channel, String consumerTag, boolean autoAck, AMQCommand amqCommand, Consumer callback) {
+        return callback;
+    }
+
     void basicCancel(Channel channel, String consumerTag);
 
+    default void basicPrePublish(Channel channel, long deliveryTag, PublishArguments publishArguments) {
+
+    }
+
+    default void basicPublishFailure(Channel channel, Exception exception, PublishArguments publishArguments) {
+        basicPublishFailure(channel, exception);
+    }
+
+    default void basicPublish(Channel channel, long deliveryTag, PublishArguments publishArguments) {
+        basicPublish(channel, deliveryTag);
+    }
+
+    class PublishArguments {
+        private AMQP.Basic.Publish publish;
+
+        private AMQP.BasicProperties props;
+
+        private byte[] body;
+
+        private final Map<String, Object> headers = new HashMap<>();
+
+        private final Map<Object, Object> context = new HashMap<>();
+
+        public PublishArguments(AMQP.Basic.Publish publish, AMQP.BasicProperties props, byte[] body) {
+            this.publish = Objects.requireNonNull(publish);
+            this.props = Objects.requireNonNull(props);
+            this.body = Objects.requireNonNull(body);
+        }
+
+        public AMQP.Basic.Publish getPublish() {
+            return publish;
+        }
+
+        public AMQP.BasicProperties getProps() {
+            return props;
+        }
+
+        public byte[] getBody() {
+            return body;
+        }
+
+        public void setPublish(AMQP.Basic.Publish publish) {
+            this.publish = publish;
+        }
+
+        public void setProps(AMQP.BasicProperties props) {
+            this.props = props;
+        }
+
+        public void setBody(byte[] body) {
+            this.body = body;
+        }
+
+        public Map<Object, Object> getContext() {
+            return context;
+        }
+
+        public Map<String, Object> getHeaders() {
+            return headers;
+        }
+    }
 }
