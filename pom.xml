@@ -57,6 +57,7 @@
     <slf4j.version>1.7.36</slf4j.version>
     <metrics.version>4.2.18</metrics.version>
     <micrometer.version>1.10.6</micrometer.version>
+    <micrometer-tracing.version>1.0.4</micrometer-tracing.version>
     <opentelemetry.version>1.25.0</opentelemetry.version>
     <jackson.version>2.14.1</jackson.version>
     <logback.version>1.2.12</logback.version>
@@ -791,6 +792,11 @@
       <version>${gson.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-tracing-integration-test</artifactId>
+      <scope>test</scope>
+    </dependency>
 
   </dependencies>
 
@@ -801,6 +807,13 @@
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
         <version>${junit.jupiter.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-tracing-bom</artifactId>
+        <version>${micrometer-tracing.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
