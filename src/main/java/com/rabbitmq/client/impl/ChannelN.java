@@ -700,20 +700,22 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (props == null) {
             props = MessageProperties.MINIMAL_BASIC;
         }
-        AMQCommand command = new AMQCommand(
-            new Basic.Publish.Builder()
+        AMQP.Basic.Publish publish = new Basic.Publish.Builder()
                 .exchange(exchange)
                 .routingKey(routingKey)
                 .mandatory(mandatory)
                 .immediate(immediate)
-                .build(), props, body);
+                .build();
+        MetricsCollector.PublishArguments args = new MetricsCollector.PublishArguments(publish, props, body);
         try {
+            metricsCollector.basicPrePublish(this, deliveryTag, args);
+            AMQCommand command = new AMQCommand(args.getPublish(), args.getProps(), args.getBody());
             transmit(command);
         } catch (IOException | AlreadyClosedException e) {
-            metricsCollector.basicPublishFailure(this, e);
+            metricsCollector.basicPublishFailure(this, e, args);
             throw e;
         }
-        metricsCollector.basicPublish(this, deliveryTag);
+        metricsCollector.basicPublish(this, deliveryTag, args);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1358,12 +1360,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             @Override
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
-                _consumers.put(actualConsumerTag, callback);
+                Consumer wrappedCallback = metricsCollector.basicPreConsume(ChannelN.this, actualConsumerTag, autoAck, replyCommand, callback);
+                _consumers.put(actualConsumerTag, wrappedCallback);
 
                 // need to register consumer in stats before it actually starts consuming
                 metricsCollector.basicConsume(ChannelN.this, actualConsumerTag, autoAck);
 
-                dispatcher.handleConsumeOk(callback, actualConsumerTag);
+                dispatcher.handleConsumeOk(wrappedCallback, actualConsumerTag);
                 return actualConsumerTag;
             }
         };
