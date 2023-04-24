@@ -57,7 +57,8 @@
     <slf4j.version>1.7.36</slf4j.version>
     <metrics.version>4.2.19</metrics.version>
     <micrometer.version>1.11.1</micrometer.version>
-    <opentelemetry.version>1.27.0</opentelemetry.version>
+    <micrometer-tracing.version>1.1.4</micrometer-tracing.version>
+    <opentelemetry.version>1.28.0</opentelemetry.version>
     <micrometer-tracing.version>1.1.4</micrometer-tracing.version>
     <jackson.version>2.15.2</jackson.version>
     <logback.version>1.2.12</logback.version>
