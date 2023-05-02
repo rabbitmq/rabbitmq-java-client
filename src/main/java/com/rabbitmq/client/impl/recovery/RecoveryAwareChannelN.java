@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -23,6 +23,7 @@ import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.ChannelN;
 import com.rabbitmq.client.impl.ConsumerWorkService;
 import com.rabbitmq.client.impl.AMQImpl.Basic;
+import com.rabbitmq.client.observation.ObservationCollector;
 
 import java.io.IOException;
 
@@ -47,7 +48,8 @@ public class RecoveryAwareChannelN extends ChannelN {
      * @param workService   service for managing this channel's consumer callbacks
      */
     public RecoveryAwareChannelN(AMQConnection connection, int channelNumber, ConsumerWorkService workService) {
-        this(connection, channelNumber, workService, new NoOpMetricsCollector());
+        this(connection, channelNumber, workService, new NoOpMetricsCollector(),
+             ObservationCollector.NO_OP);
     }
 
     /**
@@ -60,8 +62,10 @@ public class RecoveryAwareChannelN extends ChannelN {
      * @param workService   service for managing this channel's consumer callbacks
      * @param metricsCollector service for managing metrics
      */
-    public RecoveryAwareChannelN(AMQConnection connection, int channelNumber, ConsumerWorkService workService, MetricsCollector metricsCollector) {
-        super(connection, channelNumber, workService, metricsCollector);
+    public RecoveryAwareChannelN(AMQConnection connection, int channelNumber, ConsumerWorkService workService,
+                                 MetricsCollector metricsCollector, ObservationCollector observationCollector) {
+        super(connection, channelNumber, workService,
+              metricsCollector, observationCollector);
     }
 
     @Override

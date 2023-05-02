@@ -19,6 +19,7 @@ import com.rabbitmq.client.Method;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
+import com.rabbitmq.client.observation.ObservationCollector;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 import org.slf4j.Logger;
@@ -140,6 +141,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final CredentialsProvider credentialsProvider;
     private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<BlockedListener>();
     protected final MetricsCollector metricsCollector;
+    protected final ObservationCollector observationCollector;
     private final int channelRpcTimeout;
     private final boolean channelShouldCheckRpcResponseType;
     private final TrafficListener trafficListener;
@@ -210,13 +212,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     public AMQConnection(ConnectionParams params, FrameHandler frameHandler) {
-        this(params, frameHandler, new NoOpMetricsCollector());
+        this(params, frameHandler, new NoOpMetricsCollector(), ObservationCollector.NO_OP);
     }
 
     /** Construct a new connection
      * @param params parameters for it
      */
-    public AMQConnection(ConnectionParams params, FrameHandler frameHandler, MetricsCollector metricsCollector)
+    public AMQConnection(ConnectionParams params, FrameHandler frameHandler,
+                         MetricsCollector metricsCollector, ObservationCollector observationCollector)
     {
         checkPreconditions();
         this.credentialsProvider = params.getCredentialsProvider();
@@ -255,6 +258,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
 
         this.metricsCollector = metricsCollector;
+        this.observationCollector = observationCollector;
 
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
             (connection, exception) -> { throw exception; }; // we just propagate the exception for non-recoverable connections
@@ -484,7 +488,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
-        ChannelManager result = new ChannelManager(this._workService, channelMax, threadFactory, this.metricsCollector);
+        ChannelManager result = new ChannelManager(
+            this._workService, channelMax, threadFactory,
+            this.metricsCollector, this.observationCollector);
         configureChannelManager(result);
         return result;
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -21,6 +21,7 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ChannelManager;
 import com.rabbitmq.client.impl.ChannelN;
 import com.rabbitmq.client.impl.ConsumerWorkService;
+import com.rabbitmq.client.observation.ObservationCollector;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -34,15 +35,18 @@ public class RecoveryAwareChannelManager extends ChannelManager {
     }
 
     public RecoveryAwareChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory) {
-        super(workService, channelMax, threadFactory, new NoOpMetricsCollector());
+        super(workService, channelMax, threadFactory, new NoOpMetricsCollector(), ObservationCollector.NO_OP);
     }
 
-    public RecoveryAwareChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory, MetricsCollector metricsCollector) {
-        super(workService, channelMax, threadFactory, metricsCollector);
+    public RecoveryAwareChannelManager(ConsumerWorkService workService, int channelMax,
+                                       ThreadFactory threadFactory, MetricsCollector metricsCollector,
+                                       ObservationCollector observationCollector) {
+        super(workService, channelMax, threadFactory, metricsCollector, observationCollector);
     }
 
     @Override
     protected ChannelN instantiateChannel(AMQConnection connection, int channelNumber, ConsumerWorkService workService) {
-        return new RecoveryAwareChannelN(connection, channelNumber, workService, this.metricsCollector);
+        return new RecoveryAwareChannelN(connection, channelNumber, workService,
+                                         this.metricsCollector, this.observationCollector);
     }
 }

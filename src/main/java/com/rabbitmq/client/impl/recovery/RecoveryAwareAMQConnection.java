@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -19,6 +19,7 @@ import com.rabbitmq.client.MetricsCollector;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
+import com.rabbitmq.client.observation.ObservationCollector;
 
 import java.util.concurrent.ThreadFactory;
 
@@ -28,8 +29,9 @@ import java.util.concurrent.ThreadFactory;
  */
 public class RecoveryAwareAMQConnection extends AMQConnection {
 
-    public RecoveryAwareAMQConnection(ConnectionParams params, FrameHandler handler, MetricsCollector metricsCollector) {
-        super(params, handler, metricsCollector);
+    public RecoveryAwareAMQConnection(ConnectionParams params, FrameHandler handler,
+                                      MetricsCollector metricsCollector, ObservationCollector observationCollector) {
+        super(params, handler, metricsCollector, observationCollector);
     }
 
     public RecoveryAwareAMQConnection(ConnectionParams params, FrameHandler handler) {
@@ -38,8 +40,9 @@ public class RecoveryAwareAMQConnection extends AMQConnection {
 
     @Override
     protected RecoveryAwareChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
-        RecoveryAwareChannelManager recoveryAwareChannelManager = new RecoveryAwareChannelManager(super._workService, channelMax, threadFactory,
-            this.metricsCollector);
+        RecoveryAwareChannelManager recoveryAwareChannelManager = new RecoveryAwareChannelManager(
+            super._workService, channelMax, threadFactory,
+            this.metricsCollector, this.observationCollector);
         configureChannelManager(recoveryAwareChannelManager);
         return recoveryAwareChannelManager;
     }
