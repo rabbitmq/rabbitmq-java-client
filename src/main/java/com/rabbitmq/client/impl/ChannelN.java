@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -22,6 +22,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
 import com.rabbitmq.client.impl.AMQImpl.Queue;
 import com.rabbitmq.client.impl.AMQImpl.*;
+import com.rabbitmq.client.observation.ObservationCollector;
 import com.rabbitmq.utility.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,6 +90,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     private volatile boolean onlyAcksReceived = true;
 
     protected final MetricsCollector metricsCollector;
+    private final ObservationCollector observationCollector;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -101,7 +103,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public ChannelN(AMQConnection connection, int channelNumber,
                     ConsumerWorkService workService) {
-        this(connection, channelNumber, workService, new NoOpMetricsCollector());
+        this(connection, channelNumber, workService,
+             new NoOpMetricsCollector(), ObservationCollector.NO_OP);
     }
 
     /**
@@ -115,10 +118,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param metricsCollector service for managing metrics
      */
     public ChannelN(AMQConnection connection, int channelNumber,
-        ConsumerWorkService workService, MetricsCollector metricsCollector) {
+                    ConsumerWorkService workService,
+                    MetricsCollector metricsCollector, ObservationCollector observationCollector) {
         super(connection, channelNumber);
         this.dispatcher = new ConsumerDispatcher(connection, this, workService);
         this.metricsCollector = metricsCollector;
+        this.observationCollector = observationCollector;
     }
 
     /**
@@ -706,16 +711,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 .mandatory(mandatory)
                 .immediate(immediate)
                 .build();
-        MetricsCollector.PublishArguments args = new MetricsCollector.PublishArguments(publish, props, body);
         try {
-            metricsCollector.basicPrePublish(this, deliveryTag, args);
-            AMQCommand command = new AMQCommand(args.getPublish(), args.getProps(), args.getBody());
-            transmit(command);
+            ObservationCollector.PublishCall publishCall = properties -> {
+                AMQCommand command = new AMQCommand(publish, properties, body);
+                transmit(command);
+            };
+            observationCollector.publish(publishCall, publish, props);
         } catch (IOException | AlreadyClosedException e) {
-            metricsCollector.basicPublishFailure(this, e, args);
+            metricsCollector.basicPublishFailure(this, e);
             throw e;
         }
-        metricsCollector.basicPublish(this, deliveryTag, args);
+        metricsCollector.basicPublish(this, deliveryTag);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1360,7 +1366,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             @Override
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
-                Consumer wrappedCallback = metricsCollector.basicPreConsume(ChannelN.this, actualConsumerTag, autoAck, replyCommand, callback);
+                Consumer wrappedCallback = observationCollector.basicConsume(callback);
                 _consumers.put(actualConsumerTag, wrappedCallback);
 
                 // need to register consumer in stats before it actually starts consuming

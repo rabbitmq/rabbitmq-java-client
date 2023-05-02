@@ -15,22 +15,14 @@
 
 package com.rabbitmq.client.impl;
 
-import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.MetricsCollector;
-import com.rabbitmq.client.ShutdownSignalException;
-import io.micrometer.common.lang.Nullable;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -51,8 +43,6 @@ import static com.rabbitmq.client.impl.MicrometerMetricsCollector.Metrics.*;
  */
 public class MicrometerMetricsCollector extends AbstractMetricsCollector {
 
-    private static final String MICROMETER_OBSERVATION_KEY = "micrometer.observation";
-
     private final AtomicLong connections;
 
     private final AtomicLong channels;
@@ -72,12 +62,6 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     private final Counter acknowledgedMessages;
 
     private final Counter rejectedMessages;
-
-    private MicrometerPublishObservationConvention publishObservationConvention;
-
-    private MicrometerConsumeObservationConvention consumeObservationConvention;
-
-    private ObservationRegistry observationRegistry = ObservationRegistry.NOOP;
 
     public MicrometerMetricsCollector(MeterRegistry registry) {
         this(registry, "rabbitmq");
@@ -168,53 +152,6 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
         unroutedPublishedMessages.increment();
     }
 
-    @Override
-    public void basicPrePublish(Channel channel, long deliveryTag, PublishArguments publishArguments) {
-        if (observationRegistry.isNoop()) {
-            return;
-        }
-        // TODO: Is this for fire and forget or request reply too? If r-r then we have to have 2 contexts
-        MicrometerPublishContext micrometerPublishContext = new MicrometerPublishContext(publishArguments);
-        Observation observation = MicrometerRabbitMqObservationDocumentation.PUBLISH_OBSERVATION.observation(this.publishObservationConvention, DefaultMicrometerPublishObservationConvention.INSTANCE, () -> micrometerPublishContext, observationRegistry);
-        publishArguments.getContext().put(MICROMETER_OBSERVATION_KEY, observation.start());
-        publishArguments.setProps(micrometerPublishContext.getPropertiesBuilder().build());
-    }
-
-    @Override
-    public void basicPublishFailure(Channel channel, Exception exception, PublishArguments publishArguments) {
-        if (observationRegistry.isNoop()) {
-            super.basicPublishFailure(channel, exception);  // TODO: Do we want both the observation and the metrics?
-            return;
-        }
-        Observation observation = getObservation(publishArguments);
-        if (observation == null) {
-            return;
-        }
-        observation.error(exception);
-    }
-
-    @Override
-    public void basicPublish(Channel channel, long deliveryTag, PublishArguments publishArguments) {
-        if (observationRegistry.isNoop()) {
-            super.basicPublish(channel, deliveryTag); // TODO: Do we want both the observation and the metrics?
-            return;
-        }
-        Observation observation = getObservation(publishArguments);
-        if (observation == null) {
-            return;
-        }
-        observation.stop();
-    }
-
-    @Override
-    public Consumer basicPreConsume(Channel channel, String consumerTag, boolean autoAck, AMQCommand amqCommand, Consumer callback) {
-        return new ObservationConsumer(callback, observationRegistry, consumeObservationConvention);
-    }
-
-    private static Observation getObservation(PublishArguments publishArguments) {
-        return (Observation) publishArguments.getContext().get(MICROMETER_OBSERVATION_KEY);
-    }
-
     public AtomicLong getConnections() {
         return connections;
     }
@@ -253,18 +190,6 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
 
     public Counter getRejectedMessages() {
         return rejectedMessages;
-    }
-
-    public void setPublishObservationConvention(MicrometerPublishObservationConvention publishObservationConvention) {
-        this.publishObservationConvention = publishObservationConvention;
-    }
-
-    public void setConsumeObservationConvention(MicrometerConsumeObservationConvention consumeObservationConvention) {
-        this.consumeObservationConvention = consumeObservationConvention;
-    }
-
-    public void setObservationRegistry(ObservationRegistry observationRegistry) {
-        this.observationRegistry = observationRegistry;
     }
 
     public enum Metrics {
@@ -331,53 +256,6 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
 
         abstract Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags);
 
-    }
-
-    private static class ObservationConsumer implements Consumer {
-
-        private final Consumer delegate;
-
-        private final ObservationRegistry observationRegistry;
-
-        private final MicrometerConsumeObservationConvention observationConvention;
-
-        ObservationConsumer(Consumer delegate, ObservationRegistry observationRegistry, @Nullable MicrometerConsumeObservationConvention observationConvention) {
-            this.delegate = delegate;
-            this.observationRegistry = observationRegistry;
-            this.observationConvention = observationConvention;
-        }
-
-        @Override
-        public void handleConsumeOk(String consumerTag) {
-            delegate.handleConsumeOk(consumerTag);
-        }
-
-        @Override
-        public void handleCancelOk(String consumerTag) {
-            delegate.handleCancelOk(consumerTag);
-        }
-
-        @Override
-        public void handleCancel(String consumerTag) throws IOException {
-            delegate.handleCancel(consumerTag);
-        }
-
-        @Override
-        public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
-            delegate.handleShutdownSignal(consumerTag, sig);
-        }
-
-        @Override
-        public void handleRecoverOk(String consumerTag) {
-            delegate.handleRecoverOk(consumerTag);
-        }
-
-        @Override
-        public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
-            MicrometerConsumeContext context = new MicrometerConsumeContext(consumerTag, envelope, properties, body);
-            Observation observation = MicrometerRabbitMqObservationDocumentation.CONSUME_OBSERVATION.observation(observationConvention, DefaultMicrometerConsumeObservationConvention.INSTANCE, () -> context, observationRegistry);
-            observation.observeChecked(() -> delegate.handleDelivery(consumerTag, envelope, properties, body));
-        }
     }
 
 }
