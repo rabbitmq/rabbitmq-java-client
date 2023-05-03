@@ -28,7 +28,7 @@ final class NoOpObservationCollector implements ObservationCollector {
   }
 
   @Override
-  public Consumer basicConsume(Consumer consumer) {
+  public Consumer basicConsume(String queue, String consumerTag, Consumer consumer) {
     return consumer;
   }
 }
