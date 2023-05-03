@@ -23,24 +23,34 @@ import com.rabbitmq.client.observation.ObservationCollector;
 import com.rabbitmq.client.observation.micrometer.MicrometerObservationCollectorBuilder;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
+import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.test.SampleTestRunner;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 
 public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
 
   static final String QUEUE = "metrics.queue";
 
   private static ConnectionFactory createConnectionFactory() {
+    return createConnectionFactory(null);
+  }
+
+  private static ConnectionFactory createConnectionFactory(
+      ObservationRegistry observationRegistry) {
     ConnectionFactory connectionFactory = TestUtils.connectionFactory();
     connectionFactory.setAutomaticRecoveryEnabled(true);
+    if (observationRegistry != null) {
+      ObservationCollector collector =
+          new MicrometerObservationCollectorBuilder().registry(observationRegistry).build();
+      connectionFactory.setObservationCollector(collector);
+    }
     return connectionFactory;
   }
 
@@ -53,7 +63,7 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
       public void handleCancelOk(String consumerTag) {}
 
       @Override
-      public void handleCancel(String consumerTag) throws IOException {}
+      public void handleCancel(String consumerTag) {}
 
       @Override
       public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {}
@@ -80,10 +90,6 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
     channel.queueDelete(QUEUE);
   }
 
-  private Duration timeout() {
-    return Duration.ofSeconds(10);
-  }
-
   private void safeClose(Connection connection) {
     if (connection != null) {
       try {
@@ -98,24 +104,21 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
     channel.basicPublish("", QUEUE, null, "msg".getBytes(StandardCharsets.UTF_8));
   }
 
-  @Nested
-  class IntegrationTest extends SampleTestRunner {
+  private abstract static class IntegrationTest extends SampleTestRunner {
 
     @Override
     public TracingSetup[] getTracingSetup() {
       return new TracingSetup[] {TracingSetup.IN_MEMORY_BRAVE, TracingSetup.ZIPKIN_BRAVE};
     }
+  }
 
-    @Test
-    void test() {}
+  @Nested
+  class PublishConsume extends IntegrationTest {
 
     @Override
     public SampleTestRunnerConsumer yourCode() {
       return (buildingBlocks, meterRegistry) -> {
-        ConnectionFactory connectionFactory = createConnectionFactory();
-        ObservationCollector collector =
-            new MicrometerObservationCollectorBuilder().registry(getObservationRegistry()).build();
-        connectionFactory.setObservationCollector(collector);
+        ConnectionFactory connectionFactory = createConnectionFactory(getObservationRegistry());
         Connection publishConnection = null, consumeConnection = null;
         try {
           publishConnection = connectionFactory.newConnection();
@@ -125,15 +128,12 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
 
           Tracer tracer = buildingBlocks.getTracer();
           Span rootSpan = buildingBlocks.getTracer().currentSpan();
+          AtomicReference<Span> consumeSpan = new AtomicReference<>();
           CountDownLatch consumeLatch = new CountDownLatch(1);
           Consumer consumer =
               consumer(
                   (consumerTag, message) -> {
-                    assertThat(tracer.currentSpan()).as("Span must be put in scope").isNotNull();
-                    assertThat(tracer.currentSpan().context().traceId())
-                        .as("Trace id must be propagated")
-                        .isEqualTo(rootSpan.context().traceId());
-                    System.out.println("Current span [" + tracer.currentSpan() + "]");
+                    consumeSpan.set(tracer.currentSpan());
                     consumeLatch.countDown();
                   });
 
@@ -142,8 +142,14 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
           channel.basicConsume(QUEUE, true, consumer);
 
           assertThat(consumeLatch.await(10, TimeUnit.SECONDS)).isTrue();
-          waitAtMost(() -> getMeterRegistry().find("rabbitmq.publish").timer() != null &&
-              getMeterRegistry().find("rabbitmq.consume").timer() != null);
+          assertThat(consumeSpan.get()).as("Span must be put in scope").isNotNull();
+          assertThat(consumeSpan.get().context().traceId())
+              .as("Trace id must be propagated")
+              .isEqualTo(rootSpan.context().traceId());
+          waitAtMost(
+              () ->
+                  getMeterRegistry().find("rabbitmq.publish").timer() != null
+                      && getMeterRegistry().find("rabbitmq.consume").timer() != null);
           getMeterRegistry()
               .get("rabbitmq.publish")
               .tag("messaging.operation", "publish")
@@ -151,9 +157,40 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
               .timer();
           getMeterRegistry()
               .get("rabbitmq.consume")
-              .tag("messaging.operation", "publish")
+              .tag("messaging.operation", "consume")
               .tag("messaging.system", "rabbitmq")
               .timer();
+        } finally {
+          safeClose(publishConnection);
+          safeClose(consumeConnection);
+        }
+      };
+    }
+  }
+
+  @Nested
+  class ConsumeWithoutObservationShouldNotFail extends IntegrationTest {
+
+    @Override
+    public SampleTestRunnerConsumer yourCode() {
+      return (buildingBlocks, meterRegistry) -> {
+        ConnectionFactory publishCf = createConnectionFactory();
+        ConnectionFactory consumeCf = createConnectionFactory(getObservationRegistry());
+        Connection publishConnection = null, consumeConnection = null;
+        try {
+          publishConnection = publishCf.newConnection();
+          Channel channel = publishConnection.createChannel();
+
+          sendMessage(channel);
+
+          CountDownLatch consumeLatch = new CountDownLatch(1);
+          Consumer consumer = consumer((consumerTag, message) -> consumeLatch.countDown());
+
+          consumeConnection = consumeCf.newConnection();
+          channel = consumeConnection.createChannel();
+          channel.basicConsume(QUEUE, true, consumer);
+
+          assertThat(consumeLatch.await(10, TimeUnit.SECONDS)).isTrue();
         } finally {
           safeClose(publishConnection);
           safeClose(consumeConnection);

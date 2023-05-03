@@ -55,7 +55,7 @@ public class DefaultConsumeObservationConvention implements ConsumeObservationCo
   @Override
   public KeyValues getLowCardinalityKeyValues(ConsumeContext context) {
     return KeyValues.of(
-        LowCardinalityTags.MESSAGING_OPERATION.withValue("publish"),
+        LowCardinalityTags.MESSAGING_OPERATION.withValue("consume"),
         LowCardinalityTags.MESSAGING_SYSTEM.withValue("rabbitmq"));
   }
 
