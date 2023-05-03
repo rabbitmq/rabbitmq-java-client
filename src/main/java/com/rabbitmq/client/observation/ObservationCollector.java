@@ -30,7 +30,7 @@ public interface ObservationCollector {
   void publish(PublishCall call, AMQP.Basic.Publish publish, AMQP.BasicProperties properties)
       throws IOException;
 
-  Consumer basicConsume(Consumer consumer);
+  Consumer basicConsume(String queue, String consumerTag, Consumer consumer);
 
   interface PublishCall {
 

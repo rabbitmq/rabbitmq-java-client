@@ -1366,7 +1366,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             @Override
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
-                Consumer wrappedCallback = observationCollector.basicConsume(callback);
+                Consumer wrappedCallback = observationCollector.basicConsume(queue, consumerTag, callback);
                 _consumers.put(actualConsumerTag, wrappedCallback);
 
                 // need to register consumer in stats before it actually starts consuming

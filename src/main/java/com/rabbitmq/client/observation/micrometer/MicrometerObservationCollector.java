@@ -82,7 +82,7 @@ class MicrometerObservationCollector implements ObservationCollector {
   }
 
   @Override
-  public Consumer basicConsume(Consumer consumer) {
+  public Consumer basicConsume(String queue, String consumerTag, Consumer consumer) {
     return new ObservationConsumer(
         consumer, this.registry, this.customConsumeConvention, this.defaultConsumeConvention);
   }
