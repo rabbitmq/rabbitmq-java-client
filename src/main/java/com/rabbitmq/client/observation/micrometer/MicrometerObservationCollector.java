@@ -84,11 +84,13 @@ class MicrometerObservationCollector implements ObservationCollector {
   @Override
   public Consumer basicConsume(String queue, String consumerTag, Consumer consumer) {
     return new ObservationConsumer(
+        queue,
         consumer, this.registry, this.customConsumeConvention, this.defaultConsumeConvention);
   }
 
   private static class ObservationConsumer implements Consumer {
 
+    private final String queue;
     private final Consumer delegate;
 
     private final ObservationRegistry observationRegistry;
@@ -96,10 +98,12 @@ class MicrometerObservationCollector implements ObservationCollector {
     private final ConsumeObservationConvention customConsumeConvention, defaultConsumeConvention;
 
     private ObservationConsumer(
+        String queue,
         Consumer delegate,
         ObservationRegistry observationRegistry,
         ConsumeObservationConvention customConsumeConvention,
         ConsumeObservationConvention defaultConsumeConvention) {
+      this.queue = queue;
       this.delegate = delegate;
       this.observationRegistry = observationRegistry;
       this.customConsumeConvention = customConsumeConvention;
@@ -142,7 +146,7 @@ class MicrometerObservationCollector implements ObservationCollector {
         headers = properties.getHeaders();
       }
       ConsumeContext context =
-          new ConsumeContext(envelope.getExchange(), envelope.getRoutingKey(), headers);
+          new ConsumeContext(queue, headers);
       // TODO give possibility to create the consume observation
       // the custom convention is already a property, the default convention could be a property as
       // well.

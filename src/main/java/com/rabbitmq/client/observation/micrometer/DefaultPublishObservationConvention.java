@@ -49,7 +49,7 @@ public class DefaultPublishObservationConvention implements PublishObservationCo
   }
 
   private String destination(String destination) {
-    return StringUtils.isNotBlank(destination) ? destination : "(anonymous)";
+    return StringUtils.isNotBlank(destination) ? destination : "amq.default";
   }
 
   @Override
@@ -63,6 +63,6 @@ public class DefaultPublishObservationConvention implements PublishObservationCo
   public KeyValues getHighCardinalityKeyValues(PublishContext context) {
     return KeyValues.of(
         HighCardinalityTags.MESSAGING_ROUTING_KEY.withValue(context.getRoutingKey()),
-        HighCardinalityTags.MESSAGING_DESTINATION_NAME.withValue(context.getExchange()));
+        HighCardinalityTags.MESSAGING_DESTINATION_NAME.withValue(destination(context.getExchange())));
   }
 }
