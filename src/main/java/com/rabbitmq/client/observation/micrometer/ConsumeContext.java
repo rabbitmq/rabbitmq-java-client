@@ -26,10 +26,9 @@ import java.util.Map;
  */
 public class ConsumeContext extends ReceiverContext<Map<String, Object>> {
 
-  private final String exchange;
-  private final String routingKey;
+  private final String queue;
 
-  ConsumeContext(String exchange, String routingKey, Map<String, Object> headers) {
+  ConsumeContext(String queue, Map<String, Object> headers) {
     super(
         (hdrs, key) -> {
           Object result = hdrs.get(key);
@@ -38,16 +37,12 @@ public class ConsumeContext extends ReceiverContext<Map<String, Object>> {
           }
           return String.valueOf(result);
         });
-    this.exchange = exchange;
-    this.routingKey = routingKey;
+    this.queue = queue;
     setCarrier(headers);
   }
 
-  public String getExchange() {
-    return exchange;
+  public String getQueue() {
+    return queue;
   }
 
-  public String getRoutingKey() {
-    return routingKey;
-  }
 }

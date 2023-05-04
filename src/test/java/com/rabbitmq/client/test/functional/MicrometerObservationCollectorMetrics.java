@@ -24,14 +24,13 @@ import com.rabbitmq.client.observation.micrometer.MicrometerObservationCollector
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.tracing.Span;
-import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.test.SampleTestRunner;
+import io.micrometer.tracing.test.simple.SpanAssert;
+import io.micrometer.tracing.test.simple.SpansAssert;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Nested;
 
 public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
@@ -126,26 +125,23 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
 
           sendMessage(channel);
 
-          Tracer tracer = buildingBlocks.getTracer();
-          Span rootSpan = buildingBlocks.getTracer().currentSpan();
-          AtomicReference<Span> consumeSpan = new AtomicReference<>();
           CountDownLatch consumeLatch = new CountDownLatch(1);
-          Consumer consumer =
-              consumer(
-                  (consumerTag, message) -> {
-                    consumeSpan.set(tracer.currentSpan());
-                    consumeLatch.countDown();
-                  });
+          Consumer consumer = consumer((consumerTag, message) -> consumeLatch.countDown());
 
           consumeConnection = connectionFactory.newConnection();
           channel = consumeConnection.createChannel();
           channel.basicConsume(QUEUE, true, consumer);
 
           assertThat(consumeLatch.await(10, TimeUnit.SECONDS)).isTrue();
-          assertThat(consumeSpan.get()).as("Span must be put in scope").isNotNull();
-          assertThat(consumeSpan.get().context().traceId())
-              .as("Trace id must be propagated")
-              .isEqualTo(rootSpan.context().traceId());
+          waitAtMost(() -> buildingBlocks.getFinishedSpans().size() == 2);
+          SpansAssert.assertThat(buildingBlocks.getFinishedSpans()).haveSameTraceId().hasSize(2);
+          SpanAssert.assertThat(buildingBlocks.getFinishedSpans().get(0))
+              .hasNameEqualTo("metrics.queue publish")
+              .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
+              .hasTag("messaging.destination.name", "amq.default");
+          SpanAssert.assertThat(buildingBlocks.getFinishedSpans().get(1))
+              .hasNameEqualTo("metrics.queue consume")
+              .hasTag("messaging.source.name", "metrics.queue");
           waitAtMost(
               () ->
                   getMeterRegistry().find("rabbitmq.publish").timer() != null

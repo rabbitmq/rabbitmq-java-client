@@ -129,6 +129,15 @@ public enum RabbitMqObservationDocumentation implements ObservationDocumentation
       public String asString() {
         return "messaging.rabbitmq.destination.routing_key";
       }
-    }
+    },
+
+    /** The message destination name. */
+    MESSAGING_SOURCE_NAME {
+
+      @Override
+      public String asString() {
+        return "messaging.source.name";
+      }
+    },
   }
 }

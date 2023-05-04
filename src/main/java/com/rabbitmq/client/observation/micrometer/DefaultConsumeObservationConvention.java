@@ -45,10 +45,10 @@ public class DefaultConsumeObservationConvention implements ConsumeObservationCo
 
   @Override
   public String getContextualName(ConsumeContext context) {
-    return destination(context.getRoutingKey()) + " consume";
+    return source(context.getQueue()) + " consume";
   }
 
-  private String destination(String destination) {
+  private String source(String destination) {
     return StringUtils.isNotBlank(destination) ? destination : "(anonymous)";
   }
 
@@ -62,7 +62,6 @@ public class DefaultConsumeObservationConvention implements ConsumeObservationCo
   @Override
   public KeyValues getHighCardinalityKeyValues(ConsumeContext context) {
     return KeyValues.of(
-        HighCardinalityTags.MESSAGING_ROUTING_KEY.withValue(context.getRoutingKey()),
-        HighCardinalityTags.MESSAGING_DESTINATION_NAME.withValue(context.getExchange()));
+        HighCardinalityTags.MESSAGING_SOURCE_NAME.withValue(context.getQueue()));
   }
 }
