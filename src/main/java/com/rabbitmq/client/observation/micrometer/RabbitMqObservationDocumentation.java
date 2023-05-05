@@ -139,5 +139,27 @@ public enum RabbitMqObservationDocumentation implements ObservationDocumentation
         return "messaging.source.name";
       }
     },
+
+    MESSAGING_MESSAGE_PAYLOAD_SIZE_BYTES {
+
+      @Override
+      public String asString() {
+        return "messaging.message.payload_size_bytes";
+      }
+    },
+
+    NET_SOCK_PEER_PORT {
+      @Override
+      public String asString() {
+        return "net.sock.peer.port";
+      }
+    },
+
+    NET_SOCK_PEER_ADDR {
+      @Override
+      public String asString() {
+        return "net.sock.peer.addr";
+      }
+    }
   }
 }

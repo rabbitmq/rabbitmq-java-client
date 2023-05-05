@@ -23,6 +23,7 @@ import com.rabbitmq.client.AMQP.Exchange;
 import com.rabbitmq.client.AMQP.Queue;
 import com.rabbitmq.client.AMQP.Tx;
 import com.rabbitmq.client.Method;
+import com.rabbitmq.client.observation.ObservationCollector;
 import com.rabbitmq.utility.BlockingValueOrException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +79,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     private final TrafficListener _trafficListener;
     private final int maxInboundMessageBodySize;
 
+    private final ObservationCollector.ConnectionInfo connectionInfo;
+
     /**
      * Construct a channel on the given connection, with the given channel number.
      * @param connection the underlying connection for this channel
@@ -94,6 +97,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         this._trafficListener = connection.getTrafficListener();
         this.maxInboundMessageBodySize = connection.getMaxInboundMessageBodySize();
         this._command = new AMQCommand(this.maxInboundMessageBodySize);
+        this.connectionInfo = connection.connectionInfo();
     }
 
     /**
@@ -585,5 +589,9 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         public AMQCommand transformReply(AMQCommand command) {
             return command;
         }
+    }
+
+    protected ObservationCollector.ConnectionInfo connectionInfo() {
+        return this.connectionInfo;
     }
 }

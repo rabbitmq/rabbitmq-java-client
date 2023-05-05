@@ -22,7 +22,12 @@ import java.io.IOException;
 final class NoOpObservationCollector implements ObservationCollector {
 
   @Override
-  public void publish(PublishCall call, AMQP.Basic.Publish publish, AMQP.BasicProperties properties)
+  public void publish(
+      PublishCall call,
+      AMQP.Basic.Publish publish,
+      AMQP.BasicProperties properties,
+      byte[] body,
+      ConnectionInfo connectionInfo)
       throws IOException {
     call.publish(properties);
   }

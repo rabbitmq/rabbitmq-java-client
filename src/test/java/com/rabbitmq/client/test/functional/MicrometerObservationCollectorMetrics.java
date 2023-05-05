@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Nested;
 public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
 
   static final String QUEUE = "metrics.queue";
+  private static final byte[] PAYLOAD = "msg".getBytes(StandardCharsets.UTF_8);
 
   private static ConnectionFactory createConnectionFactory() {
     return createConnectionFactory(null);
@@ -100,7 +101,7 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
   }
 
   private void sendMessage(Channel channel) throws IOException {
-    channel.basicPublish("", QUEUE, null, "msg".getBytes(StandardCharsets.UTF_8));
+    channel.basicPublish("", QUEUE, null, PAYLOAD);
   }
 
   private abstract static class IntegrationTest extends SampleTestRunner {
@@ -138,10 +139,16 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
           SpanAssert.assertThat(buildingBlocks.getFinishedSpans().get(0))
               .hasNameEqualTo("metrics.queue publish")
               .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
-              .hasTag("messaging.destination.name", "amq.default");
+              .hasTag("messaging.destination.name", "amq.default")
+              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length))
+              .hasTagWithKey("net.sock.peer.addr")
+              .hasTag("net.sock.peer.port", "5672");
           SpanAssert.assertThat(buildingBlocks.getFinishedSpans().get(1))
               .hasNameEqualTo("metrics.queue consume")
-              .hasTag("messaging.source.name", "metrics.queue");
+              .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
+              .hasTag("messaging.destination.name", "amq.default")
+              .hasTag("messaging.source.name", "metrics.queue")
+              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length));
           waitAtMost(
               () ->
                   getMeterRegistry().find("rabbitmq.publish").timer() != null

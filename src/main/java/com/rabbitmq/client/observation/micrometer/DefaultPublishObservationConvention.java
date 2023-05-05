@@ -45,10 +45,10 @@ public class DefaultPublishObservationConvention implements PublishObservationCo
 
   @Override
   public String getContextualName(PublishContext context) {
-    return destination(context.getRoutingKey()) + " publish";
+    return exchange(context.getRoutingKey()) + " publish";
   }
 
-  private String destination(String destination) {
+  private String exchange(String destination) {
     return StringUtils.isNotBlank(destination) ? destination : "amq.default";
   }
 
@@ -63,6 +63,12 @@ public class DefaultPublishObservationConvention implements PublishObservationCo
   public KeyValues getHighCardinalityKeyValues(PublishContext context) {
     return KeyValues.of(
         HighCardinalityTags.MESSAGING_ROUTING_KEY.withValue(context.getRoutingKey()),
-        HighCardinalityTags.MESSAGING_DESTINATION_NAME.withValue(destination(context.getExchange())));
+        HighCardinalityTags.MESSAGING_DESTINATION_NAME.withValue(exchange(context.getExchange())),
+        HighCardinalityTags.MESSAGING_MESSAGE_PAYLOAD_SIZE_BYTES.withValue(
+            String.valueOf(context.getPayloadSizeBytes())),
+        HighCardinalityTags.NET_SOCK_PEER_ADDR.withValue(
+            context.getConnectionInfo().getPeerAddress()),
+        HighCardinalityTags.NET_SOCK_PEER_PORT.withValue(
+            String.valueOf(context.getConnectionInfo().getPeerPort())));
   }
 }

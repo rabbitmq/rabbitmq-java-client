@@ -69,6 +69,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int workPoolTimeout;
 
     private final AtomicBoolean finalShutdownStarted = new AtomicBoolean(false);
+    private volatile ObservationCollector.ConnectionInfo connectionInfo;
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -437,6 +438,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             }
 
             setHeartbeat(heartbeat);
+
+            this.connectionInfo = new DefaultConnectionInfo(
+                this._frameHandler.getAddress().getHostAddress(),
+                this._frameHandler.getPort()
+            );
 
             _channel0.transmit(new AMQP.Connection.TuneOk.Builder()
                                 .channelMax(channelMax)
@@ -1214,5 +1220,31 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     int getMaxInboundMessageBodySize() {
         return maxInboundMessageBodySize;
+    }
+
+    private static class DefaultConnectionInfo implements ObservationCollector.ConnectionInfo {
+
+        private final String peerAddress;
+        private final int peerPort;
+
+        private DefaultConnectionInfo(String peerAddress, int peerPort) {
+            this.peerAddress = peerAddress;
+            this.peerPort = peerPort;
+        }
+
+        @Override
+        public String   getPeerAddress() {
+            return peerAddress;
+        }
+
+        @Override
+        public int getPeerPort() {
+            return this.peerPort;
+        }
+
+    }
+
+    ObservationCollector.ConnectionInfo connectionInfo() {
+        return this.connectionInfo;
     }
 }
