@@ -45,7 +45,8 @@ class MicrometerObservationCollector implements ObservationCollector {
   }
 
   @Override
-  public void publish(PublishCall call, AMQP.Basic.Publish publish, AMQP.BasicProperties properties)
+  public void publish(PublishCall call, AMQP.Basic.Publish publish, AMQP.BasicProperties properties,
+                      byte [] body, ConnectionInfo connectionInfo)
       throws IOException {
     // TODO: Is this for fire and forget or request reply too? If r-r then we have to have 2
     // contexts
@@ -56,7 +57,9 @@ class MicrometerObservationCollector implements ObservationCollector {
       headers = new HashMap<>(properties.getHeaders());
     }
     PublishContext micrometerPublishContext =
-        new PublishContext(publish.getExchange(), publish.getRoutingKey(), headers);
+        new PublishContext(publish.getExchange(), publish.getRoutingKey(), headers,
+            body == null ? 0 : body.length,
+            connectionInfo);
     AMQP.BasicProperties.Builder builder = properties.builder();
     builder.headers(headers);
     // TODO give possibility to create the publish observation
@@ -146,7 +149,7 @@ class MicrometerObservationCollector implements ObservationCollector {
         headers = properties.getHeaders();
       }
       ConsumeContext context =
-          new ConsumeContext(queue, headers);
+          new ConsumeContext(envelope.getExchange(), envelope.getRoutingKey(), queue, headers, body == null ? 0 : body.length);
       // TODO give possibility to create the consume observation
       // the custom convention is already a property, the default convention could be a property as
       // well.

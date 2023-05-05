@@ -20,14 +20,18 @@ import com.rabbitmq.client.Consumer;
 import java.io.IOException;
 
 /**
- *
  * @since 5.18.0
  */
 public interface ObservationCollector {
 
   ObservationCollector NO_OP = new NoOpObservationCollector();
 
-  void publish(PublishCall call, AMQP.Basic.Publish publish, AMQP.BasicProperties properties)
+  void publish(
+      PublishCall call,
+      AMQP.Basic.Publish publish,
+      AMQP.BasicProperties properties,
+      byte[] body,
+      ConnectionInfo connectionInfo)
       throws IOException;
 
   Consumer basicConsume(String queue, String consumerTag, Consumer consumer);
@@ -35,5 +39,12 @@ public interface ObservationCollector {
   interface PublishCall {
 
     void publish(AMQP.BasicProperties properties) throws IOException;
+  }
+
+  interface ConnectionInfo {
+
+    String getPeerAddress();
+
+    int getPeerPort();
   }
 }
