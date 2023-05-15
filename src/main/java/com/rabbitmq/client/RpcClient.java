@@ -18,6 +18,7 @@ package com.rabbitmq.client;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -44,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * It simply provides a mechanism for sending a message to an exchange with a given routing key,
  * and waiting for a response.
 */
-public class RpcClient {
+public class RpcClient implements Closeable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
 
@@ -236,10 +237,13 @@ public class RpcClient {
      * Public API - cancels the consumer, thus deleting the temporary queue, and marks the RpcClient as closed.
      * @throws IOException if an error is encountered
      */
+    @Override
     public void close() throws IOException {
         if (_consumer != null) {
-            _channel.basicCancel(_consumer.getConsumerTag());
+            final String consumerTag = _consumer.getConsumerTag();
+            // set it null before calling basicCancel to make this method idempotent in case of IOException
             _consumer = null;
+            _channel.basicCancel(consumerTag);
         }
     }
 
