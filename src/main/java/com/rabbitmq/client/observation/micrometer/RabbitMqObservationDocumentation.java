@@ -107,7 +107,23 @@ public enum RabbitMqObservationDocumentation implements ObservationDocumentation
       public String asString() {
         return "messaging.operation";
       }
-    }
+    },
+
+    NET_PROTOCOL_NAME {
+
+      @Override
+      public String asString() {
+        return "net.protocol.name";
+      }
+    },
+
+    NET_PROTOCOL_VERSION {
+
+      @Override
+      public String asString() {
+        return "net.protocol.version";
+      }
+    },
   }
 
   /** High cardinality tags. */
