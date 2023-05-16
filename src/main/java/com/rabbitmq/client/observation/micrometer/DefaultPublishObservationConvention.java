@@ -56,7 +56,9 @@ public class DefaultPublishObservationConvention implements PublishObservationCo
   public KeyValues getLowCardinalityKeyValues(PublishContext context) {
     return KeyValues.of(
         LowCardinalityTags.MESSAGING_OPERATION.withValue("publish"),
-        LowCardinalityTags.MESSAGING_SYSTEM.withValue("rabbitmq"));
+        LowCardinalityTags.MESSAGING_SYSTEM.withValue("rabbitmq"),
+        LowCardinalityTags.NET_PROTOCOL_NAME.withValue("amqp"),
+        LowCardinalityTags.NET_PROTOCOL_VERSION.withValue("0.9.1"));
   }
 
   @Override
