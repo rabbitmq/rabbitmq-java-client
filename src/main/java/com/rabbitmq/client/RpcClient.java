@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -13,12 +13,10 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-
 package com.rabbitmq.client;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -28,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -45,7 +44,7 @@ import org.slf4j.LoggerFactory;
  * It simply provides a mechanism for sending a message to an exchange with a given routing key,
  * and waiting for a response.
 */
-public class RpcClient implements Closeable {
+public class RpcClient implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcClient.class);
 
@@ -63,6 +62,8 @@ public class RpcClient implements Closeable {
     protected final static int NO_TIMEOUT = -1;
     /** Whether to publish RPC requests with the mandatory flag or not. */
     private final boolean _useMandatory;
+    /** closed flag */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public final static Function<Object, Response> DEFAULT_REPLY_HANDLER = reply -> {
         if (reply instanceof ShutdownSignalException) {
@@ -96,7 +97,7 @@ public class RpcClient implements Closeable {
     private String lastCorrelationId = "0";
 
     /** Consumer attached to our reply queue */
-    private DefaultConsumer _consumer;
+    private final DefaultConsumer _consumer;
 
     /**
      * Construct a {@link RpcClient} with the passed-in {@link RpcClientParams}.
@@ -227,8 +228,8 @@ public class RpcClient implements Closeable {
      * Private API - ensures the RpcClient is correctly open.
      * @throws IOException if an error is encountered
      */
-    public void checkConsumer() throws IOException {
-        if (_consumer == null) {
+    private void checkNotClosed() throws IOException {
+        if (this.closed.get()) {
             throw new EOFException("RpcClient is closed");
         }
     }
@@ -239,11 +240,8 @@ public class RpcClient implements Closeable {
      */
     @Override
     public void close() throws IOException {
-        if (_consumer != null) {
-            final String consumerTag = _consumer.getConsumerTag();
-            // set it null before calling basicCancel to make this method idempotent in case of IOException
-            _consumer = null;
-            _channel.basicCancel(consumerTag);
+        if (this.closed.compareAndSet(false, true)) {
+            _channel.basicCancel(_consumer.getConsumerTag());
         }
     }
 
@@ -261,7 +259,7 @@ public class RpcClient implements Closeable {
                     for (Entry<String, BlockingCell<Object>> entry : _continuationMap.entrySet()) {
                         entry.getValue().set(signal);
                     }
-                    _consumer = null;
+                    closed.set(true);
                 }
             }
 
@@ -269,8 +267,7 @@ public class RpcClient implements Closeable {
             public void handleDelivery(String consumerTag,
                                        Envelope envelope,
                                        AMQP.BasicProperties properties,
-                                       byte[] body)
-                    throws IOException {
+                                       byte[] body) {
                 synchronized (_continuationMap) {
                     String replyId = properties.getCorrelationId();
                     BlockingCell<Object> blocker =_continuationMap.remove(replyId);
@@ -301,7 +298,7 @@ public class RpcClient implements Closeable {
 
     public Response doCall(AMQP.BasicProperties props, byte[] message, int timeout)
         throws IOException, ShutdownSignalException, TimeoutException {
-        checkConsumer();
+        checkNotClosed();
         BlockingCell<Object> k = new BlockingCell<Object>();
         String replyId;
         synchronized (_continuationMap) {
