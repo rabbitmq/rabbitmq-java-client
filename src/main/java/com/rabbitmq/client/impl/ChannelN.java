@@ -1166,26 +1166,28 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                   .queue(queue)
                                                   .noAck(autoAck)
                                                  .build());
-        Method method = replyCommand.getMethod();
+        return this.observationCollector.basicGet(() -> {
+            Method method = replyCommand.getMethod();
 
-        if (method instanceof Basic.GetOk) {
-            Basic.GetOk getOk = (Basic.GetOk)method;
-            Envelope envelope = new Envelope(getOk.getDeliveryTag(),
-                                             getOk.getRedelivered(),
-                                             getOk.getExchange(),
-                                             getOk.getRoutingKey());
-            BasicProperties props = (BasicProperties)replyCommand.getContentHeader();
-            byte[] body = replyCommand.getContentBody();
-            int messageCount = getOk.getMessageCount();
+            if (method instanceof Basic.GetOk) {
+                Basic.GetOk getOk = (Basic.GetOk)method;
+                Envelope envelope = new Envelope(getOk.getDeliveryTag(),
+                    getOk.getRedelivered(),
+                    getOk.getExchange(),
+                    getOk.getRoutingKey());
+                BasicProperties props = (BasicProperties)replyCommand.getContentHeader();
+                byte[] body = replyCommand.getContentBody();
+                int messageCount = getOk.getMessageCount();
 
-            metricsCollector.consumedMessage(this, getOk.getDeliveryTag(), autoAck);
+                metricsCollector.consumedMessage(this, getOk.getDeliveryTag(), autoAck);
 
-            return new GetResponse(envelope, props, body, messageCount);
-        } else if (method instanceof Basic.GetEmpty) {
-            return null;
-        } else {
-            throw new UnexpectedMethodError(method);
-        }
+                return new GetResponse(envelope, props, body, messageCount);
+            } else if (method instanceof Basic.GetEmpty) {
+                return null;
+            } else {
+                throw new UnexpectedMethodError(method);
+            }
+        }, queue);
     }
 
     /** Public API - {@inheritDoc} */

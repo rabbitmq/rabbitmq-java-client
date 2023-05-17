@@ -12,7 +12,6 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.observation.micrometer;
 
 import io.micrometer.common.docs.KeyName;
@@ -26,8 +25,6 @@ import io.micrometer.observation.docs.ObservationDocumentation;
  * @since 5.18.0
  */
 public enum RabbitMqObservationDocumentation implements ObservationDocumentation {
-
-  /** Observation for Rabbit Client publishers. */
   PUBLISH_OBSERVATION {
 
     @Override
@@ -42,13 +39,26 @@ public enum RabbitMqObservationDocumentation implements ObservationDocumentation
     }
   },
 
-  /** Observation for Rabbit Client consumers. */
-  CONSUME_OBSERVATION {
+  PROCESS_OBSERVATION {
 
     @Override
     public Class<? extends ObservationConvention<? extends Observation.Context>>
         getDefaultConvention() {
-      return DefaultConsumeObservationConvention.class;
+      return DefaultDeliverObservationConvention.class;
+    }
+
+    @Override
+    public KeyName[] getLowCardinalityKeyNames() {
+      return LowCardinalityTags.values();
+    }
+  },
+
+  RECEIVE_OBSERVATION {
+
+    @Override
+    public Class<? extends ObservationConvention<? extends Observation.Context>>
+        getDefaultConvention() {
+      return DefaultDeliverObservationConvention.class;
     }
 
     @Override

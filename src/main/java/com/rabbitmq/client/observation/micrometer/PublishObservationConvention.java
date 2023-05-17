@@ -12,7 +12,6 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.observation.micrometer;
 
 import io.micrometer.observation.Observation;
@@ -22,7 +21,6 @@ import io.micrometer.observation.ObservationConvention;
  * {@link ObservationConvention} for RabbitMQ client instrumentation.
  *
  * @since 5.18.0
- * @see DefaultPublishObservationConvention
  */
 public interface PublishObservationConvention extends ObservationConvention<PublishContext> {
 

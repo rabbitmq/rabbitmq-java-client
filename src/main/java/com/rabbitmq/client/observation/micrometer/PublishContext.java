@@ -12,7 +12,6 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.observation.micrometer;
 
 import com.rabbitmq.client.observation.ObservationCollector;
@@ -33,7 +32,10 @@ public class PublishContext extends SenderContext<Map<String, Object>> {
   private final ObservationCollector.ConnectionInfo connectionInfo;
 
   PublishContext(
-      String exchange, String routingKey, Map<String, Object> headers, int payloadSizeBytes,
+      String exchange,
+      String routingKey,
+      Map<String, Object> headers,
+      int payloadSizeBytes,
       ObservationCollector.ConnectionInfo connectionInfo) {
     super((hdrs, key, value) -> hdrs.put(key, value));
     this.exchange = exchange;

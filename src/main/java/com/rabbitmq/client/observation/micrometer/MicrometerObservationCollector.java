@@ -12,7 +12,6 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.observation.micrometer;
 
 import com.rabbitmq.client.*;
@@ -29,24 +28,33 @@ class MicrometerObservationCollector implements ObservationCollector {
   private final ObservationRegistry registry;
 
   private final PublishObservationConvention customPublishConvention, defaultPublishConvention;
-  private final ConsumeObservationConvention customConsumeConvention, defaultConsumeConvention;
+  private final DeliverObservationConvention customProcessConvention, defaultProcessConvention;
+  private final DeliverObservationConvention customReceiveConvention, defaultReceiveConvention;
 
   MicrometerObservationCollector(
       ObservationRegistry registry,
       PublishObservationConvention customPublishConvention,
       PublishObservationConvention defaultPublishConvention,
-      ConsumeObservationConvention customConsumeConvention,
-      ConsumeObservationConvention defaultConsumeConvention) {
+      DeliverObservationConvention customProcessConvention,
+      DeliverObservationConvention defaultProcessConvention,
+      DeliverObservationConvention customReceiveConvention,
+      DeliverObservationConvention defaultReceiveConvention) {
     this.registry = registry;
     this.customPublishConvention = customPublishConvention;
     this.defaultPublishConvention = defaultPublishConvention;
-    this.customConsumeConvention = customConsumeConvention;
-    this.defaultConsumeConvention = defaultConsumeConvention;
+    this.customProcessConvention = customProcessConvention;
+    this.defaultProcessConvention = defaultProcessConvention;
+    this.customReceiveConvention = customReceiveConvention;
+    this.defaultReceiveConvention = defaultReceiveConvention;
   }
 
   @Override
-  public void publish(PublishCall call, AMQP.Basic.Publish publish, AMQP.BasicProperties properties,
-                      byte [] body, ConnectionInfo connectionInfo)
+  public void publish(
+      PublishCall call,
+      AMQP.Basic.Publish publish,
+      AMQP.BasicProperties properties,
+      byte[] body,
+      ConnectionInfo connectionInfo)
       throws IOException {
     // TODO: Is this for fire and forget or request reply too? If r-r then we have to have 2
     // contexts
@@ -57,17 +65,14 @@ class MicrometerObservationCollector implements ObservationCollector {
       headers = new HashMap<>(properties.getHeaders());
     }
     PublishContext micrometerPublishContext =
-        new PublishContext(publish.getExchange(), publish.getRoutingKey(), headers,
+        new PublishContext(
+            publish.getExchange(),
+            publish.getRoutingKey(),
+            headers,
             body == null ? 0 : body.length,
             connectionInfo);
     AMQP.BasicProperties.Builder builder = properties.builder();
     builder.headers(headers);
-    // TODO give possibility to create the publish observation
-    // the custom convention is already a property, the default convention could be a property as
-    // well.
-    // the name (in default convention) could also be set in a simple way, from the base
-    // configuration
-    // no need to give access to the other 2 parameters
     Observation observation =
         RabbitMqObservationDocumentation.PUBLISH_OBSERVATION.observation(
             this.customPublishConvention,
@@ -88,7 +93,39 @@ class MicrometerObservationCollector implements ObservationCollector {
   public Consumer basicConsume(String queue, String consumerTag, Consumer consumer) {
     return new ObservationConsumer(
         queue,
-        consumer, this.registry, this.customConsumeConvention, this.defaultConsumeConvention);
+        consumer,
+        this.registry,
+        this.customProcessConvention,
+        this.defaultProcessConvention);
+  }
+
+  @Override
+  public GetResponse basicGet(BasicGetCall call, String queue) {
+    Observation parentObservation = Observation.start("rabbitmq.receive", registry);
+    try {
+      GetResponse response = call.get();
+      if (response != null) {
+        DeliverContext context =
+            new DeliverContext(
+                response.getEnvelope().getExchange(),
+                response.getEnvelope().getRoutingKey(),
+                queue,
+                response.getProps().getHeaders(),
+                response.getBody() == null ? 0 : response.getBody().length);
+        Observation observation =
+            RabbitMqObservationDocumentation.RECEIVE_OBSERVATION.observation(
+                customReceiveConvention, defaultReceiveConvention, () -> context, registry);
+        observation.parentObservation(parentObservation);
+        observation.start();
+        observation.stop();
+      }
+      return response;
+    } catch (RuntimeException e) {
+      parentObservation.error(e);
+      throw e;
+    } finally {
+      parentObservation.stop();
+    }
   }
 
   private static class ObservationConsumer implements Consumer {
@@ -98,14 +135,14 @@ class MicrometerObservationCollector implements ObservationCollector {
 
     private final ObservationRegistry observationRegistry;
 
-    private final ConsumeObservationConvention customConsumeConvention, defaultConsumeConvention;
+    private final DeliverObservationConvention customConsumeConvention, defaultConsumeConvention;
 
     private ObservationConsumer(
         String queue,
         Consumer delegate,
         ObservationRegistry observationRegistry,
-        ConsumeObservationConvention customConsumeConvention,
-        ConsumeObservationConvention defaultConsumeConvention) {
+        DeliverObservationConvention customConsumeConvention,
+        DeliverObservationConvention defaultConsumeConvention) {
       this.queue = queue;
       this.delegate = delegate;
       this.observationRegistry = observationRegistry;
@@ -148,16 +185,15 @@ class MicrometerObservationCollector implements ObservationCollector {
       } else {
         headers = properties.getHeaders();
       }
-      ConsumeContext context =
-          new ConsumeContext(envelope.getExchange(), envelope.getRoutingKey(), queue, headers, body == null ? 0 : body.length);
-      // TODO give possibility to create the consume observation
-      // the custom convention is already a property, the default convention could be a property as
-      // well.
-      // the name (in default convention) could also be set in a simple way, from the base
-      // configuration
-      // no need to give access to the other 2 parameters
+      DeliverContext context =
+          new DeliverContext(
+              envelope.getExchange(),
+              envelope.getRoutingKey(),
+              queue,
+              headers,
+              body == null ? 0 : body.length);
       Observation observation =
-          RabbitMqObservationDocumentation.CONSUME_OBSERVATION.observation(
+          RabbitMqObservationDocumentation.PROCESS_OBSERVATION.observation(
               customConsumeConvention,
               defaultConsumeConvention,
               () -> context,

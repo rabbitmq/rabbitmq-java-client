@@ -12,7 +12,6 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.test.functional;
 
 import static com.rabbitmq.client.test.TestUtils.waitAtMost;
@@ -29,8 +28,10 @@ import io.micrometer.tracing.test.simple.SpanAssert;
 import io.micrometer.tracing.test.simple.SpansAssert;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Nested;
 
 public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
@@ -142,9 +143,11 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
               .hasTag("messaging.destination.name", "amq.default")
               .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length))
               .hasTagWithKey("net.sock.peer.addr")
-              .hasTag("net.sock.peer.port", "5672");
+              .hasTag("net.sock.peer.port", "5672")
+              .hasTag("net.protocol.name", "amqp")
+              .hasTag("net.protocol.version", "0.9.1");
           SpanAssert.assertThat(buildingBlocks.getFinishedSpans().get(1))
-              .hasNameEqualTo("metrics.queue consume")
+              .hasNameEqualTo("metrics.queue process")
               .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
               .hasTag("messaging.destination.name", "amq.default")
               .hasTag("messaging.source.name", "metrics.queue")
@@ -152,15 +155,76 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
           waitAtMost(
               () ->
                   getMeterRegistry().find("rabbitmq.publish").timer() != null
-                      && getMeterRegistry().find("rabbitmq.consume").timer() != null);
+                      && getMeterRegistry().find("rabbitmq.process").timer() != null);
           getMeterRegistry()
               .get("rabbitmq.publish")
               .tag("messaging.operation", "publish")
               .tag("messaging.system", "rabbitmq")
               .timer();
           getMeterRegistry()
-              .get("rabbitmq.consume")
-              .tag("messaging.operation", "consume")
+              .get("rabbitmq.process")
+              .tag("messaging.operation", "process")
+              .tag("messaging.system", "rabbitmq")
+              .timer();
+        } finally {
+          safeClose(publishConnection);
+          safeClose(consumeConnection);
+        }
+      };
+    }
+  }
+
+  @Nested
+  class PublishBasicGet extends IntegrationTest {
+
+    @Override
+    public SampleTestRunnerConsumer yourCode() {
+      return (buildingBlocks, meterRegistry) -> {
+        ConnectionFactory connectionFactory = createConnectionFactory(getObservationRegistry());
+        Connection publishConnection = null, consumeConnection = null;
+        try {
+          publishConnection = connectionFactory.newConnection();
+          Channel channel = publishConnection.createChannel();
+
+          sendMessage(channel);
+
+          consumeConnection = connectionFactory.newConnection();
+          Channel basicGetChannel = consumeConnection.createChannel();
+          waitAtMost(() -> basicGetChannel.basicGet(QUEUE, true) != null);
+
+          waitAtMost(() -> buildingBlocks.getFinishedSpans().size() >= 3);
+          System.out.println(
+              buildingBlocks.getFinishedSpans().stream()
+                  .map(Objects::toString)
+                  .collect(Collectors.joining("\n")));
+          SpansAssert.assertThat(buildingBlocks.getFinishedSpans()).haveSameTraceId();
+          SpanAssert.assertThat(buildingBlocks.getFinishedSpans().get(0))
+              .hasNameEqualTo("metrics.queue publish")
+              .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
+              .hasTag("messaging.destination.name", "amq.default")
+              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length))
+              .hasTagWithKey("net.sock.peer.addr")
+              .hasTag("net.sock.peer.port", "5672")
+              .hasTag("net.protocol.name", "amqp")
+              .hasTag("net.protocol.version", "0.9.1");
+          SpanAssert.assertThat(buildingBlocks.getFinishedSpans().get(1))
+              .hasNameEqualTo("metrics.queue receive")
+              .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
+              .hasTag("messaging.destination.name", "amq.default")
+              .hasTag("messaging.source.name", "metrics.queue")
+              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length));
+          waitAtMost(
+              () ->
+                  getMeterRegistry().find("rabbitmq.publish").timer() != null
+                      && getMeterRegistry().find("rabbitmq.receive").timer() != null);
+          getMeterRegistry()
+              .get("rabbitmq.publish")
+              .tag("messaging.operation", "publish")
+              .tag("messaging.system", "rabbitmq")
+              .timer();
+          getMeterRegistry()
+              .get("rabbitmq.receive")
+              .tag("messaging.operation", "receive")
               .tag("messaging.system", "rabbitmq")
               .timer();
         } finally {
