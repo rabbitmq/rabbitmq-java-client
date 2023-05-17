@@ -12,7 +12,6 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.observation.micrometer;
 
 import com.rabbitmq.client.observation.micrometer.RabbitMqObservationDocumentation.HighCardinalityTags;
@@ -24,7 +23,6 @@ import io.micrometer.common.util.StringUtils;
  * Default implementation of {@link PublishObservationConvention}.
  *
  * @since 5.18.0
- * @see RabbitMqObservationDocumentation
  */
 public class DefaultPublishObservationConvention implements PublishObservationConvention {
 

@@ -12,7 +12,6 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.observation.micrometer;
 
 import io.micrometer.observation.transport.ReceiverContext;
@@ -24,15 +23,19 @@ import java.util.Map;
  *
  * @since 5.18.0
  */
-public class ConsumeContext extends ReceiverContext<Map<String, Object>> {
+public class DeliverContext extends ReceiverContext<Map<String, Object>> {
 
   private final String exchange;
   private final String routingKey;
   private final int payloadSizeBytes;
   private final String queue;
 
-  ConsumeContext(String exchange, String routingKey, String queue, Map<String, Object> headers,
-                 int payloadSizeBytes) {
+  DeliverContext(
+      String exchange,
+      String routingKey,
+      String queue,
+      Map<String, Object> headers,
+      int payloadSizeBytes) {
     super(
         (hdrs, key) -> {
           Object result = hdrs.get(key);
@@ -63,5 +66,4 @@ public class ConsumeContext extends ReceiverContext<Map<String, Object>> {
   public String getQueue() {
     return queue;
   }
-
 }

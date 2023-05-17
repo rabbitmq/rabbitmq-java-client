@@ -12,7 +12,6 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.observation.micrometer;
 
 import com.rabbitmq.client.observation.micrometer.RabbitMqObservationDocumentation.HighCardinalityTags;
@@ -21,21 +20,19 @@ import io.micrometer.common.KeyValues;
 import io.micrometer.common.util.StringUtils;
 
 /**
- * Default implementation of {@link ConsumeObservationConvention}.
+ * Default implementation of {@link DeliverObservationConvention}.
  *
  * @since 5.18.0
- * @see ConsumeObservationConvention
+ * @see DeliverObservationConvention
  */
-public class DefaultConsumeObservationConvention implements ConsumeObservationConvention {
+public class DefaultDeliverObservationConvention implements DeliverObservationConvention {
 
   private final String name;
+  private final String operation;
 
-  public DefaultConsumeObservationConvention() {
-    this("rabbitmq.consume");
-  }
-
-  public DefaultConsumeObservationConvention(String name) {
+  public DefaultDeliverObservationConvention(String name, String operation) {
     this.name = name;
+    this.operation = operation;
   }
 
   @Override
@@ -44,8 +41,8 @@ public class DefaultConsumeObservationConvention implements ConsumeObservationCo
   }
 
   @Override
-  public String getContextualName(ConsumeContext context) {
-    return source(context.getQueue()) + " consume";
+  public String getContextualName(DeliverContext context) {
+    return source(context.getQueue()) + " " + operation;
   }
 
   private String exchange(String destination) {
@@ -57,14 +54,14 @@ public class DefaultConsumeObservationConvention implements ConsumeObservationCo
   }
 
   @Override
-  public KeyValues getLowCardinalityKeyValues(ConsumeContext context) {
+  public KeyValues getLowCardinalityKeyValues(DeliverContext context) {
     return KeyValues.of(
-        LowCardinalityTags.MESSAGING_OPERATION.withValue("consume"),
+        LowCardinalityTags.MESSAGING_OPERATION.withValue(this.operation),
         LowCardinalityTags.MESSAGING_SYSTEM.withValue("rabbitmq"));
   }
 
   @Override
-  public KeyValues getHighCardinalityKeyValues(ConsumeContext context) {
+  public KeyValues getHighCardinalityKeyValues(DeliverContext context) {
     return KeyValues.of(
         HighCardinalityTags.MESSAGING_ROUTING_KEY.withValue(context.getRoutingKey()),
         HighCardinalityTags.MESSAGING_DESTINATION_NAME.withValue(exchange(context.getExchange())),

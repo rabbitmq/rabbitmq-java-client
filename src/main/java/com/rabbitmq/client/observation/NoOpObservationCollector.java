@@ -12,11 +12,11 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.observation;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.GetResponse;
 import java.io.IOException;
 
 final class NoOpObservationCollector implements ObservationCollector {
@@ -35,5 +35,10 @@ final class NoOpObservationCollector implements ObservationCollector {
   @Override
   public Consumer basicConsume(String queue, String consumerTag, Consumer consumer) {
     return consumer;
+  }
+
+  @Override
+  public GetResponse basicGet(BasicGetCall call, String queue) {
+    return call.get();
   }
 }

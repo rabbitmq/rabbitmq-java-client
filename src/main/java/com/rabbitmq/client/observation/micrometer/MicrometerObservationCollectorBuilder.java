@@ -12,13 +12,15 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.observation.micrometer;
 
 import com.rabbitmq.client.observation.ObservationCollector;
 import io.micrometer.observation.ObservationRegistry;
 
 /**
+ * Builder to configure and create <a href="https://micrometer.io/docs/observation">Micrometer
+ * Observation</a> implementation of {@link ObservationCollector}.
+ *
  * @since 5.18.0
  */
 public class MicrometerObservationCollectorBuilder {
@@ -27,9 +29,12 @@ public class MicrometerObservationCollectorBuilder {
   private PublishObservationConvention customPublishObservationConvention;
   private PublishObservationConvention defaultPublishObservationConvention =
       new DefaultPublishObservationConvention();
-  private ConsumeObservationConvention customConsumeObservationConvention;
-  private ConsumeObservationConvention defaultConsumeObservationConvention =
-      new DefaultConsumeObservationConvention();
+  private DeliverObservationConvention customProcessObservationConvention;
+  private DeliverObservationConvention defaultProcessObservationConvention =
+      new DefaultDeliverObservationConvention("rabbitmq.process", "process");
+  private DeliverObservationConvention customReceiveObservationConvention;
+  private DeliverObservationConvention defaultReceiveObservationConvention =
+      new DefaultDeliverObservationConvention("rabbitmq.receive", "receive");
 
   public MicrometerObservationCollectorBuilder registry(ObservationRegistry registry) {
     this.registry = registry;
@@ -48,25 +53,38 @@ public class MicrometerObservationCollectorBuilder {
     return this;
   }
 
-  public MicrometerObservationCollectorBuilder customConsumeObservationConvention(
-      ConsumeObservationConvention customConsumeObservationConvention) {
-    this.customConsumeObservationConvention = customConsumeObservationConvention;
+  public MicrometerObservationCollectorBuilder customProcessObservationConvention(
+      DeliverObservationConvention customConsumeObservationConvention) {
+    this.customProcessObservationConvention = customConsumeObservationConvention;
     return this;
   }
 
-  public MicrometerObservationCollectorBuilder defaultConsumeObservationConvention(
-      ConsumeObservationConvention defaultConsumeObservationConvention) {
-    this.defaultConsumeObservationConvention = defaultConsumeObservationConvention;
+  public MicrometerObservationCollectorBuilder defaultProcessObservationConvention(
+      DeliverObservationConvention defaultConsumeObservationConvention) {
+    this.defaultProcessObservationConvention = defaultConsumeObservationConvention;
+    return this;
+  }
+
+  public MicrometerObservationCollectorBuilder customReceiveObservationConvention(
+      DeliverObservationConvention customReceiveObservationConvention) {
+    this.customReceiveObservationConvention = customReceiveObservationConvention;
+    return this;
+  }
+
+  public MicrometerObservationCollectorBuilder defaultReceiveObservationConvention(
+      DeliverObservationConvention defaultReceiveObservationConvention) {
+    this.defaultReceiveObservationConvention = defaultReceiveObservationConvention;
     return this;
   }
 
   public ObservationCollector build() {
     return new MicrometerObservationCollector(
-      this.registry,
-      this.customPublishObservationConvention,
-      this.defaultPublishObservationConvention,
-      this.customConsumeObservationConvention,
-      this.defaultConsumeObservationConvention
-    );
+        this.registry,
+        this.customPublishObservationConvention,
+        this.defaultPublishObservationConvention,
+        this.customProcessObservationConvention,
+        this.defaultProcessObservationConvention,
+        this.customReceiveObservationConvention,
+        this.defaultReceiveObservationConvention);
   }
 }
