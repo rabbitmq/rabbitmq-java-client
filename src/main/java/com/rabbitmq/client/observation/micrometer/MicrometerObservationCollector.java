@@ -85,8 +85,9 @@ class MicrometerObservationCollector implements ObservationCollector {
     } catch (IOException | AlreadyClosedException e) {
       observation.error(e);
       throw e;
+    } finally {
+      observation.stop();
     }
-    observation.stop();
   }
 
   @Override
@@ -105,12 +106,18 @@ class MicrometerObservationCollector implements ObservationCollector {
     try {
       GetResponse response = call.get();
       if (response != null) {
+        Map<String, Object> headers;
+        if (response.getProps() == null || response.getProps().getHeaders() == null) {
+          headers = Collections.emptyMap();
+        } else {
+          headers = response.getProps().getHeaders();
+        }
         DeliverContext context =
             new DeliverContext(
                 response.getEnvelope().getExchange(),
                 response.getEnvelope().getRoutingKey(),
                 queue,
-                response.getProps().getHeaders(),
+                headers,
                 response.getBody() == null ? 0 : response.getBody().length);
         Observation observation =
             RabbitMqObservationDocumentation.RECEIVE_OBSERVATION.observation(

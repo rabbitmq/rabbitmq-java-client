@@ -191,7 +191,6 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
           consumeConnection = connectionFactory.newConnection();
           Channel basicGetChannel = consumeConnection.createChannel();
           waitAtMost(() -> basicGetChannel.basicGet(QUEUE, true) != null);
-
           waitAtMost(() -> buildingBlocks.getFinishedSpans().size() >= 3);
           System.out.println(
               buildingBlocks.getFinishedSpans().stream()
