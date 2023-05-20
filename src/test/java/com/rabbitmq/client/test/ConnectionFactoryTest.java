@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -203,7 +204,7 @@ public class ConnectionFactoryTest {
     @Test
     public void shouldBeConfigurableUsingFluentAPI() throws Exception {
         /* GIVEN */
-        Map<String, Object> clientProperties = Map.of();
+        Map<String, Object> clientProperties = new HashMap<>();
         SaslConfig saslConfig = mock(SaslConfig.class);
         ConnectionFactory connectionFactory = new ConnectionFactory();
         SocketFactory socketFactory = mock(SocketFactory.class);

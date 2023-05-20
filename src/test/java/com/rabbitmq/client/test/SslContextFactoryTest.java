@@ -40,30 +40,22 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class SslContextFactoryTest {
 
     @Test public void setSslContextFactory() throws Exception {
-        doTestSetSslContextFactory(() -> {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
-            connectionFactory.useBlockingIo();
-            connectionFactory.setAutomaticRecoveryEnabled(true);
-            return connectionFactory;
-        });
-        doTestSetSslContextFactory(() -> {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
-            connectionFactory.useNio();
-            connectionFactory.setAutomaticRecoveryEnabled(true);
-            return connectionFactory;
-        });
-        doTestSetSslContextFactory(() -> {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
-            connectionFactory.useBlockingIo();
-            connectionFactory.setAutomaticRecoveryEnabled(false);
-            return connectionFactory;
-        });
-        doTestSetSslContextFactory(() -> {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
-            connectionFactory.useNio();
-            connectionFactory.setAutomaticRecoveryEnabled(false);
-            return connectionFactory;
-        });
+        doTestSetSslContextFactory(() -> new ConnectionFactory()
+                .useBlockingIo()
+                .setAutomaticRecoveryEnabled(true)
+        );
+        doTestSetSslContextFactory(() -> new ConnectionFactory()
+                .useNio()
+                .setAutomaticRecoveryEnabled(true)
+        );
+        doTestSetSslContextFactory(() -> new ConnectionFactory()
+                .useBlockingIo()
+                .setAutomaticRecoveryEnabled(false)
+        );
+        doTestSetSslContextFactory(() -> new ConnectionFactory()
+                .useNio()
+                .setAutomaticRecoveryEnabled(false)
+        );
     }
 
     private void doTestSetSslContextFactory(Supplier<ConnectionFactory> supplier) throws Exception {
@@ -82,31 +74,27 @@ public class SslContextFactoryTest {
     }
 
     @Test public void socketFactoryTakesPrecedenceOverSslContextFactoryWithBlockingIo() throws Exception {
-        doTestSocketFactoryTakesPrecedenceOverSslContextFactoryWithBlockingIo(() -> {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
-            connectionFactory.useBlockingIo();
-            connectionFactory.setAutomaticRecoveryEnabled(true);
-            return connectionFactory;
-        });
-        doTestSocketFactoryTakesPrecedenceOverSslContextFactoryWithBlockingIo(() -> {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
-            connectionFactory.useBlockingIo();
-            connectionFactory.setAutomaticRecoveryEnabled(false);
-            return connectionFactory;
-        });
+        doTestSocketFactoryTakesPrecedenceOverSslContextFactoryWithBlockingIo(() -> new ConnectionFactory()
+                .useBlockingIo()
+                .setAutomaticRecoveryEnabled(true)
+        );
+        doTestSocketFactoryTakesPrecedenceOverSslContextFactoryWithBlockingIo(() -> new ConnectionFactory()
+                .useBlockingIo()
+                .setAutomaticRecoveryEnabled(false)
+        );
     }
 
     private void doTestSocketFactoryTakesPrecedenceOverSslContextFactoryWithBlockingIo(
                 Supplier<ConnectionFactory> supplier
             ) throws Exception {
-        ConnectionFactory connectionFactory = supplier.get();
-        connectionFactory.useBlockingIo();
         SslContextFactory sslContextFactory = sslContextFactory();
-        connectionFactory.setSslContextFactory(sslContextFactory);
-
         SSLContext contextAcceptAll = sslContextFactory.create("connection01");
-        connectionFactory.setSocketFactory(contextAcceptAll.getSocketFactory());
-
+        ConnectionFactory connectionFactory = supplier.get();
+        connectionFactory
+                .useBlockingIo()
+                .setSslContextFactory(sslContextFactory)
+                .setSocketFactory(contextAcceptAll.getSocketFactory());
+        
         Connection connection = connectionFactory.newConnection("connection01");
         TestUtils.close(connection);
         connection = connectionFactory.newConnection("connection02");
