@@ -80,31 +80,35 @@ public class AutorecoveringChannel implements RecoverableChannel {
     }
 
     @Override
-    public void abort() throws IOException {
-        try {
-            executeAndClean(() -> delegate.abort());
-        } catch (TimeoutException e) {
-            // abort() ignores exceptions
-        }
+    public void abort() {
+        this.delegate.abort();
+        this.clean();
     }
 
     @Override
-    public void abort(int closeCode, String closeMessage) throws IOException {
-        try {
-            executeAndClean(() -> delegate.abort(closeCode, closeMessage));
-        } catch (TimeoutException e) {
-            // abort() ignores exceptions
+    public void abort(int closeCode, String closeMessage) {
+        this.delegate.abort(closeCode, closeMessage != null ? closeMessage : "");
+        this.clean();
+    }
+
+    /**
+     * Cleans up the channel in the following way:
+     * <p>
+     * Removes every recorded consumer of the channel and finally unregisters the channel from
+     * the underlying connection to not process any further traffic.
+     */
+    private void clean() {
+        for (String consumerTag : Utility.copy(consumerTags)) {
+            this.deleteRecordedConsumer(consumerTag);
         }
+        this.connection.unregisterChannel(this);
     }
 
     private void executeAndClean(IoTimeoutExceptionRunnable callback) throws IOException, TimeoutException {
         try {
             callback.run();
         } finally {
-            for (String consumerTag : Utility.copy(consumerTags)) {
-                this.deleteRecordedConsumer(consumerTag);
-            }
-            this.connection.unregisterChannel(this);
+            this.clean();
         }
     }
 

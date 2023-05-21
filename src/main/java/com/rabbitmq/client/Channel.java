@@ -89,7 +89,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * Forces the channel to close and waits for the close operation to complete.
      * Any encountered exceptions in the close operation are silently discarded.
      */
-    void abort() throws IOException;
+    void abort();
 
     /**
      * Abort this channel.
@@ -97,7 +97,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * Forces the channel to close and waits for the close operation to complete.
      * Any encountered exceptions in the close operation are silently discarded.
      */
-    void abort(int closeCode, String closeMessage) throws IOException;
+    void abort(int closeCode, String closeMessage);
 
     /**
      * Add a {@link ReturnListener}.
