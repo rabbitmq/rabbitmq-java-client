@@ -30,8 +30,8 @@ public class JavaNioTest {
 
     @BeforeEach
     public void init() throws Exception {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.useNio();
+        ConnectionFactory connectionFactory = new ConnectionFactory()
+                .useNio();
         testConnection = connectionFactory.newConnection();
     }
 
@@ -46,8 +46,8 @@ public class JavaNioTest {
     @Test
     public void connection() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.useNio();
+        ConnectionFactory connectionFactory = new ConnectionFactory()
+                .useNio();
         Connection connection = null;
         try {
             connection = basicGetBasicConsume(connectionFactory, "nio.queue", latch);
@@ -61,9 +61,9 @@ public class JavaNioTest {
     @Test
     public void twoConnections() throws IOException, TimeoutException, InterruptedException {
         CountDownLatch latch = new CountDownLatch(2);
-        ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.useNio();
-        connectionFactory.setNioParams(new NioParams().setNbIoThreads(4));
+        ConnectionFactory connectionFactory = new ConnectionFactory()
+                .useNio()
+                .setNioParams(new NioParams().setNbIoThreads(4));
         Connection connection1 = null;
         Connection connection2 = null;
         try {
@@ -82,8 +82,8 @@ public class JavaNioTest {
     public void twoConnectionsWithNioExecutor() throws IOException, TimeoutException, InterruptedException {
         CountDownLatch latch = new CountDownLatch(2);
         ExecutorService nioExecutor = Executors.newFixedThreadPool(5);
-        ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.useNio();
+        ConnectionFactory connectionFactory = new ConnectionFactory()
+                .useNio();
         Connection connection1 = null;
         Connection connection2 = null;
         try {
@@ -101,8 +101,8 @@ public class JavaNioTest {
 
     @Test
     public void shutdownListenerCalled() throws IOException, TimeoutException, InterruptedException {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.useNio();
+        ConnectionFactory connectionFactory = new ConnectionFactory()
+                .useNio();
         Connection connection = connectionFactory.newConnection();
         try {
             final CountDownLatch latch = new CountDownLatch(1);
@@ -122,8 +122,8 @@ public class JavaNioTest {
 
     @Test
     public void nioLoopCleaning() throws Exception {
-        ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.useNio();
+        ConnectionFactory connectionFactory = new ConnectionFactory()
+                .useNio();
         for (int i = 0; i < 10; i++) {
             Connection connection = connectionFactory.newConnection();
             connection.abort();
@@ -139,20 +139,20 @@ public class JavaNioTest {
 
     @Test
     public void byteBufferFactory() throws Exception {
-        ConnectionFactory cf = new ConnectionFactory();
-        cf.useNio();
+        ConnectionFactory connectionFactory = new ConnectionFactory()
+                .useNio();
         int baseCapacity = 32768;
         NioParams nioParams = new NioParams();
         nioParams.setReadByteBufferSize(baseCapacity / 2);
         nioParams.setWriteByteBufferSize(baseCapacity / 4);
         List<ByteBuffer> byteBuffers = new CopyOnWriteArrayList<>();
-        cf.setNioParams(nioParams.setByteBufferFactory(new DefaultByteBufferFactory(capacity -> {
+        connectionFactory.setNioParams(nioParams.setByteBufferFactory(new DefaultByteBufferFactory(capacity -> {
             ByteBuffer bb = ByteBuffer.allocate(capacity);
             byteBuffers.add(bb);
             return bb;
         })));
 
-        try (Connection c = cf.newConnection()) {
+        try (Connection c = connectionFactory.newConnection()) {
             sendAndVerifyMessage(c, 100);
         }
 
@@ -165,27 +165,27 @@ public class JavaNioTest {
 
     @Test
     public void directByteBuffers() throws Exception {
-        ConnectionFactory cf = new ConnectionFactory();
-        cf.useNio();
-        cf.setNioParams(new NioParams().setByteBufferFactory(new DefaultByteBufferFactory(capacity -> ByteBuffer.allocateDirect(capacity))));
-        try (Connection c = cf.newConnection()) {
+        ConnectionFactory connectionFactory = new ConnectionFactory()
+                .useNio()
+                .setNioParams(new NioParams().setByteBufferFactory(new DefaultByteBufferFactory(capacity -> ByteBuffer.allocateDirect(capacity))));
+        try (Connection c = connectionFactory.newConnection()) {
             sendAndVerifyMessage(c, 100);
         }
     }
 
     @Test
     public void customWriteQueue() throws Exception {
-        ConnectionFactory cf = new ConnectionFactory();
-        cf.useNio();
         AtomicInteger count = new AtomicInteger(0);
-        cf.setNioParams(new NioParams().setWriteQueueFactory(ctx -> {
-            count.incrementAndGet();
-            return new BlockingQueueNioQueue(
-                    new LinkedBlockingQueue<>(ctx.getNioParams().getWriteQueueCapacity()),
-                    ctx.getNioParams().getWriteEnqueuingTimeoutInMs()
-            );
-        }));
-        try (Connection c = cf.newConnection()) {
+        ConnectionFactory connectionFactory = new ConnectionFactory()
+                .useNio()
+                .setNioParams(new NioParams().setWriteQueueFactory(ctx -> {
+                    count.incrementAndGet();
+                    return new BlockingQueueNioQueue(
+                            new LinkedBlockingQueue<>(ctx.getNioParams().getWriteQueueCapacity()),
+                            ctx.getNioParams().getWriteEnqueuingTimeoutInMs()
+                    );
+                }));
+        try (Connection c = connectionFactory.newConnection()) {
             sendAndVerifyMessage(c, 100);
         }
         assertEquals(1, count.get());

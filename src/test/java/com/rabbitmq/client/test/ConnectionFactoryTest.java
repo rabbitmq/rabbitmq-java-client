@@ -17,16 +17,23 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.*;
+import com.rabbitmq.client.impl.nio.NioParams;
+import com.rabbitmq.client.impl.recovery.RecoveredQueueNameSupplier;
+import com.rabbitmq.client.impl.recovery.RetryHandler;
+import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import org.junit.jupiter.api.Test;
 
+import javax.net.SocketFactory;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -192,6 +199,111 @@ public class ConnectionFactoryTest {
                     }
                 });
 
+    }
+
+    @Test
+    public void shouldBeConfigurableUsingFluentAPI() throws Exception {
+        /* GIVEN */
+        Map<String, Object> clientProperties = new HashMap<>();
+        SaslConfig saslConfig = mock(SaslConfig.class);
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        SocketFactory socketFactory = mock(SocketFactory.class);
+        SocketConfigurator socketConfigurator = mock(SocketConfigurator.class);
+        ExecutorService executorService = mock(ExecutorService.class);
+        ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
+        ThreadFactory threadFactory = mock(ThreadFactory.class);
+        ExceptionHandler exceptionHandler = mock(ExceptionHandler.class);
+        MetricsCollector metricsCollector = mock(MetricsCollector.class);
+        CredentialsRefreshService credentialsRefreshService = mock(CredentialsRefreshService.class);
+        RecoveryDelayHandler recoveryDelayHandler = mock(RecoveryDelayHandler.class);
+        NioParams nioParams = mock(NioParams.class);
+        SslContextFactory sslContextFactory = mock(SslContextFactory.class);
+        TopologyRecoveryFilter topologyRecoveryFilter = mock(TopologyRecoveryFilter.class);
+        Predicate<ShutdownSignalException> connectionRecoveryTriggeringCondition = (ShutdownSignalException) -> true;
+        RetryHandler retryHandler = mock(RetryHandler.class);
+        RecoveredQueueNameSupplier recoveredQueueNameSupplier = mock(RecoveredQueueNameSupplier.class);
+
+        /* WHEN */
+        connectionFactory
+                .setHost("rabbitmq")
+                .setPort(5672)
+                .setUsername("guest")
+                .setPassword("guest")
+                .setVirtualHost("/")
+                .setRequestedChannelMax(1)
+                .setRequestedFrameMax(2)
+                .setRequestedHeartbeat(3)
+                .setConnectionTimeout(4)
+                .setHandshakeTimeout(5)
+                .setShutdownTimeout(6)
+                .setClientProperties(clientProperties)
+                .setSaslConfig(saslConfig)
+                .setSocketFactory(socketFactory)
+                .setSocketConfigurator(socketConfigurator)
+                .setSharedExecutor(executorService)
+                .setShutdownExecutor(executorService)
+                .setHeartbeatExecutor(scheduledExecutorService)
+                .setThreadFactory(threadFactory)
+                .setExceptionHandler(exceptionHandler)
+                .setAutomaticRecoveryEnabled(true)
+                .setTopologyRecoveryEnabled(true)
+                .setTopologyRecoveryExecutor(executorService)
+                .setMetricsCollector(metricsCollector)
+                .setCredentialsRefreshService(credentialsRefreshService)
+                .setNetworkRecoveryInterval(7)
+                .setRecoveryDelayHandler(recoveryDelayHandler)
+                .setNioParams(nioParams)
+                .useNio()
+                .useBlockingIo()
+                .setChannelRpcTimeout(8)
+                .setSslContextFactory(sslContextFactory)
+                .setChannelShouldCheckRpcResponseType(true)
+                .setWorkPoolTimeout(9)
+                .setTopologyRecoveryFilter(topologyRecoveryFilter)
+                .setConnectionRecoveryTriggeringCondition(connectionRecoveryTriggeringCondition)
+                .setTopologyRecoveryRetryHandler(retryHandler)
+                .setRecoveredQueueNameSupplier(recoveredQueueNameSupplier);
+
+        /* THEN */
+        assertThat(connectionFactory.getHost()).isEqualTo("rabbitmq");
+        assertThat(connectionFactory.getPort()).isEqualTo(5672);
+        assertThat(connectionFactory.getUsername()).isEqualTo("guest");
+        assertThat(connectionFactory.getPassword()).isEqualTo("guest");
+        assertThat(connectionFactory.getVirtualHost()).isEqualTo("/");
+        assertThat(connectionFactory.getRequestedChannelMax()).isEqualTo(1);
+        assertThat(connectionFactory.getRequestedFrameMax()).isEqualTo(2);
+        assertThat(connectionFactory.getRequestedHeartbeat()).isEqualTo(3);
+        assertThat(connectionFactory.getConnectionTimeout()).isEqualTo(4);
+        assertThat(connectionFactory.getHandshakeTimeout()).isEqualTo(5);
+        assertThat(connectionFactory.getShutdownTimeout()).isEqualTo(6);
+        assertThat(connectionFactory.getClientProperties()).isEqualTo(clientProperties);
+        assertThat(connectionFactory.getSaslConfig()).isEqualTo(saslConfig);
+        assertThat(connectionFactory.getSocketFactory()).isEqualTo(socketFactory);
+        assertThat(connectionFactory.getSocketConfigurator()).isEqualTo(socketConfigurator);
+        assertThat(connectionFactory.isAutomaticRecoveryEnabled()).isEqualTo(true);
+        assertThat(connectionFactory.isTopologyRecoveryEnabled()).isEqualTo(true);
+        assertThat(connectionFactory.getMetricsCollector()).isEqualTo(metricsCollector);
+        assertThat(connectionFactory.getNetworkRecoveryInterval()).isEqualTo(7);
+        assertThat(connectionFactory.getRecoveryDelayHandler()).isEqualTo(recoveryDelayHandler);
+        assertThat(connectionFactory.getNioParams()).isEqualTo(nioParams);
+        assertThat(connectionFactory.getChannelRpcTimeout()).isEqualTo(8);
+        assertThat(connectionFactory.isChannelShouldCheckRpcResponseType()).isEqualTo(true);
+        assertThat(connectionFactory.getWorkPoolTimeout()).isEqualTo(9);
+        assertThat(connectionFactory.isSSL()).isEqualTo(true);
+
+        /* Now test cross-cutting setters that override properties set by other setters */
+        CredentialsProvider credentialsProvider = mock(CredentialsProvider.class);
+        when(credentialsProvider.getUsername()).thenReturn("admin");
+        when(credentialsProvider.getPassword()).thenReturn("admin");
+        connectionFactory
+                .setCredentialsProvider(credentialsProvider)
+                .setUri("amqp://host:5671")
+                .useSslProtocol("TLSv1.2");
+        assertThat(connectionFactory.getHost()).isEqualTo("host");
+        assertThat(connectionFactory.getPort()).isEqualTo(5671);
+        assertThat(connectionFactory.getUsername()).isEqualTo("admin");
+        assertThat(connectionFactory.getPassword()).isEqualTo("admin");
+        assertThat(connectionFactory.isSSL()).isEqualTo(true);
     }
 
 }
