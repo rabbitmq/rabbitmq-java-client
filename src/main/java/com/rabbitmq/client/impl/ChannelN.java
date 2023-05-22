@@ -545,7 +545,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Public API - {@inheritDoc} */
     @Override
     public void abort()
-        throws IOException
     {
         abort(AMQP.REPLY_SUCCESS, "OK");
     }
@@ -553,14 +552,11 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     /** Public API - {@inheritDoc} */
     @Override
     public void abort(int closeCode, String closeMessage)
-        throws IOException
     {
         try {
           close(closeCode, closeMessage, true, null, true);
-        } catch (IOException _e) {
-        /* ignored */
-        } catch (TimeoutException _e) {
-          /* ignored */
+        } catch (IOException | TimeoutException _e) {
+            // abort() shall silently discard any exceptions
         }
     }
 
