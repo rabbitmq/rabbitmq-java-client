@@ -102,8 +102,7 @@ class MicrometerObservationCollector implements ObservationCollector {
 
   @Override
   public GetResponse basicGet(BasicGetCall call, String queue) {
-    Observation parentObservation = Observation.start("rabbitmq.receive", registry);
-    try {
+    return Observation.createNotStarted("rabbitmq.receive", registry).observe(() -> {
       GetResponse response = call.get();
       if (response != null) {
         Map<String, Object> headers;
@@ -113,26 +112,20 @@ class MicrometerObservationCollector implements ObservationCollector {
           headers = response.getProps().getHeaders();
         }
         DeliverContext context =
-            new DeliverContext(
-                response.getEnvelope().getExchange(),
-                response.getEnvelope().getRoutingKey(),
-                queue,
-                headers,
-                response.getBody() == null ? 0 : response.getBody().length);
+                new DeliverContext(
+                        response.getEnvelope().getExchange(),
+                        response.getEnvelope().getRoutingKey(),
+                        queue,
+                        headers,
+                        response.getBody() == null ? 0 : response.getBody().length);
         Observation observation =
-            RabbitMqObservationDocumentation.RECEIVE_OBSERVATION.observation(
-                customReceiveConvention, defaultReceiveConvention, () -> context, registry);
-        observation.parentObservation(parentObservation);
+                RabbitMqObservationDocumentation.RECEIVE_OBSERVATION.observation(
+                        customReceiveConvention, defaultReceiveConvention, () -> context, registry);
         observation.start();
         observation.stop();
       }
       return response;
-    } catch (RuntimeException e) {
-      parentObservation.error(e);
-      throw e;
-    } finally {
-      parentObservation.stop();
-    }
+    });
   }
 
   private static class ObservationConsumer implements Consumer {

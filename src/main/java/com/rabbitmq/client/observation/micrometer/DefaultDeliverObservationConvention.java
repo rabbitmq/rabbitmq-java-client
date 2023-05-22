@@ -35,6 +35,7 @@ public class DefaultDeliverObservationConvention implements DeliverObservationCo
     this.operation = operation;
   }
 
+  // TODO: If the name is not fixed we won't be able to parse it to automatically document the name
   @Override
   public String getName() {
     return name;
