@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        rabbitmq-image: [ 'pivotalrabbitmq/rabbitmq:v3.11.x-otp-max-bazel', 'pivotalrabbitmq/rabbitmq:v3.12.x-otp-max-bazel' ]
+        rabbitmq-image: [ 'pivotalrabbitmq/rabbitmq:v3.12.x-otp-max-bazel', 'pivotalrabbitmq/rabbitmq:main-otp-max-bazel' ]
     name:  Test against ${{ matrix.rabbitmq-image }}
     steps:
       - uses: actions/checkout@v3
