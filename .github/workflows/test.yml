@@ -1,4 +1,4 @@
-name: Test against RabbitMQ 3.11 stable
+name: Test against RabbitMQ 3.12 stable
 
 on:
   pull_request:
@@ -8,9 +8,6 @@ on:
     branches:
       - 5.x.x-stable
   workflow_dispatch:
-
-env:
-  RABBITMQ_IMAGE: 'rabbitmq:3.11'
 
 jobs:
   build:

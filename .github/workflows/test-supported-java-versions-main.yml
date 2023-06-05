@@ -5,9 +5,6 @@ on:
     - cron: '0 4 ? * SUN,THU'
   workflow_dispatch:
 
-env:
-  RABBITMQ_IMAGE: 'rabbitmq:3.11'
-
 jobs:
   build:
     runs-on: ubuntu-22.04
