@@ -15,7 +15,9 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.AMQP;import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Method;
+import com.rabbitmq.client.TrafficListener;
 import com.rabbitmq.client.impl.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,13 +25,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ChannelNTest {
 
@@ -67,7 +68,7 @@ public class ChannelNTest {
     @Test
     public void qosShouldBeUnsignedShort() {
         AMQConnection connection = Mockito.mock(AMQConnection.class);
-        AtomicReference<com.rabbitmq.client.AMQP.Basic.Qos> qosMethod = new AtomicReference<>();
+        AtomicReference<AMQP.Basic.Qos> qosMethod = new AtomicReference<>();
         ChannelN channel = new ChannelN(connection, 1, consumerWorkService) {
             @Override
             public AMQCommand exnWrappingRpc(Method m) {
@@ -104,6 +105,30 @@ public class ChannelNTest {
                         e.printStackTrace();
                     }
                 });
+    }
+
+    @Test
+    public void confirmSelectOnlySendsRPCCallOnce() throws Exception {
+        AMQConnection connection = Mockito.mock(AMQConnection.class);
+        TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
+
+        Mockito.when(connection.getTrafficListener()).thenReturn(trafficListener);
+
+        ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
+
+        Future<AMQImpl.Confirm.SelectOk> future = executorService.submit(() -> {
+            try {
+                return channel.confirmSelect();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Confirm.SelectOk()));
+
+        assertNotNull(future.get(1, TimeUnit.SECONDS));
+        assertNotNull(channel.confirmSelect());
+        Mockito.verify(trafficListener, Mockito.times(1)).write(Mockito.any(Command.class));
     }
 
     interface Consumer {
