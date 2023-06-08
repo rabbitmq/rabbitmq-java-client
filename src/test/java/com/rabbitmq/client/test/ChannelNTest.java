@@ -15,17 +15,20 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.Command;
 import com.rabbitmq.client.Method;
+import com.rabbitmq.client.TrafficListener;
 import com.rabbitmq.client.impl.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.io.IOException;
+import java.util.concurrent.*;
 import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class ChannelNTest {
 
@@ -79,6 +82,30 @@ public class ChannelNTest {
                 new TestConfig(-1, qos), new TestConfig(65536, qos)
         ).flatMap(config -> Stream.of(config, new TestConfig(config.value, qosGlobal), new TestConfig(config.value, qosPrefetchSize)))
                 .forEach(config -> assertThatThrownBy(() -> config.call.apply(config.value)).isInstanceOf(IllegalArgumentException.class));
+    }
+
+    @Test
+    public void confirmSelectOnlySendsRPCCallOnce() throws Exception {
+        AMQConnection connection = Mockito.mock(AMQConnection.class);
+        TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
+
+        Mockito.when(connection.getTrafficListener()).thenReturn(trafficListener);
+
+        ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
+
+        Future<AMQImpl.Confirm.SelectOk> future = executorService.submit(() -> {
+            try {
+                return channel.confirmSelect();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Confirm.SelectOk()));
+
+        assertNotNull(future.get(1, TimeUnit.SECONDS));
+        assertNotNull(channel.confirmSelect());
+        Mockito.verify(trafficListener, Mockito.times(1)).write(Mockito.any(Command.class));
     }
 
     interface Consumer {
