@@ -24,8 +24,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -93,17 +93,16 @@ public class ChannelNTest {
 
         ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
 
-        Future<AMQImpl.Confirm.SelectOk> future = executorService.submit(() -> {
+        new Thread(() -> {
             try {
-                return channel.confirmSelect();
-            } catch (IOException e) {
+                Thread.sleep(15);
+                channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Confirm.SelectOk()));
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        });
+        }).start();
 
-        channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Confirm.SelectOk()));
-
-        assertNotNull(future.get(1, TimeUnit.SECONDS));
+        assertNotNull(channel.confirmSelect());
         assertNotNull(channel.confirmSelect());
         Mockito.verify(trafficListener, Mockito.times(1)).write(Mockito.any(Command.class));
     }
