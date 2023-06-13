@@ -82,6 +82,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     private final SortedSet<Long> unconfirmedSet =
             Collections.synchronizedSortedSet(new TreeSet<Long>());
 
+    /** Whether the confirm select method has been successfully activated */
+    private boolean confirmSelectActivated = false;
+
     /** Whether any nacks have been received since the last waitForConfirms(). */
     private volatile boolean onlyAcksReceived = true;
 
@@ -1553,10 +1556,16 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     public Confirm.SelectOk confirmSelect()
         throws IOException
     {
+        if (confirmSelectActivated) {
+            return new Confirm.SelectOk();
+        }
+
         if (nextPublishSeqNo == 0) nextPublishSeqNo = 1;
-        return (Confirm.SelectOk)
+        Confirm.SelectOk result = (Confirm.SelectOk)
             exnWrappingRpc(new Confirm.Select(false)).getMethod();
 
+        confirmSelectActivated = true;
+        return result;
     }
 
     /** Public API - {@inheritDoc} */
