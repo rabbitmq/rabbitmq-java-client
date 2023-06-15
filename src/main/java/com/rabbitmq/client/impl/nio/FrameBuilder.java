@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -23,6 +23,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import static java.lang.String.format;
 
 /**
  * Class to create AMQP frames from a {@link ReadableByteChannel}.
@@ -43,6 +44,7 @@ public class FrameBuilder {
     protected final ReadableByteChannel channel;
 
     protected final ByteBuffer applicationBuffer;
+    private final int maxPayloadSize;
     // to store the bytes of the outstanding data
     // 3 byte-long because the longest we read is an unsigned int
     // (not need to store the latest byte)
@@ -52,9 +54,10 @@ public class FrameBuilder {
     private byte[] framePayload;
     private int bytesRead = 0;
 
-    public FrameBuilder(ReadableByteChannel channel, ByteBuffer buffer) {
+    public FrameBuilder(ReadableByteChannel channel, ByteBuffer buffer, int maxPayloadSize) {
         this.channel = channel;
         this.applicationBuffer = buffer;
+        this.maxPayloadSize = maxPayloadSize;
     }
 
     /**
@@ -65,7 +68,7 @@ public class FrameBuilder {
      *
      * @return a complete frame or null if a frame couldn't have been fully built
      * @throws IOException
-     * @see Frame#readFrom(DataInputStream)
+     * @see Frame#readFrom(DataInputStream, int)
      */
     public Frame readFrame() throws IOException {
         while (somethingToRead()) {
@@ -93,6 +96,12 @@ public class FrameBuilder {
             } else if (bytesRead == 6) {
                 // payload size 4/4
                 int framePayloadSize = (frameBuffer[0] << 24) + (frameBuffer[1] << 16) + (frameBuffer[2] << 8) + readFromBuffer();
+                if (framePayloadSize >= maxPayloadSize) {
+                    throw new IllegalStateException(format(
+                        "Frame body is too large (%d), maximum size is %d",
+                        framePayloadSize, maxPayloadSize
+                    ));
+                }
                 framePayload = new byte[framePayloadSize];
             } else if (bytesRead >= PAYLOAD_OFFSET && bytesRead < framePayload.length + PAYLOAD_OFFSET) {
                 framePayload[bytesRead - PAYLOAD_OFFSET] = (byte) readFromBuffer();
