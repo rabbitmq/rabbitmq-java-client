@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -39,12 +39,14 @@ public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
 
     public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory, SocketConfigurator configurator,
                                      boolean ssl, ExecutorService shutdownExecutor) {
-        this(connectionTimeout, socketFactory, configurator, ssl, shutdownExecutor, null);
+        this(connectionTimeout, socketFactory, configurator, ssl, shutdownExecutor, null,
+             Integer.MAX_VALUE);
     }
 
     public SocketFrameHandlerFactory(int connectionTimeout, SocketFactory socketFactory, SocketConfigurator configurator,
-                                     boolean ssl, ExecutorService shutdownExecutor, SslContextFactory sslContextFactory) {
-        super(connectionTimeout, configurator, ssl);
+                                     boolean ssl, ExecutorService shutdownExecutor, SslContextFactory sslContextFactory,
+                                     int maxInboundMessageBodySize) {
+        super(connectionTimeout, configurator, ssl, maxInboundMessageBodySize);
         this.socketFactory = socketFactory;
         this.shutdownExecutor = shutdownExecutor;
         this.sslContextFactory = sslContextFactory;
@@ -81,7 +83,7 @@ public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
 
     public FrameHandler create(Socket sock) throws IOException
     {
-        return new SocketFrameHandler(sock, this.shutdownExecutor);
+        return new SocketFrameHandler(sock, this.shutdownExecutor, this.maxInboundMessageBodySize);
     }
 
     private static void quietTrySocketClose(Socket socket) {

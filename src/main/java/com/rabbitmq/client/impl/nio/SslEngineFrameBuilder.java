@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -35,8 +35,10 @@ public class SslEngineFrameBuilder extends FrameBuilder {
 
     private boolean isUnderflowHandlingEnabled = false;
 
-    public SslEngineFrameBuilder(SSLEngine sslEngine, ByteBuffer plainIn, ByteBuffer cipherIn, ReadableByteChannel channel) {
-        super(channel, plainIn);
+    public SslEngineFrameBuilder(SSLEngine sslEngine, ByteBuffer plainIn,
+                                 ByteBuffer cipherIn, ReadableByteChannel channel,
+                                 int maxPayloadSize) {
+        super(channel, plainIn, maxPayloadSize);
         this.sslEngine = sslEngine;
         this.cipherBuffer = cipherIn;
     }

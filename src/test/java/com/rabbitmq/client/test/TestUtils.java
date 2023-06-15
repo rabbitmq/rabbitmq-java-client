@@ -30,6 +30,7 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
+import org.assertj.core.api.Condition;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -349,6 +350,22 @@ public class TestUtils {
     public interface CallableFunction<T, R> {
 
         R apply(T t) throws Exception;
+
+    }
+
+    public static class LatchConditions {
+
+        static Condition<CountDownLatch> completed() {
+            return new Condition<>(
+                countDownLatch-> {
+                    try {
+                        return countDownLatch.await(10, TimeUnit.SECONDS);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                "Latch did not complete in 10 seconds");
+        }
 
     }
 
