@@ -98,7 +98,9 @@ public class FrameBuilder {
                 int framePayloadSize = (frameBuffer[0] << 24) + (frameBuffer[1] << 16) + (frameBuffer[2] << 8) + readFromBuffer();
                 if (framePayloadSize >= maxPayloadSize) {
                     throw new IllegalStateException(format(
-                        "Frame body is too large (%d), maximum size is %d",
+                        "Frame body is too large (%d), maximum configured size is %d. " +
+                            "See ConnectionFactory#setMaxInboundMessageBodySize " +
+                            "if you need to increase the limit.",
                         framePayloadSize, maxPayloadSize
                     ));
                 }
