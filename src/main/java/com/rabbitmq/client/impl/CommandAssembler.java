@@ -107,7 +107,9 @@ final class CommandAssembler {
             long bodySize = this.contentHeader.getBodySize();
             if (bodySize >= this.maxBodyLength) {
                 throw new IllegalStateException(format(
-                    "Message body is too large (%d), maximum size is %d",
+                    "Message body is too large (%d), maximum configured size is %d. " +
+                        "See ConnectionFactory#setMaxInboundMessageBodySize " +
+                        "if you need to increase the limit.",
                     bodySize, this.maxBodyLength
                 ));
             }
