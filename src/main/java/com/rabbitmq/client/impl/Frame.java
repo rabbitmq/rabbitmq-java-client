@@ -111,7 +111,9 @@ public class Frame {
         int payloadSize = is.readInt();
         if (payloadSize >= maxPayloadSize) {
             throw new IllegalStateException(format(
-                "Frame body is too large (%d), maximum size is %d",
+                "Frame body is too large (%d), maximum configured size is %d. " +
+                    "See ConnectionFactory#setMaxInboundMessageBodySize " +
+                    "if you need to increase the limit.",
                 payloadSize, maxPayloadSize
             ));
         }
