@@ -59,7 +59,7 @@ public class FrameBuilderTest {
     @Test
     public void buildFrameInOneGo() throws IOException {
         buffer = ByteBuffer.wrap(new byte[] { 1, 0, 0, 0, 0, 0, 3, 1, 2, 3, end() });
-        builder = new FrameBuilder(channel, buffer);
+        builder = new FrameBuilder(channel, buffer, Integer.MAX_VALUE);
         Frame frame = builder.readFrame();
         assertThat(frame).isNotNull();
         assertThat(frame.type).isEqualTo(1);
@@ -78,7 +78,7 @@ public class FrameBuilderTest {
             }
         }
         buffer = ByteBuffer.wrap(frames);
-        builder = new FrameBuilder(channel, buffer);
+        builder = new FrameBuilder(channel, buffer, Integer.MAX_VALUE);
         int frameCount = 0;
         Frame frame;
         while ((frame = builder.readFrame()) != null) {
@@ -94,7 +94,7 @@ public class FrameBuilderTest {
     @Test
     public void buildFrameInSeveralCalls() throws IOException {
         buffer = ByteBuffer.wrap(new byte[] { 1, 0, 0, 0, 0, 0, 3, 1, 2 });
-        builder = new FrameBuilder(channel, buffer);
+        builder = new FrameBuilder(channel, buffer, Integer.MAX_VALUE);
         Frame frame = builder.readFrame();
         assertThat(frame).isNull();
 
@@ -131,7 +131,7 @@ public class FrameBuilderTest {
         };
 
         for (int i = 0; i < buffers.length; i++) {
-            builder = new FrameBuilder(channel, buffers[i]);
+            builder = new FrameBuilder(channel, buffers[i], Integer.MAX_VALUE);
             try {
                 builder.readFrame();
                 fail("protocol header not correct, exception should have been thrown");

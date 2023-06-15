@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -71,7 +71,9 @@ public class SocketChannelFrameHandlerState {
 
     final FrameBuilder frameBuilder;
 
-    public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopContext nioLoopsState, NioParams nioParams, SSLEngine sslEngine) {
+    public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopContext nioLoopsState,
+                                          NioParams nioParams, SSLEngine sslEngine,
+                                          int maxFramePayloadSize) {
         this.channel = channel;
         this.readSelectorState = nioLoopsState.readSelectorState;
         this.writeSelectorState = nioLoopsState.writeSelectorState;
@@ -94,7 +96,7 @@ public class SocketChannelFrameHandlerState {
                 new ByteBufferOutputStream(channel, plainOut)
             );
 
-            this.frameBuilder = new FrameBuilder(channel, plainIn);
+            this.frameBuilder = new FrameBuilder(channel, plainIn, maxFramePayloadSize);
 
         } else {
             this.ssl = true;
@@ -106,7 +108,8 @@ public class SocketChannelFrameHandlerState {
             this.outputStream = new DataOutputStream(
                 new SslEngineByteBufferOutputStream(sslEngine, plainOut, cipherOut, channel)
             );
-            this.frameBuilder = new SslEngineFrameBuilder(sslEngine, plainIn, cipherIn, channel);
+            this.frameBuilder = new SslEngineFrameBuilder(sslEngine, plainIn,
+                cipherIn, channel, maxFramePayloadSize);
         }
 
     }

@@ -157,6 +157,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private volatile ChannelManager _channelManager;
     /** Saved server properties field from connection.start */
     private volatile Map<String, Object> _serverProperties;
+    private final int maxInboundMessageBodySize;
 
     /**
      * Protected API - respond, in the driver thread, to a ShutdownSignal.
@@ -244,6 +245,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         this.credentialsRefreshService = params.getCredentialsRefreshService();
 
+
         this._channel0 = createChannel0();
 
         this._channelManager = null;
@@ -257,6 +259,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
             (connection, exception) -> { throw exception; }; // we just propagate the exception for non-recoverable connections
         this.workPoolTimeout = params.getWorkPoolTimeout();
+        this.maxInboundMessageBodySize = params.getMaxInboundMessageBodySize();
     }
 
     AMQChannel createChannel0() {
@@ -1201,5 +1204,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     public TrafficListener getTrafficListener() {
         return trafficListener;
+    }
+
+    int getMaxInboundMessageBodySize() {
+        return maxInboundMessageBodySize;
     }
 }

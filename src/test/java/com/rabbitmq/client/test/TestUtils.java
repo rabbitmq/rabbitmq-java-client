@@ -26,11 +26,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.function.Function;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -46,8 +46,6 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestUtils {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
 
     public static final boolean USE_NIO = System.getProperty("use.nio") != null;
 
@@ -300,6 +298,22 @@ public class TestUtils {
     public interface CallableFunction<T, R> {
 
         R apply(T t) throws Exception;
+
+    }
+
+    public static class LatchConditions {
+
+        static Condition<CountDownLatch> completed() {
+            return new Condition<>(
+                countDownLatch-> {
+                    try {
+                        return countDownLatch.await(10, TimeUnit.SECONDS);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                "Latch did not complete in 10 seconds");
+        }
 
     }
 
