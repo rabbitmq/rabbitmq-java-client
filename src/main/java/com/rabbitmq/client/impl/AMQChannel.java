@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -62,7 +62,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     private final int _channelNumber;
 
     /** Command being assembled */
-    private AMQCommand _command = new AMQCommand();
+    private AMQCommand _command;
 
     /** The current outstanding RPC request, if any. (Could become a queue in future.) */
     private RpcWrapper _activeRpc = null;
@@ -76,6 +76,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     private final boolean _checkRpcResponseType;
 
     private final TrafficListener _trafficListener;
+    private final int maxInboundMessageBodySize;
 
     /**
      * Construct a channel on the given connection, with the given channel number.
@@ -91,6 +92,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         this._rpcTimeout = connection.getChannelRpcTimeout();
         this._checkRpcResponseType = connection.willCheckRpcResponseType();
         this._trafficListener = connection.getTrafficListener();
+        this.maxInboundMessageBodySize = connection.getMaxInboundMessageBodySize();
+        this._command = new AMQCommand(this.maxInboundMessageBodySize);
     }
 
     /**
@@ -110,7 +113,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public void handleFrame(Frame frame) throws IOException {
         AMQCommand command = _command;
         if (command.handleFrame(frame)) { // a complete command has rolled off the assembly line
-            _command = new AMQCommand(); // prepare for the next one
+            _command = new AMQCommand(this.maxInboundMessageBodySize); // prepare for the next one
             handleCompleteInboundCommand(command);
         }
     }

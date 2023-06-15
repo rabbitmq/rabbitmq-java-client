@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.UnexpectedFrameError;
+import static java.lang.String.format;
 
 /**
  * Class responsible for piecing together a command from a series of {@link Frame}s.
@@ -52,12 +53,16 @@ final class CommandAssembler {
     /** No bytes of content body not yet accumulated */
     private long remainingBodyBytes;
 
-    public CommandAssembler(Method method, AMQContentHeader contentHeader, byte[] body) {
+    private final int maxBodyLength;
+
+    public CommandAssembler(Method method, AMQContentHeader contentHeader, byte[] body,
+                            int maxBodyLength) {
         this.method = method;
         this.contentHeader = contentHeader;
-        this.bodyN = new ArrayList<byte[]>(2);
+        this.bodyN = new ArrayList<>(2);
         this.bodyLength = 0;
         this.remainingBodyBytes = 0;
+        this.maxBodyLength = maxBodyLength;
         appendBodyFragment(body);
         if (method == null) {
             this.state = CAState.EXPECTING_METHOD;
@@ -99,7 +104,14 @@ final class CommandAssembler {
     private void consumeHeaderFrame(Frame f) throws IOException {
         if (f.type == AMQP.FRAME_HEADER) {
             this.contentHeader = AMQImpl.readContentHeaderFrom(f.getInputStream());
-            this.remainingBodyBytes = this.contentHeader.getBodySize();
+            long bodySize = this.contentHeader.getBodySize();
+            if (bodySize >= this.maxBodyLength) {
+                throw new IllegalStateException(format(
+                    "Message body is too large (%d), maximum size is %d",
+                    bodySize, this.maxBodyLength
+                ));
+            }
+            this.remainingBodyBytes = bodySize;
             updateContentBodyState();
         } else {
             throw new UnexpectedFrameError(f, AMQP.FRAME_HEADER);

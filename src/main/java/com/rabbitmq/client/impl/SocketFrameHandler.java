@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -52,6 +52,8 @@ public class SocketFrameHandler implements FrameHandler {
     /** Socket's outputstream - data to the broker - synchronized on */
     private final DataOutputStream _outputStream;
 
+    private final int maxInboundMessageBodySize;
+
     /** Time to linger before closing the socket forcefully. */
     public static final int SOCKET_CLOSING_TIMEOUT = 1;
 
@@ -59,15 +61,17 @@ public class SocketFrameHandler implements FrameHandler {
      * @param socket the socket to use
      */
     public SocketFrameHandler(Socket socket) throws IOException {
-        this(socket, null);
+        this(socket, null, Integer.MAX_VALUE);
     }
 
     /**
      * @param socket the socket to use
      */
-    public SocketFrameHandler(Socket socket, ExecutorService shutdownExecutor) throws IOException {
+    public SocketFrameHandler(Socket socket, ExecutorService shutdownExecutor,
+                              int maxInboundMessageBodySize) throws IOException {
         _socket = socket;
         _shutdownExecutor = shutdownExecutor;
+        this.maxInboundMessageBodySize = maxInboundMessageBodySize;
 
         _inputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         _outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
@@ -181,7 +185,7 @@ public class SocketFrameHandler implements FrameHandler {
     @Override
     public Frame readFrame() throws IOException {
         synchronized (_inputStream) {
-            return Frame.readFrom(_inputStream);
+            return Frame.readFrom(_inputStream, this.maxInboundMessageBodySize);
         }
     }
 

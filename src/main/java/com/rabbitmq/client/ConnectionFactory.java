@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -204,6 +204,13 @@ public class ConnectionFactory implements Cloneable {
     private TrafficListener trafficListener = TrafficListener.NO_OP;
 
     private CredentialsRefreshService credentialsRefreshService;
+
+    /**
+     * Maximum body size of inbound (received) messages in bytes.
+     *
+     * <p>Default value is 67,108,864 (64 MiB).
+     */
+    private int maxInboundMessageBodySize = 1_048_576 * 64;
 
     /** @return the default host to use for connections */
     public String getHost() {
@@ -970,11 +977,15 @@ public class ConnectionFactory implements Cloneable {
                 if(this.nioParams.getNioExecutor() == null && this.nioParams.getThreadFactory() == null) {
                     this.nioParams.setThreadFactory(getThreadFactory());
                 }
-                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(connectionTimeout, nioParams, isSSL(), sslContextFactory);
+                this.frameHandlerFactory = new SocketChannelFrameHandlerFactory(
+                    connectionTimeout, nioParams, isSSL(), sslContextFactory,
+                    this.maxInboundMessageBodySize);
             }
             return this.frameHandlerFactory;
         } else {
-            return new SocketFrameHandlerFactory(connectionTimeout, socketFactory, socketConf, isSSL(), this.shutdownExecutor, sslContextFactory);
+            return new SocketFrameHandlerFactory(connectionTimeout, socketFactory,
+                socketConf, isSSL(), this.shutdownExecutor, sslContextFactory,
+                this.maxInboundMessageBodySize);
         }
 
     }
@@ -1273,6 +1284,7 @@ public class ConnectionFactory implements Cloneable {
         result.setRecoveredQueueNameSupplier(recoveredQueueNameSupplier);
         result.setTrafficListener(trafficListener);
         result.setCredentialsRefreshService(credentialsRefreshService);
+        result.setMaxInboundMessageBodySize(maxInboundMessageBodySize);
         return result;
     }
 
@@ -1554,6 +1566,21 @@ public class ConnectionFactory implements Cloneable {
      */
     public int getChannelRpcTimeout() {
         return channelRpcTimeout;
+    }
+
+    /**
+     * Maximum body size of inbound (received) messages in bytes.
+     *
+     * <p>Default value is 67,108,864 (64 MiB).
+     *
+     * @param maxInboundMessageBodySize the maximum size of inbound messages
+     */
+    public void setMaxInboundMessageBodySize(int maxInboundMessageBodySize) {
+        if (maxInboundMessageBodySize <= 0) {
+            throw new IllegalArgumentException("Max inbound message body size must be greater than 0: "
+                + maxInboundMessageBodySize);
+        }
+        this.maxInboundMessageBodySize = maxInboundMessageBodySize;
     }
 
     /**

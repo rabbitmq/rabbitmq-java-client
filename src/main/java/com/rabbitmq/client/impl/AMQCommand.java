@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -44,9 +44,13 @@ public class AMQCommand implements Command {
     /** The assembler for this command - synchronised on - contains all the state */
     private final CommandAssembler assembler;
 
+    AMQCommand(int maxBodyLength) {
+        this(null, null, null, maxBodyLength);
+    }
+
     /** Construct a command ready to fill in by reading frames */
     public AMQCommand() {
-        this(null, null, null);
+        this(null, null, null, Integer.MAX_VALUE);
     }
 
     /**
@@ -54,7 +58,7 @@ public class AMQCommand implements Command {
      * @param method the wrapped method
      */
     public AMQCommand(com.rabbitmq.client.Method method) {
-        this(method, null, null);
+        this(method, null, null, Integer.MAX_VALUE);
     }
 
     /**
@@ -64,7 +68,19 @@ public class AMQCommand implements Command {
      * @param body the message body data
      */
     public AMQCommand(com.rabbitmq.client.Method method, AMQContentHeader contentHeader, byte[] body) {
-        this.assembler = new CommandAssembler((Method) method, contentHeader, body);
+        this.assembler = new CommandAssembler((Method) method, contentHeader, body, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Construct a command with a specified method, header and body.
+     * @param method the wrapped method
+     * @param contentHeader the wrapped content header
+     * @param body the message body data
+     * @param maxBodyLength the maximum size for an inbound message body
+     */
+    public AMQCommand(com.rabbitmq.client.Method method, AMQContentHeader contentHeader, byte[] body,
+                      int maxBodyLength) {
+        this.assembler = new CommandAssembler((Method) method, contentHeader, body, maxBodyLength);
     }
 
     /** Public API - {@inheritDoc} */

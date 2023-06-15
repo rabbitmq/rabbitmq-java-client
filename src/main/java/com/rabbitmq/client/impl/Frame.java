@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -26,6 +26,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import static java.lang.String.format;
 
 /**
  * Represents an AMQP wire-protocol frame, with frame type, channel number, and payload bytes.
@@ -83,7 +84,7 @@ public class Frame {
      *
      * @return a new Frame if we read a frame successfully, otherwise null
      */
-    public static Frame readFrom(DataInputStream is) throws IOException {
+    public static Frame readFrom(DataInputStream is, int maxPayloadSize) throws IOException {
         int type;
         int channel;
 
@@ -109,6 +110,12 @@ public class Frame {
 
         channel = is.readUnsignedShort();
         int payloadSize = is.readInt();
+        if (payloadSize >= maxPayloadSize) {
+            throw new IllegalStateException(format(
+                "Frame body is too large (%d), maximum size is %d",
+                payloadSize, maxPayloadSize
+            ));
+        }
         byte[] payload = new byte[payloadSize];
         is.readFully(payload);
 
