@@ -28,8 +28,9 @@ import java.io.IOException;
  *
  * <p>This is considered an SPI and is susceptible to change at any time.
  *
- * @since 5.18.0
+ * @since 5.19.0
  * @see com.rabbitmq.client.ConnectionFactory#setObservationCollector( ObservationCollector)
+ * @see com.rabbitmq.client.observation.micrometer.MicrometerObservationCollectorBuilder
  */
 public interface ObservationCollector {
 

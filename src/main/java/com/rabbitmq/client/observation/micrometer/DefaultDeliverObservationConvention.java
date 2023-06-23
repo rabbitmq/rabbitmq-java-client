@@ -22,7 +22,7 @@ import io.micrometer.common.util.StringUtils;
 /**
  * Default implementation of {@link DeliverObservationConvention}.
  *
- * @since 5.18.0
+ * @since 5.19.0
  * @see DeliverObservationConvention
  */
 public class DefaultDeliverObservationConvention implements DeliverObservationConvention {

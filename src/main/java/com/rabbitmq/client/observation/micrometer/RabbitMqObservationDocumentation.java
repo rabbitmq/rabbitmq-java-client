@@ -22,7 +22,7 @@ import io.micrometer.observation.docs.ObservationDocumentation;
 /**
  * {@link ObservationDocumentation} for RabbitMQ Clients.
  *
- * @since 5.18.0
+ * @since 5.19.0
  */
 public enum RabbitMqObservationDocumentation implements ObservationDocumentation {
   PUBLISH_OBSERVATION {

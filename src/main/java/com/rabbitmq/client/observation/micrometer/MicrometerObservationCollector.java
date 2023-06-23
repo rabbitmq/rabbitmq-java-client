@@ -102,30 +102,37 @@ class MicrometerObservationCollector implements ObservationCollector {
 
   @Override
   public GetResponse basicGet(BasicGetCall call, String queue) {
-    return Observation.createNotStarted("rabbitmq.receive", registry).observe(() -> {
-      GetResponse response = call.get();
-      if (response != null) {
-        Map<String, Object> headers;
-        if (response.getProps() == null || response.getProps().getHeaders() == null) {
-          headers = Collections.emptyMap();
-        } else {
-          headers = response.getProps().getHeaders();
-        }
-        DeliverContext context =
-                new DeliverContext(
+    return Observation.createNotStarted("rabbitmq.receive", registry)
+        .observe(
+            () -> {
+              try {
+                Thread.sleep(100);
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+              }
+              GetResponse response = call.get();
+              if (response != null) {
+                Map<String, Object> headers;
+                if (response.getProps() == null || response.getProps().getHeaders() == null) {
+                  headers = Collections.emptyMap();
+                } else {
+                  headers = response.getProps().getHeaders();
+                }
+                DeliverContext context =
+                    new DeliverContext(
                         response.getEnvelope().getExchange(),
                         response.getEnvelope().getRoutingKey(),
                         queue,
                         headers,
                         response.getBody() == null ? 0 : response.getBody().length);
-        Observation observation =
-                RabbitMqObservationDocumentation.RECEIVE_OBSERVATION.observation(
+                Observation observation =
+                    RabbitMqObservationDocumentation.RECEIVE_OBSERVATION.observation(
                         customReceiveConvention, defaultReceiveConvention, () -> context, registry);
-        observation.start();
-        observation.stop();
-      }
-      return response;
-    });
+                observation.start();
+                observation.stop();
+              }
+              return response;
+            });
   }
 
   private static class ObservationConsumer implements Consumer {

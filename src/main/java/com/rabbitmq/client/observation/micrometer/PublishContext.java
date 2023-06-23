@@ -22,7 +22,7 @@ import java.util.Map;
  * {@link io.micrometer.observation.Observation.Context} for use with RabbitMQ client {@link
  * io.micrometer.observation.Observation} instrumentation.
  *
- * @since 5.18.0
+ * @since 5.19.0
  */
 public class PublishContext extends SenderContext<Map<String, Object>> {
 

@@ -723,7 +723,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             metricsCollector.basicPublishFailure(this, e);
             throw e;
         }
-        metricsCollector.basicPublish(this, deliveryTag);
+        metricsCollector.basicPublish(this);
     }
 
     /** Public API - {@inheritDoc} */
