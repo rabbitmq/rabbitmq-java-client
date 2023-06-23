@@ -16,6 +16,7 @@ package com.rabbitmq.client.observation.micrometer;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.observation.ObservationCollector;
+import io.micrometer.common.KeyValues;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import java.io.IOException;
@@ -56,8 +57,6 @@ class MicrometerObservationCollector implements ObservationCollector {
       byte[] body,
       ConnectionInfo connectionInfo)
       throws IOException {
-    // TODO: Is this for fire and forget or request reply too? If r-r then we have to have 2
-    // contexts
     Map<String, Object> headers;
     if (properties.getHeaders() == null) {
       headers = new HashMap<>();
@@ -103,13 +102,14 @@ class MicrometerObservationCollector implements ObservationCollector {
   @Override
   public GetResponse basicGet(BasicGetCall call, String queue) {
     return Observation.createNotStarted("rabbitmq.receive", registry)
+        .highCardinalityKeyValues(
+            KeyValues.of(
+                RabbitMqObservationDocumentation.LowCardinalityTags.MESSAGING_OPERATION.withValue(
+                    "receive"),
+                RabbitMqObservationDocumentation.LowCardinalityTags.MESSAGING_SYSTEM.withValue(
+                    "rabbitmq")))
         .observe(
             () -> {
-              try {
-                Thread.sleep(100);
-              } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-              }
               GetResponse response = call.get();
               if (response != null) {
                 Map<String, Object> headers;
