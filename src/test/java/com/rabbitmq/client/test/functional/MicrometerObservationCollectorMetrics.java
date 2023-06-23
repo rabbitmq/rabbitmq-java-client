@@ -22,9 +22,8 @@ import com.rabbitmq.client.observation.ObservationCollector;
 import com.rabbitmq.client.observation.micrometer.MicrometerObservationCollectorBuilder;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
-import io.micrometer.observation.Observation;
+import io.micrometer.observation.NullObservation;
 import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.exporter.FinishedSpan;
 import io.micrometer.tracing.test.SampleTestRunner;
 import io.micrometer.tracing.test.simple.SpanAssert;
@@ -35,11 +34,9 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 import org.assertj.core.api.BDDAssertions;
 import org.junit.jupiter.api.Nested;
 
@@ -120,17 +117,6 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
     public TracingSetup[] getTracingSetup() {
       return new TracingSetup[] {TracingSetup.IN_MEMORY_BRAVE, TracingSetup.ZIPKIN_BRAVE};
     }
-
-    void runWithNullingObservation(ObservationRegistry registry, Tracer tracer, Observation.CheckedRunnable<?> runnable) {
-      Observation noParentObservation = Observation.createNotStarted("null_observation", registry);
-      noParentObservation.parentObservation(null);
-      try (Tracer.SpanInScope ws = tracer.withSpan(null)) {
-        noParentObservation.observeChecked(runnable);
-      }
-      catch (Throwable e) {
-        throw new RuntimeException(e);
-      }
-    }
   }
 
   @Nested
@@ -206,24 +192,29 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
           publishConnection = connectionFactory.newConnection();
           Channel channel = publishConnection.createChannel();
 
-          runWithNullingObservation(getObservationRegistry(), buildingBlocks.getTracer(), () -> sendMessage(channel));
+          new NullObservation(getObservationRegistry()).observeChecked(() -> sendMessage(channel));
 
           consumeConnection = connectionFactory.newConnection();
           Channel basicGetChannel = consumeConnection.createChannel();
           waitAtMost(() -> basicGetChannel.basicGet(QUEUE, true) != null);
           waitAtMost(() -> buildingBlocks.getFinishedSpans().size() >= 3);
-          System.out.println(
+          Map<String, List<FinishedSpan>> finishedSpans =
               buildingBlocks.getFinishedSpans().stream()
-                  .map(Objects::toString)
-                  .collect(Collectors.joining("\n")));
-          Map<String, List<FinishedSpan>> finishedSpans = buildingBlocks.getFinishedSpans().stream()
                   .collect(Collectors.groupingBy(FinishedSpan::getTraceId));
-          BDDAssertions.then(finishedSpans).as("One trace id for sending, one for polling").hasSize(2);
+          BDDAssertions.then(finishedSpans)
+              .as("One trace id for sending, one for polling")
+              .hasSize(2);
           Collection<List<FinishedSpan>> spans = finishedSpans.values();
-          List<FinishedSpan> sendAndReceiveSpans = spans.stream().filter(f -> f.size() == 3).findFirst().orElseThrow(() -> new AssertionError("null_observation (fake nulling observation) -> produce -> consume"));
+          List<FinishedSpan> sendAndReceiveSpans =
+              spans.stream()
+                  .filter(f -> f.size() == 2)
+                  .findFirst()
+                  .orElseThrow(
+                      () ->
+                          new AssertionError(
+                              "null_observation (fake nulling observation) -> produce -> consume"));
           sendAndReceiveSpans.sort(Comparator.comparing(FinishedSpan::getStartTimestamp));
-          SpanAssert.assertThat(sendAndReceiveSpans.get(0)).hasNameEqualTo("null_observation");
-          SpanAssert.assertThat(sendAndReceiveSpans.get(1))
+          SpanAssert.assertThat(sendAndReceiveSpans.get(0))
               .hasNameEqualTo("metrics.queue publish")
               .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
               .hasTag("messaging.destination.name", "amq.default")
@@ -232,15 +223,18 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
               .hasTag("net.sock.peer.port", "5672")
               .hasTag("net.protocol.name", "amqp")
               .hasTag("net.protocol.version", "0.9.1");
-          SpanAssert.assertThat(sendAndReceiveSpans.get(2))
+          SpanAssert.assertThat(sendAndReceiveSpans.get(1))
               .hasNameEqualTo("metrics.queue receive")
               .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
               .hasTag("messaging.destination.name", "amq.default")
               .hasTag("messaging.source.name", "metrics.queue")
               .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length));
-          List<FinishedSpan> pollingSpans = spans.stream().filter(f -> f.size() == 1).findFirst().orElseThrow(() -> new AssertionError("rabbitmq.receive (child of test span)"));
-          SpanAssert.assertThat(pollingSpans.get(0))
-                  .hasNameEqualTo("rabbitmq.receive");
+          List<FinishedSpan> pollingSpans =
+              spans.stream()
+                  .filter(f -> f.size() == 1)
+                  .findFirst()
+                  .orElseThrow(() -> new AssertionError("rabbitmq.receive (child of test span)"));
+          SpanAssert.assertThat(pollingSpans.get(0)).hasNameEqualTo("rabbitmq.receive");
           waitAtMost(
               () ->
                   getMeterRegistry().find("rabbitmq.publish").timer() != null

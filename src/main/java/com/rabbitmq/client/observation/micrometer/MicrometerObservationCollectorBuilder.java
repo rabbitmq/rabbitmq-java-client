@@ -21,7 +21,7 @@ import io.micrometer.observation.ObservationRegistry;
  * Builder to configure and create <a href="https://micrometer.io/docs/observation">Micrometer
  * Observation</a> implementation of {@link ObservationCollector}.
  *
- * @since 5.18.0
+ * @since 5.19.0
  */
 public class MicrometerObservationCollectorBuilder {
 

@@ -20,7 +20,7 @@ import io.micrometer.observation.ObservationConvention;
 /**
  * {@link ObservationConvention} for RabbitMQ client instrumentation.
  *
- * @since 5.18.0
+ * @since 5.19.0
  */
 public interface DeliverObservationConvention extends ObservationConvention<DeliverContext> {
 

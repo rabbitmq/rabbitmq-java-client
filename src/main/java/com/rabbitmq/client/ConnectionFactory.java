@@ -53,7 +53,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 public class ConnectionFactory implements Cloneable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionFactory.class);
     private static final int MAX_UNSIGNED_SHORT = 65535;
 
     /** Default user name */
@@ -980,12 +979,15 @@ public class ConnectionFactory implements Cloneable {
         return metricsCollector;
     }
 
-    /**
-     *
-     * @since 5.18.0
-     * @param observationCollector
-     */
-    public void setObservationCollector(ObservationCollector observationCollector) {
+  /**
+   * Set observation collector.
+   *
+   * @param observationCollector the collector instance
+   * @since 5.19.0
+   * @see ObservationCollector
+   * @see com.rabbitmq.client.observation.micrometer.MicrometerObservationCollectorBuilder
+   */
+  public void setObservationCollector(ObservationCollector observationCollector) {
         this.observationCollector = observationCollector;
     }
 
