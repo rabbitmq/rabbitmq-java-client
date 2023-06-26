@@ -25,20 +25,12 @@ import io.micrometer.common.util.StringUtils;
  * @since 5.19.0
  * @see DeliverObservationConvention
  */
-public class DefaultDeliverObservationConvention implements DeliverObservationConvention {
+abstract class DefaultDeliverObservationConvention implements DeliverObservationConvention {
 
-  private final String name;
   private final String operation;
 
-  public DefaultDeliverObservationConvention(String name, String operation) {
-    this.name = name;
+  public DefaultDeliverObservationConvention(String operation) {
     this.operation = operation;
-  }
-
-  // TODO: If the name is not fixed we won't be able to parse it to automatically document the name
-  @Override
-  public String getName() {
-    return name;
   }
 
   @Override

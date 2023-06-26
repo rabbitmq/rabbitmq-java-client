@@ -25,6 +25,7 @@ import io.micrometer.observation.docs.ObservationDocumentation;
  * @since 5.19.0
  */
 public enum RabbitMqObservationDocumentation implements ObservationDocumentation {
+  /** Observation for publishing a message. */
   PUBLISH_OBSERVATION {
 
     @Override
@@ -39,12 +40,13 @@ public enum RabbitMqObservationDocumentation implements ObservationDocumentation
     }
   },
 
+  /** Observation for processing a message. */
   PROCESS_OBSERVATION {
 
     @Override
     public Class<? extends ObservationConvention<? extends Observation.Context>>
         getDefaultConvention() {
-      return DefaultDeliverObservationConvention.class;
+      return DefaultProcessObservationConvention.class;
     }
 
     @Override
@@ -53,12 +55,13 @@ public enum RabbitMqObservationDocumentation implements ObservationDocumentation
     }
   },
 
+  /** Observation for polling for a message with <code>basic.get</code>. */
   RECEIVE_OBSERVATION {
 
     @Override
     public Class<? extends ObservationConvention<? extends Observation.Context>>
         getDefaultConvention() {
-      return DefaultDeliverObservationConvention.class;
+      return DefaultReceiveObservationConvention.class;
     }
 
     @Override
@@ -66,37 +69,6 @@ public enum RabbitMqObservationDocumentation implements ObservationDocumentation
       return LowCardinalityTags.values();
     }
   };
-
-  // SPAN NAME
-  // <destination name> <operation name>
-  // topic with spaces process
-  // (anonymous) publish ((anonymous) being a stable identifier for an unnamed destination)
-  // (anonymous) receive ((anonymous) being a stable identifier for an unnamed destination)
-
-  // LOW CARDINALITY
-  // messaging.system = rabbitmq
-  // messaging.operation = publish
-
-  // HIGH CARDINALITY
-
-  // messaging.rabbitmq.destination.routing_key
-  // messaging.destination.anonymous
-  // messaging.destination.name
-  // messaging.destination.template
-  // messaging.destination.temporary
-  // messaging.batch.message_count
-  // messaging.message.conversation_id
-  // messaging.message.id
-  // messaging.message.payload_compressed_size_bytes
-  // messaging.message.payload_size_bytes
-
-  // net.peer.name
-  // net.protocol.name
-  // net.protocol.version
-  // net.sock.family
-  // net.sock.peer.addr
-  // net.sock.peer.name
-  // net.sock.peer.port
 
   /** Low cardinality tags. */
   public enum LowCardinalityTags implements KeyName {
@@ -119,6 +91,7 @@ public enum RabbitMqObservationDocumentation implements ObservationDocumentation
       }
     },
 
+    /** A string identifying the protocol (AMQP). */
     NET_PROTOCOL_NAME {
 
       @Override
@@ -127,6 +100,7 @@ public enum RabbitMqObservationDocumentation implements ObservationDocumentation
       }
     },
 
+    /** A string identifying the protocol version (0.9.1). */
     NET_PROTOCOL_VERSION {
 
       @Override
