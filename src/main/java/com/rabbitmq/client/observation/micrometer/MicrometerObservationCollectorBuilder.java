@@ -31,10 +31,10 @@ public class MicrometerObservationCollectorBuilder {
       new DefaultPublishObservationConvention();
   private DeliverObservationConvention customProcessObservationConvention;
   private DeliverObservationConvention defaultProcessObservationConvention =
-      new DefaultDeliverObservationConvention("rabbitmq.process", "process");
+      new DefaultProcessObservationConvention("process");
   private DeliverObservationConvention customReceiveObservationConvention;
   private DeliverObservationConvention defaultReceiveObservationConvention =
-      new DefaultDeliverObservationConvention("rabbitmq.receive", "receive");
+      new DefaultReceiveObservationConvention("receive");
 
   public MicrometerObservationCollectorBuilder registry(ObservationRegistry registry) {
     this.registry = registry;
