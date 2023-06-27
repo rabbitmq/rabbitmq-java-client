@@ -66,6 +66,7 @@
     <mockito.version>5.4.0</mockito.version>
     <assertj.version>3.24.2</assertj.version>
     <micrometer-tracing-test.version>1.1.2</micrometer-tracing-test.version>
+    <micrometer-docs-generator.version>1.0.2</micrometer-docs-generator.version>
     <jetty.version>9.4.51.v20230217</jetty.version>
     <bouncycastle.version>1.70</bouncycastle.version>
     <netcrusher.version>0.10</netcrusher.version>
@@ -799,6 +800,12 @@
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-tracing-integration-test</artifactId>
       <version>${micrometer-tracing-test.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-docs-generator</artifactId>
+      <version>${micrometer-docs-generator.version}</version>
       <scope>test</scope>
     </dependency>
 
