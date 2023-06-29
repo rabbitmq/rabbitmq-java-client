@@ -41,11 +41,11 @@
   <scm>
     <url>https://github.com/rabbitmq/rabbitmq-java-client</url>
     <connection>scm:git:git://github.com/rabbitmq/rabbitmq-java-client.git</connection>
-    <developerConnection>scm:git:https://github.com/rabbitmq/rabbitmq-java-client.git</developerConnection>
-    <tag>v5.17.1</tag>
+    <developerConnection>scm:git:git@github.com:rabbitmq/rabbitmq-java-client.git</developerConnection>
+    <tag>HEAD</tag>
   </scm>
 
-  <organization>
+   <organization>
     <name>VMware, Inc. or its affiliates.</name>
     <url>https://www.rabbitmq.com</url>
   </organization>
