@@ -20,13 +20,34 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.rabbitmq.client.*;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 public class MaxInboundMessageSizeTest extends BrokerTestCase {
+
+  @Parameterized.Parameter(value = 0)
+  public int maxMessageSize;
+  @Parameterized.Parameter(value = 1)
+  public int frameMax;
+  @Parameterized.Parameter(value = 2)
+  public boolean basicGet;
+
+  @Parameterized.Parameters
+  public static Iterable<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+            {20000, 5000, true},
+            {20000, 100000, true},
+            {20000, 5000, false},
+            {20000, 100000, false}
+        });
+  }
 
   String q;
 
@@ -45,14 +66,8 @@ public class MaxInboundMessageSizeTest extends BrokerTestCase {
     super.createResources();
   }
 
-  @CsvSource({
-    "20000,5000,true",
-    "20000,100000,true",
-    "20000,5000,false",
-    "20000,100000,false",
-  })
-  @ParameterizedTest
-  void maxInboundMessageSizeMustBeEnforced(int maxMessageSize, int frameMax, boolean basicGet)
+  @Test
+  public void maxInboundMessageSizeMustBeEnforced()
       throws Exception {
     ConnectionFactory cf = newConnectionFactory();
     cf.setMaxInboundMessageBodySize(maxMessageSize);
