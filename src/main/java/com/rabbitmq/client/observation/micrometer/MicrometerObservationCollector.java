@@ -31,6 +31,7 @@ class MicrometerObservationCollector implements ObservationCollector {
   private final PublishObservationConvention customPublishConvention, defaultPublishConvention;
   private final DeliverObservationConvention customProcessConvention, defaultProcessConvention;
   private final DeliverObservationConvention customReceiveConvention, defaultReceiveConvention;
+  private final boolean keepObservationOpenOnBasicGet;
 
   MicrometerObservationCollector(
       ObservationRegistry registry,
@@ -39,7 +40,8 @@ class MicrometerObservationCollector implements ObservationCollector {
       DeliverObservationConvention customProcessConvention,
       DeliverObservationConvention defaultProcessConvention,
       DeliverObservationConvention customReceiveConvention,
-      DeliverObservationConvention defaultReceiveConvention) {
+      DeliverObservationConvention defaultReceiveConvention,
+      boolean keepObservationOpenOnBasicGet) {
     this.registry = registry;
     this.customPublishConvention = customPublishConvention;
     this.defaultPublishConvention = defaultPublishConvention;
@@ -47,6 +49,7 @@ class MicrometerObservationCollector implements ObservationCollector {
     this.defaultProcessConvention = defaultProcessConvention;
     this.customReceiveConvention = customReceiveConvention;
     this.defaultReceiveConvention = defaultReceiveConvention;
+    this.keepObservationOpenOnBasicGet = keepObservationOpenOnBasicGet;
   }
 
   @Override
@@ -129,7 +132,11 @@ class MicrometerObservationCollector implements ObservationCollector {
                     RabbitMqObservationDocumentation.RECEIVE_OBSERVATION.observation(
                         customReceiveConvention, defaultReceiveConvention, () -> context, registry);
                 observation.start();
-                observation.stop();
+                if (this.keepObservationOpenOnBasicGet) {
+                  observation.openScope();
+                } else {
+                  observation.stop();
+                }
               }
               return response;
             });
