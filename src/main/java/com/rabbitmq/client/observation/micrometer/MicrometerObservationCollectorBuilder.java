@@ -35,6 +35,7 @@ public class MicrometerObservationCollectorBuilder {
   private DeliverObservationConvention customReceiveObservationConvention;
   private DeliverObservationConvention defaultReceiveObservationConvention =
       new DefaultReceiveObservationConvention("receive");
+  private boolean keepObservationOpenOnBasicGet = false;
 
   public MicrometerObservationCollectorBuilder registry(ObservationRegistry registry) {
     this.registry = registry;
@@ -77,6 +78,12 @@ public class MicrometerObservationCollectorBuilder {
     return this;
   }
 
+  public MicrometerObservationCollectorBuilder keepObservationOpenOnBasicGet(
+      boolean keepObservationOpenOnBasicGet) {
+    this.keepObservationOpenOnBasicGet = keepObservationOpenOnBasicGet;
+    return this;
+  }
+
   public ObservationCollector build() {
     return new MicrometerObservationCollector(
         this.registry,
@@ -85,6 +92,7 @@ public class MicrometerObservationCollectorBuilder {
         this.customProcessObservationConvention,
         this.defaultProcessObservationConvention,
         this.customReceiveObservationConvention,
-        this.defaultReceiveObservationConvention);
+        this.defaultReceiveObservationConvention,
+        keepObservationOpenOnBasicGet);
   }
 }

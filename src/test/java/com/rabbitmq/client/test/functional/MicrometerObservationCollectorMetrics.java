@@ -23,6 +23,7 @@ import com.rabbitmq.client.observation.micrometer.MicrometerObservationCollector
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import io.micrometer.observation.NullObservation;
+import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.exporter.FinishedSpan;
 import io.micrometer.tracing.test.SampleTestRunner;
@@ -51,11 +52,19 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
 
   private static ConnectionFactory createConnectionFactory(
       ObservationRegistry observationRegistry) {
+    return createConnectionFactory(false, observationRegistry);
+  }
+
+  private static ConnectionFactory createConnectionFactory(
+      boolean keepObservationOpenOnBasicGet, ObservationRegistry observationRegistry) {
     ConnectionFactory connectionFactory = TestUtils.connectionFactory();
     connectionFactory.setAutomaticRecoveryEnabled(true);
     if (observationRegistry != null) {
       ObservationCollector collector =
-          new MicrometerObservationCollectorBuilder().registry(observationRegistry).build();
+          new MicrometerObservationCollectorBuilder()
+              .keepObservationOpenOnBasicGet(keepObservationOpenOnBasicGet)
+              .registry(observationRegistry)
+              .build();
       connectionFactory.setObservationCollector(collector);
     }
     return connectionFactory;
@@ -186,18 +195,113 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
     @Override
     public SampleTestRunnerConsumer yourCode() {
       return (buildingBlocks, meterRegistry) -> {
-        ConnectionFactory connectionFactory = createConnectionFactory(getObservationRegistry());
+        ObservationRegistry observationRegistry = getObservationRegistry();
+        ConnectionFactory connectionFactory = createConnectionFactory(observationRegistry);
         Connection publishConnection = null, consumeConnection = null;
         try {
           publishConnection = connectionFactory.newConnection();
           Channel channel = publishConnection.createChannel();
 
-          new NullObservation(getObservationRegistry()).observeChecked(() -> sendMessage(channel));
+          new NullObservation(observationRegistry).observeChecked(() -> sendMessage(channel));
 
           consumeConnection = connectionFactory.newConnection();
           Channel basicGetChannel = consumeConnection.createChannel();
           waitAtMost(() -> basicGetChannel.basicGet(QUEUE, true) != null);
           waitAtMost(() -> buildingBlocks.getFinishedSpans().size() >= 3);
+          buildingBlocks
+              .getFinishedSpans()
+              .forEach(
+                  s -> {
+                    System.out.println(s.getName() + " " + s.getTraceId());
+                  });
+          Map<String, List<FinishedSpan>> finishedSpans =
+              buildingBlocks.getFinishedSpans().stream()
+                  .collect(Collectors.groupingBy(FinishedSpan::getTraceId));
+          BDDAssertions.then(finishedSpans)
+              .as("One trace id for sending, one for polling")
+              .hasSize(2);
+          Collection<List<FinishedSpan>> spans = finishedSpans.values();
+          List<FinishedSpan> sendAndReceiveSpans =
+              spans.stream()
+                  .filter(f -> f.size() == 2)
+                  .findFirst()
+                  .orElseThrow(
+                      () ->
+                          new AssertionError(
+                              "null_observation (fake nulling observation) -> produce -> consume"));
+          sendAndReceiveSpans.sort(Comparator.comparing(FinishedSpan::getStartTimestamp));
+          SpanAssert.assertThat(sendAndReceiveSpans.get(0))
+              .hasNameEqualTo("metrics.queue publish")
+              .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
+              .hasTag("messaging.destination.name", "amq.default")
+              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length))
+              .hasTagWithKey("net.sock.peer.addr")
+              .hasTag("net.sock.peer.port", "5672")
+              .hasTag("net.protocol.name", "amqp")
+              .hasTag("net.protocol.version", "0.9.1");
+          SpanAssert.assertThat(sendAndReceiveSpans.get(1))
+              .hasNameEqualTo("metrics.queue receive")
+              .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
+              .hasTag("messaging.destination.name", "amq.default")
+              .hasTag("messaging.source.name", "metrics.queue")
+              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length));
+          List<FinishedSpan> pollingSpans =
+              spans.stream()
+                  .filter(f -> f.size() == 1)
+                  .findFirst()
+                  .orElseThrow(() -> new AssertionError("rabbitmq.receive (child of test span)"));
+          SpanAssert.assertThat(pollingSpans.get(0)).hasNameEqualTo("rabbitmq.receive");
+          waitAtMost(
+              () ->
+                  getMeterRegistry().find("rabbitmq.publish").timer() != null
+                      && getMeterRegistry().find("rabbitmq.receive").timer() != null);
+          getMeterRegistry()
+              .get("rabbitmq.publish")
+              .tag("messaging.operation", "publish")
+              .tag("messaging.system", "rabbitmq")
+              .timer();
+          getMeterRegistry()
+              .get("rabbitmq.receive")
+              .tag("messaging.operation", "receive")
+              .tag("messaging.system", "rabbitmq")
+              .timer();
+        } finally {
+          safeClose(publishConnection);
+          safeClose(consumeConnection);
+        }
+      };
+    }
+  }
+
+//    @Nested
+  class PublishBasicGetKeepObservationOpen extends IntegrationTest {
+
+    @Override
+    public SampleTestRunnerConsumer yourCode() {
+      return (buildingBlocks, meterRegistry) -> {
+        ObservationRegistry observationRegistry = getObservationRegistry();
+        ConnectionFactory connectionFactory = createConnectionFactory(true, observationRegistry);
+        Connection publishConnection = null, consumeConnection = null;
+        try {
+          publishConnection = connectionFactory.newConnection();
+          Channel channel = publishConnection.createChannel();
+
+          new NullObservation(observationRegistry).observeChecked(() -> sendMessage(channel));
+
+          consumeConnection = connectionFactory.newConnection();
+          Channel basicGetChannel = consumeConnection.createChannel();
+          waitAtMost(() -> basicGetChannel.basicGet(QUEUE, true) != null);
+          Observation.Scope scope = observationRegistry.getCurrentObservationScope();
+          assertThat(scope).isNotNull();
+          scope.close();
+          scope.getCurrentObservation().stop();
+          waitAtMost(() -> buildingBlocks.getFinishedSpans().size() >= 3);
+          buildingBlocks
+              .getFinishedSpans()
+              .forEach(
+                  s -> {
+                    System.out.println(s.getName() + " " + s.getTraceId());
+                  });
           Map<String, List<FinishedSpan>> finishedSpans =
               buildingBlocks.getFinishedSpans().stream()
                   .collect(Collectors.groupingBy(FinishedSpan::getTraceId));
