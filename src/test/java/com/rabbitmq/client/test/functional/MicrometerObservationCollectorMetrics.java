@@ -208,12 +208,7 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
           Channel basicGetChannel = consumeConnection.createChannel();
           waitAtMost(() -> basicGetChannel.basicGet(QUEUE, true) != null);
           waitAtMost(() -> buildingBlocks.getFinishedSpans().size() >= 3);
-          buildingBlocks
-              .getFinishedSpans()
-              .forEach(
-                  s -> {
-                    System.out.println(s.getName() + " " + s.getTraceId());
-                  });
+
           Map<String, List<FinishedSpan>> finishedSpans =
               buildingBlocks.getFinishedSpans().stream()
                   .collect(Collectors.groupingBy(FinishedSpan::getTraceId));
@@ -273,7 +268,7 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
     }
   }
 
-//    @Nested
+  @Nested
   class PublishBasicGetKeepObservationOpen extends IntegrationTest {
 
     @Override
@@ -293,15 +288,11 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
           waitAtMost(() -> basicGetChannel.basicGet(QUEUE, true) != null);
           Observation.Scope scope = observationRegistry.getCurrentObservationScope();
           assertThat(scope).isNotNull();
+          // creating a dummy span to make sure it's wrapped into the receive one
+          buildingBlocks.getTracer().nextSpan().name("foobar").start().end();
           scope.close();
           scope.getCurrentObservation().stop();
-          waitAtMost(() -> buildingBlocks.getFinishedSpans().size() >= 3);
-          buildingBlocks
-              .getFinishedSpans()
-              .forEach(
-                  s -> {
-                    System.out.println(s.getName() + " " + s.getTraceId());
-                  });
+          waitAtMost(() -> buildingBlocks.getFinishedSpans().size() >= 3 + 1);
           Map<String, List<FinishedSpan>> finishedSpans =
               buildingBlocks.getFinishedSpans().stream()
                   .collect(Collectors.groupingBy(FinishedSpan::getTraceId));
@@ -311,7 +302,7 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
           Collection<List<FinishedSpan>> spans = finishedSpans.values();
           List<FinishedSpan> sendAndReceiveSpans =
               spans.stream()
-                  .filter(f -> f.size() == 2)
+                  .filter(f -> f.size() == 2 + 1)
                   .findFirst()
                   .orElseThrow(
                       () ->
