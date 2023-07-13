@@ -42,6 +42,8 @@ public class MicrometerObservationCollectorBuilder {
   /**
    * Set the {@link ObservationRegistry} to use.
    *
+   * <p>Default is {@link ObservationRegistry#NOOP}.
+   *
    * @param registry the registry
    * @return this builder instance
    */
@@ -54,6 +56,8 @@ public class MicrometerObservationCollectorBuilder {
    * Custom convention for <code>basic.publish</code>.
    *
    * <p>If not null, it will override any pre-configured conventions.
+   *
+   * <p>Default is <code>null</code>.
    *
    * @param customPublishObservationConvention the convention
    * @return this builder instance
@@ -72,6 +76,8 @@ public class MicrometerObservationCollectorBuilder {
    * <p>It will be picked if there was neither custom convention nor a pre-configured one via {@link
    * ObservationRegistry}.
    *
+   * <p>Default is {@link DefaultPublishObservationConvention}.
+   *
    * @param defaultPublishObservationConvention the convention
    * @return this builder instance
    * @see io.micrometer.observation.docs.ObservationDocumentation#observation(ObservationConvention,
@@ -87,6 +93,8 @@ public class MicrometerObservationCollectorBuilder {
    * Custom convention for <code>basic.deliver</code>.
    *
    * <p>If not null, it will override any pre-configured conventions.
+   *
+   * <p>Default is <code>null</code>.
    *
    * @param customProcessObservationConvention the convention
    * @return this builder instance
@@ -105,6 +113,8 @@ public class MicrometerObservationCollectorBuilder {
    * <p>It will be picked if there was neither custom convention nor a pre-configured one via {@link
    * ObservationRegistry}.
    *
+   * <p>Default is <code>DefaultProcessObservationConvention("process")</code>.
+   *
    * @param defaultProcessObservationConvention the convention
    * @return this builder instance
    * @see io.micrometer.observation.docs.ObservationDocumentation#observation(ObservationConvention,
@@ -120,6 +130,8 @@ public class MicrometerObservationCollectorBuilder {
    * Custom convention for <code>basic.get</code>.
    *
    * <p>If not null, it will override any pre-configured conventions.
+   *
+   * <p>Default is <code>null</code>.
    *
    * @param customReceiveObservationConvention the convention
    * @return this builder instance
@@ -137,6 +149,8 @@ public class MicrometerObservationCollectorBuilder {
    *
    * <p>It will be picked if there was neither custom convention nor a pre-configured one via {@link
    * ObservationRegistry}.
+   *
+   * <p>Default is <code>DefaultReceiveObservationConvention("receive")</code>.
    *
    * @param defaultReceiveObservationConvention the convention
    * @return this builder instance
@@ -181,6 +195,11 @@ public class MicrometerObservationCollectorBuilder {
     return this;
   }
 
+  /**
+   * Create the Micrometer {@link ObservationCollector}.
+   *
+   * @return the Micrometer observation collector
+   */
   public ObservationCollector build() {
     return new MicrometerObservationCollector(
         this.registry,
