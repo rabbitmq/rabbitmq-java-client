@@ -104,42 +104,53 @@ class MicrometerObservationCollector implements ObservationCollector {
 
   @Override
   public GetResponse basicGet(BasicGetCall call, String queue) {
-    return Observation.createNotStarted("rabbitmq.receive", registry)
-        .highCardinalityKeyValues(
-            KeyValues.of(
-                RabbitMqObservationDocumentation.LowCardinalityTags.MESSAGING_OPERATION.withValue(
-                    "receive"),
-                RabbitMqObservationDocumentation.LowCardinalityTags.MESSAGING_SYSTEM.withValue(
-                    "rabbitmq")))
-        .observe(
-            () -> {
-              GetResponse response = call.get();
-              if (response != null) {
-                Map<String, Object> headers;
-                if (response.getProps() == null || response.getProps().getHeaders() == null) {
-                  headers = Collections.emptyMap();
-                } else {
-                  headers = response.getProps().getHeaders();
-                }
-                DeliverContext context =
-                    new DeliverContext(
-                        response.getEnvelope().getExchange(),
-                        response.getEnvelope().getRoutingKey(),
-                        queue,
-                        headers,
-                        response.getBody() == null ? 0 : response.getBody().length);
-                Observation observation =
-                    RabbitMqObservationDocumentation.RECEIVE_OBSERVATION.observation(
-                        customReceiveConvention, defaultReceiveConvention, () -> context, registry);
-                observation.start();
-                if (this.keepObservationOpenOnBasicGet) {
-                  observation.openScope();
-                } else {
-                  observation.stop();
-                }
-              }
-              return response;
-            });
+    Observation observation =
+        Observation.createNotStarted("rabbitmq.receive", registry)
+            .highCardinalityKeyValues(
+                KeyValues.of(
+                    RabbitMqObservationDocumentation.LowCardinalityTags.MESSAGING_OPERATION
+                        .withValue("receive"),
+                    RabbitMqObservationDocumentation.LowCardinalityTags.MESSAGING_SYSTEM.withValue(
+                        "rabbitmq")))
+            .start();
+    boolean stopped = false;
+    try {
+      GetResponse response = call.get();
+      if (response != null) {
+        observation.stop();
+        stopped = true;
+        Map<String, Object> headers;
+        if (response.getProps() == null || response.getProps().getHeaders() == null) {
+          headers = Collections.emptyMap();
+        } else {
+          headers = response.getProps().getHeaders();
+        }
+        DeliverContext context =
+            new DeliverContext(
+                response.getEnvelope().getExchange(),
+                response.getEnvelope().getRoutingKey(),
+                queue,
+                headers,
+                response.getBody() == null ? 0 : response.getBody().length);
+        Observation receiveObservation =
+            RabbitMqObservationDocumentation.RECEIVE_OBSERVATION.observation(
+                customReceiveConvention, defaultReceiveConvention, () -> context, registry);
+        receiveObservation.start();
+        if (this.keepObservationOpenOnBasicGet) {
+          receiveObservation.openScope();
+        } else {
+          receiveObservation.stop();
+        }
+      }
+      return response;
+    } catch (RuntimeException e) {
+      observation.error(e);
+      throw e;
+    } finally {
+      if (!stopped) {
+        observation.stop();
+      }
+    }
   }
 
   private static class ObservationConsumer implements Consumer {
