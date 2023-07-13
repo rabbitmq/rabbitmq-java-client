@@ -56,13 +56,13 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
   }
 
   private static ConnectionFactory createConnectionFactory(
-      boolean keepObservationOpenOnBasicGet, ObservationRegistry observationRegistry) {
+      boolean keepObservationStartedOnBasicGet, ObservationRegistry observationRegistry) {
     ConnectionFactory connectionFactory = TestUtils.connectionFactory();
     connectionFactory.setAutomaticRecoveryEnabled(true);
     if (observationRegistry != null) {
       ObservationCollector collector =
           new MicrometerObservationCollectorBuilder()
-              .keepObservationOpenOnBasicGet(keepObservationOpenOnBasicGet)
+              .keepObservationStartedOnBasicGet(keepObservationStartedOnBasicGet)
               .registry(observationRegistry)
               .build();
       connectionFactory.setObservationCollector(collector);
