@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -19,6 +19,7 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
+import com.rabbitmq.client.observation.ObservationCollector;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,20 +33,25 @@ public class RecoveryAwareAMQConnectionFactory {
     private final FrameHandlerFactory factory;
     private final AddressResolver addressResolver;
     private final MetricsCollector metricsCollector;
+    private final ObservationCollector observationCollector;
 
     public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, List<Address> addrs) {
-        this(params, factory, new ListAddressResolver(addrs), new NoOpMetricsCollector());
+        this(params, factory, new ListAddressResolver(addrs), new NoOpMetricsCollector(),
+             ObservationCollector.NO_OP);
     }
 
     public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, AddressResolver addressResolver) {
-        this(params, factory, addressResolver, new NoOpMetricsCollector());
+        this(params, factory, addressResolver, new NoOpMetricsCollector(),
+             ObservationCollector.NO_OP);
     }
 
-    public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, AddressResolver addressResolver, MetricsCollector metricsCollector) {
+    public RecoveryAwareAMQConnectionFactory(ConnectionParams params, FrameHandlerFactory factory, AddressResolver addressResolver,
+                                             MetricsCollector metricsCollector, ObservationCollector observationCollector) {
         this.params = params;
         this.factory = factory;
         this.addressResolver = addressResolver;
         this.metricsCollector = metricsCollector;
+        this.observationCollector = observationCollector;
     }
 
     /**
@@ -83,7 +89,8 @@ public class RecoveryAwareAMQConnectionFactory {
     }
 
     protected RecoveryAwareAMQConnection createConnection(ConnectionParams params, FrameHandler handler, MetricsCollector metricsCollector) {
-        return new RecoveryAwareAMQConnection(params, handler, metricsCollector);
+        return new RecoveryAwareAMQConnection(params, handler, metricsCollector,
+                                              this.observationCollector);
     }
 
     private String connectionName() {

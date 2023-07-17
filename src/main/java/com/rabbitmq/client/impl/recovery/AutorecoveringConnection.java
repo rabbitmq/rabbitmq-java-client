@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -20,6 +20,7 @@ import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
+import com.rabbitmq.client.observation.ObservationCollector;
 import com.rabbitmq.utility.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,11 +104,15 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, AddressResolver addressResolver) {
-        this(params, f, addressResolver, new NoOpMetricsCollector());
+        this(params, f, addressResolver, new NoOpMetricsCollector(), ObservationCollector.NO_OP);
     }
 
-    public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, AddressResolver addressResolver, MetricsCollector metricsCollector) {
-        this.cf = new RecoveryAwareAMQConnectionFactory(params, f, addressResolver, metricsCollector);
+    public AutorecoveringConnection(ConnectionParams params, FrameHandlerFactory f, AddressResolver addressResolver,
+                                    MetricsCollector metricsCollector, ObservationCollector observationCollector) {
+        this.cf = new RecoveryAwareAMQConnectionFactory(
+            params, f, addressResolver,
+            metricsCollector, observationCollector
+        );
         this.params = params;
 
         this.connectionRecoveryTriggeringCondition = params.getConnectionRecoveryTriggeringCondition() == null ?

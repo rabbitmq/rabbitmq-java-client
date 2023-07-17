@@ -54,15 +54,19 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
+    <spotless.check.skip>true</spotless.check.skip>
     <slf4j.version>1.7.36</slf4j.version>
     <metrics.version>4.2.19</metrics.version>
     <micrometer.version>1.11.2</micrometer.version>
+    <micrometer-tracing.version>1.1.4</micrometer-tracing.version>
     <opentelemetry.version>1.28.0</opentelemetry.version>
     <jackson.version>2.15.2</jackson.version>
     <logback.version>1.2.12</logback.version>
     <junit.jupiter.version>5.9.3</junit.jupiter.version>
     <mockito.version>5.4.0</mockito.version>
     <assertj.version>3.24.2</assertj.version>
+    <micrometer-tracing-test.version>1.1.2</micrometer-tracing-test.version>
+    <micrometer-docs-generator.version>1.0.2</micrometer-docs-generator.version>
     <jetty.version>9.4.51.v20230217</jetty.version>
     <bouncycastle.version>1.70</bouncycastle.version>
     <netcrusher.version>0.10</netcrusher.version>
@@ -87,7 +91,8 @@
     <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
     <checksum.maven.plugin.version>1.11</checksum.maven.plugin.version>
     <jshell-maven-plugin.version>1.3</jshell-maven-plugin.version>
-
+    <spotless.version>2.35.0</spotless.version>
+    <google-java-format.version>1.17.0</google-java-format.version>
     <!--
     These groovy scripts are used later in this POM file to generate
     source files and resources for the library itself and for the
@@ -791,9 +796,20 @@
       <version>${gson.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-tracing-integration-test</artifactId>
+      <version>${micrometer-tracing-test.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-docs-generator</artifactId>
+      <version>${micrometer-docs-generator.version}</version>
+      <scope>test</scope>
+    </dependency>
 
   </dependencies>
-
 
   <dependencyManagement>
     <dependencies>
@@ -1088,6 +1104,42 @@
         <version>${jshell-maven-plugin.version}</version>
         <configuration>
           <testClasspath>true</testClasspath>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless.version}</version>
+        <configuration>
+          <java>
+            <includes>
+              <include>src/main/java/com/rabbitmq/client/observation/**/*.java</include>
+              <include>src/test/java/com/rabbitmq/client/test/functional/MicrometerObservationCollectorMetrics.java</include>
+            </includes>
+            <googleJavaFormat>
+              <version>${google-java-format.version}</version>
+              <style>GOOGLE</style>
+            </googleJavaFormat>
+          </java>
+          <!--          <ratchetFrom>origin/main</ratchetFrom>-->
+          <licenseHeader> <!-- specify either content or file, but not both -->
+            <content>// Copyright (c) $YEAR VMware, Inc. or its affiliates.  All rights reserved.
+              //
+              // This software, the RabbitMQ Java client library, is triple-licensed under the
+              // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
+              // ("GPL") and the Apache License version 2 ("ASL"). For the MPL, please see
+              // LICENSE-MPL-RabbitMQ. For the GPL, please see LICENSE-GPL2.  For the ASL,
+              // please see LICENSE-APACHE2.
+              //
+              // This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
+              // either express or implied. See the LICENSE file for specific language governing
+              // rights and limitations of this software.
+              //
+              // If you have any questions regarding licensing, please contact us at
+              // info@rabbitmq.com.
+            </content>
+          </licenseHeader>
         </configuration>
       </plugin>
 

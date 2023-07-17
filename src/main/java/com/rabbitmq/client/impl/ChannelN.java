@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -22,6 +22,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.impl.AMQImpl.Channel;
 import com.rabbitmq.client.impl.AMQImpl.Queue;
 import com.rabbitmq.client.impl.AMQImpl.*;
+import com.rabbitmq.client.observation.ObservationCollector;
 import com.rabbitmq.utility.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,6 +90,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     private volatile boolean onlyAcksReceived = true;
 
     protected final MetricsCollector metricsCollector;
+    private final ObservationCollector observationCollector;
 
     /**
      * Construct a new channel on the given connection with the given
@@ -101,7 +103,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      */
     public ChannelN(AMQConnection connection, int channelNumber,
                     ConsumerWorkService workService) {
-        this(connection, channelNumber, workService, new NoOpMetricsCollector());
+        this(connection, channelNumber, workService,
+             new NoOpMetricsCollector(), ObservationCollector.NO_OP);
     }
 
     /**
@@ -115,10 +118,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param metricsCollector service for managing metrics
      */
     public ChannelN(AMQConnection connection, int channelNumber,
-        ConsumerWorkService workService, MetricsCollector metricsCollector) {
+                    ConsumerWorkService workService,
+                    MetricsCollector metricsCollector, ObservationCollector observationCollector) {
         super(connection, channelNumber);
         this.dispatcher = new ConsumerDispatcher(connection, this, workService);
         this.metricsCollector = metricsCollector;
+        this.observationCollector = observationCollector;
     }
 
     /**
@@ -700,15 +705,18 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         if (props == null) {
             props = MessageProperties.MINIMAL_BASIC;
         }
-        AMQCommand command = new AMQCommand(
-            new Basic.Publish.Builder()
+        AMQP.Basic.Publish publish = new Basic.Publish.Builder()
                 .exchange(exchange)
                 .routingKey(routingKey)
                 .mandatory(mandatory)
                 .immediate(immediate)
-                .build(), props, body);
+                .build();
         try {
-            transmit(command);
+            ObservationCollector.PublishCall publishCall = properties -> {
+                AMQCommand command = new AMQCommand(publish, properties, body);
+                transmit(command);
+            };
+            observationCollector.publish(publishCall, publish, props, body, this.connectionInfo());
         } catch (IOException | AlreadyClosedException e) {
             metricsCollector.basicPublishFailure(this, e);
             throw e;
@@ -1156,26 +1164,28 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                   .queue(queue)
                                                   .noAck(autoAck)
                                                  .build());
-        Method method = replyCommand.getMethod();
+        return this.observationCollector.basicGet(() -> {
+            Method method = replyCommand.getMethod();
 
-        if (method instanceof Basic.GetOk) {
-            Basic.GetOk getOk = (Basic.GetOk)method;
-            Envelope envelope = new Envelope(getOk.getDeliveryTag(),
-                                             getOk.getRedelivered(),
-                                             getOk.getExchange(),
-                                             getOk.getRoutingKey());
-            BasicProperties props = (BasicProperties)replyCommand.getContentHeader();
-            byte[] body = replyCommand.getContentBody();
-            int messageCount = getOk.getMessageCount();
+            if (method instanceof Basic.GetOk) {
+                Basic.GetOk getOk = (Basic.GetOk)method;
+                Envelope envelope = new Envelope(getOk.getDeliveryTag(),
+                    getOk.getRedelivered(),
+                    getOk.getExchange(),
+                    getOk.getRoutingKey());
+                BasicProperties props = (BasicProperties)replyCommand.getContentHeader();
+                byte[] body = replyCommand.getContentBody();
+                int messageCount = getOk.getMessageCount();
 
-            metricsCollector.consumedMessage(this, getOk.getDeliveryTag(), autoAck);
+                metricsCollector.consumedMessage(this, getOk.getDeliveryTag(), autoAck);
 
-            return new GetResponse(envelope, props, body, messageCount);
-        } else if (method instanceof Basic.GetEmpty) {
-            return null;
-        } else {
-            throw new UnexpectedMethodError(method);
-        }
+                return new GetResponse(envelope, props, body, messageCount);
+            } else if (method instanceof Basic.GetEmpty) {
+                return null;
+            } else {
+                throw new UnexpectedMethodError(method);
+            }
+        }, queue);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1358,12 +1368,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             @Override
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
-                _consumers.put(actualConsumerTag, callback);
+                Consumer wrappedCallback = observationCollector.basicConsume(queue, consumerTag, callback);
+                _consumers.put(actualConsumerTag, wrappedCallback);
 
                 // need to register consumer in stats before it actually starts consuming
                 metricsCollector.basicConsume(ChannelN.this, actualConsumerTag, autoAck);
 
-                dispatcher.handleConsumeOk(callback, actualConsumerTag);
+                dispatcher.handleConsumeOk(wrappedCallback, actualConsumerTag);
                 return actualConsumerTag;
             }
         };

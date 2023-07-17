@@ -19,6 +19,7 @@ import com.rabbitmq.client.Method;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQChannel.BlockingRpcContinuation;
 import com.rabbitmq.client.impl.recovery.RecoveryCanBeginListener;
+import com.rabbitmq.client.observation.ObservationCollector;
 import com.rabbitmq.utility.BlockingCell;
 import com.rabbitmq.utility.Utility;
 import org.slf4j.Logger;
@@ -68,6 +69,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final int workPoolTimeout;
 
     private final AtomicBoolean finalShutdownStarted = new AtomicBoolean(false);
+    private volatile ObservationCollector.ConnectionInfo connectionInfo;
 
     /**
      * Retrieve a copy of the default table of client properties that
@@ -140,6 +142,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final CredentialsProvider credentialsProvider;
     private final Collection<BlockedListener> blockedListeners = new CopyOnWriteArrayList<>();
     protected final MetricsCollector metricsCollector;
+    protected final ObservationCollector observationCollector;
     private final int channelRpcTimeout;
     private final boolean channelShouldCheckRpcResponseType;
     private final TrafficListener trafficListener;
@@ -210,13 +213,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     public AMQConnection(ConnectionParams params, FrameHandler frameHandler) {
-        this(params, frameHandler, new NoOpMetricsCollector());
+        this(params, frameHandler, new NoOpMetricsCollector(), ObservationCollector.NO_OP);
     }
 
     /** Construct a new connection
      * @param params parameters for it
      */
-    public AMQConnection(ConnectionParams params, FrameHandler frameHandler, MetricsCollector metricsCollector)
+    public AMQConnection(ConnectionParams params, FrameHandler frameHandler,
+                         MetricsCollector metricsCollector, ObservationCollector observationCollector)
     {
         checkPreconditions();
         this.credentialsProvider = params.getCredentialsProvider();
@@ -255,6 +259,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this._inConnectionNegotiation = true; // we start out waiting for the first protocol response
 
         this.metricsCollector = metricsCollector;
+        this.observationCollector = observationCollector;
 
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
             (connection, exception) -> { throw exception; }; // we just propagate the exception for non-recoverable connections
@@ -425,6 +430,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
             setHeartbeat(negotiatedHeartbeat);
 
+            this.connectionInfo = new DefaultConnectionInfo(
+                this._frameHandler.getAddress().getHostAddress(),
+                this._frameHandler.getPort()
+            );
+
             _channel0.transmit(new AMQP.Connection.TuneOk.Builder()
                                 .channelMax(negotiatedChannelMax)
                                 .frameMax(frameMax)
@@ -475,7 +485,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {
-        ChannelManager result = new ChannelManager(this._workService, channelMax, threadFactory, this.metricsCollector);
+        ChannelManager result = new ChannelManager(
+            this._workService, channelMax, threadFactory,
+            this.metricsCollector, this.observationCollector);
         configureChannelManager(result);
         return result;
     }
@@ -1197,5 +1209,31 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     int getMaxInboundMessageBodySize() {
         return maxInboundMessageBodySize;
+    }
+
+    private static class DefaultConnectionInfo implements ObservationCollector.ConnectionInfo {
+
+        private final String peerAddress;
+        private final int peerPort;
+
+        private DefaultConnectionInfo(String peerAddress, int peerPort) {
+            this.peerAddress = peerAddress;
+            this.peerPort = peerPort;
+        }
+
+        @Override
+        public String   getPeerAddress() {
+            return peerAddress;
+        }
+
+        @Override
+        public int getPeerPort() {
+            return this.peerPort;
+        }
+
+    }
+
+    ObservationCollector.ConnectionInfo connectionInfo() {
+        return this.connectionInfo;
     }
 }

@@ -17,6 +17,7 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.observation.ObservationCollector;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.client.test.TestUtils.BrokerVersion;
 import com.rabbitmq.client.test.TestUtils.BrokerVersionAtLeast;
@@ -64,7 +65,7 @@ public class AMQConnectionRefreshCredentialsTest {
         ConnectionFactory cf = new ConnectionFactory() {
             @Override
             protected AMQConnection createConnection(ConnectionParams params, FrameHandler frameHandler, MetricsCollector metricsCollector) {
-                return new AMQConnection(params, frameHandler, metricsCollector) {
+                return new AMQConnection(params, frameHandler, metricsCollector, ObservationCollector.NO_OP) {
 
                     @Override
                     AMQChannel createChannel0() {

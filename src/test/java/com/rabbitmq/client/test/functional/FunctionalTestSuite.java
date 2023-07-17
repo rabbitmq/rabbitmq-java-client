@@ -76,6 +76,7 @@ import org.junit.platform.suite.api.Suite;
 	Nack.class,
 	ExceptionMessages.class,
 	Metrics.class,
+	MicrometerObservationCollectorMetrics.class,
 	TopologyRecoveryFiltering.class,
 	TopologyRecoveryRetry.class
 })

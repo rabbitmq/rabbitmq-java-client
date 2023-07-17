@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2020 VMware, Inc. or its affiliates.  All rights reserved.
+// Copyright (c) 2007-2023 VMware, Inc. or its affiliates.  All rights reserved.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -19,6 +19,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MetricsCollector;
 import com.rabbitmq.client.NoOpMetricsCollector;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.observation.ObservationCollector;
 import com.rabbitmq.utility.IntAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,7 @@ public class ChannelManager {
     private int channelShutdownTimeout = (int) ((ConnectionFactory.DEFAULT_HEARTBEAT * AMQConnection.CHANNEL_SHUTDOWN_TIMEOUT_MULTIPLIER) * 1000);
 
     protected final MetricsCollector metricsCollector;
+    protected final ObservationCollector observationCollector;
 
     public int getChannelMax(){
       return _channelMax;
@@ -65,11 +67,13 @@ public class ChannelManager {
     }
 
     public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory) {
-        this(workService, channelMax, threadFactory, new NoOpMetricsCollector());
+        this(workService, channelMax, threadFactory,
+             new NoOpMetricsCollector(), ObservationCollector.NO_OP);
     }
 
 
-    public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory, MetricsCollector metricsCollector) {
+    public ChannelManager(ConsumerWorkService workService, int channelMax, ThreadFactory threadFactory,
+                          MetricsCollector metricsCollector, ObservationCollector observationCollector) {
         if (channelMax < 0)
             throw new IllegalArgumentException("create ChannelManager: 'channelMax' must be greater or equal to 0.");
         if (channelMax == 0) {
@@ -83,6 +87,7 @@ public class ChannelManager {
         this.workService = workService;
         this.threadFactory = threadFactory;
         this.metricsCollector = metricsCollector;
+        this.observationCollector = observationCollector;
     }
 
     /**
@@ -214,7 +219,8 @@ public class ChannelManager {
     }
 
     protected ChannelN instantiateChannel(AMQConnection connection, int channelNumber, ConsumerWorkService workService) {
-        return new ChannelN(connection, channelNumber, workService, this.metricsCollector);
+        return new ChannelN(connection, channelNumber, workService,
+                            this.metricsCollector, this.observationCollector);
     }
 
     /**
