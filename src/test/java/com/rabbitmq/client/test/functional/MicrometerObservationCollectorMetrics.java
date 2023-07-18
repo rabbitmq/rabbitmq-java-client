@@ -166,7 +166,9 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
               .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
               .hasTag("messaging.destination.name", "amq.default")
               .hasTag("messaging.source.name", "metrics.queue")
-              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length));
+              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length))
+              .hasTag("net.protocol.name", "amqp")
+              .hasTag("net.protocol.version", "0.9.1");
           waitAtMost(
               () ->
                   getMeterRegistry().find("rabbitmq.publish").timer() != null
@@ -239,7 +241,9 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
               .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
               .hasTag("messaging.destination.name", "amq.default")
               .hasTag("messaging.source.name", "metrics.queue")
-              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length));
+              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length))
+              .hasTag("net.protocol.name", "amqp")
+              .hasTag("net.protocol.version", "0.9.1");
           List<FinishedSpan> pollingSpans =
               spans.stream()
                   .filter(f -> f.size() == 1)
@@ -323,7 +327,9 @@ public class MicrometerObservationCollectorMetrics extends BrokerTestCase {
               .hasTag("messaging.rabbitmq.destination.routing_key", "metrics.queue")
               .hasTag("messaging.destination.name", "amq.default")
               .hasTag("messaging.source.name", "metrics.queue")
-              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length));
+              .hasTag("messaging.message.payload_size_bytes", String.valueOf(PAYLOAD.length))
+              .hasTag("net.protocol.name", "amqp")
+              .hasTag("net.protocol.version", "0.9.1");
           List<FinishedSpan> pollingSpans =
               spans.stream()
                   .filter(f -> f.size() == 1)

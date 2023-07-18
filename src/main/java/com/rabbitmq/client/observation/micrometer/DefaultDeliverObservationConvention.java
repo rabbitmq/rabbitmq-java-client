@@ -50,7 +50,9 @@ abstract class DefaultDeliverObservationConvention implements DeliverObservation
   public KeyValues getLowCardinalityKeyValues(DeliverContext context) {
     return KeyValues.of(
         LowCardinalityTags.MESSAGING_OPERATION.withValue(this.operation),
-        LowCardinalityTags.MESSAGING_SYSTEM.withValue("rabbitmq"));
+        LowCardinalityTags.MESSAGING_SYSTEM.withValue("rabbitmq"),
+        LowCardinalityTags.NET_PROTOCOL_NAME.withValue("amqp"),
+        LowCardinalityTags.NET_PROTOCOL_VERSION.withValue("0.9.1"));
   }
 
   @Override
