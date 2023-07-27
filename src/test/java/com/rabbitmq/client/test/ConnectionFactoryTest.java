@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeoutException;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -31,6 +32,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 public class ConnectionFactoryTest {
@@ -193,6 +195,13 @@ public class ConnectionFactoryTest {
                     assertThat(config.getCall.get()).isEqualTo(config.expected);
                 });
 
+    }
+
+    @Test
+    void newConnectionWithEmptyAddressListShouldThrowException() {
+        ConnectionFactory cf = new ConnectionFactory();
+        assertThatThrownBy(() -> cf.newConnection(Collections.emptyList()));
+        assertThatThrownBy(() -> cf.newConnection(new Address[] {}));
     }
 
 }

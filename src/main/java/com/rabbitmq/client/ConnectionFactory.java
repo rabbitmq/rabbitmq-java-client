@@ -1370,7 +1370,9 @@ public class ConnectionFactory implements Cloneable {
     }
 
     protected AddressResolver createAddressResolver(List<Address> addresses) {
-        if (addresses.size() > 1) {
+        if (addresses == null || addresses.isEmpty()) {
+            throw new IllegalArgumentException("Please provide at least one address to connect to");
+        } else if (addresses.size() > 1) {
             return new ListAddressResolver(addresses);
         } else {
             return new DnsRecordIpAddressResolver(addresses.get(0), isSSL());
