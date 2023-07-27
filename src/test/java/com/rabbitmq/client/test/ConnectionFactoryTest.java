@@ -25,10 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -304,6 +301,13 @@ public class ConnectionFactoryTest {
         assertThat(connectionFactory.getUsername()).isEqualTo("admin");
         assertThat(connectionFactory.getPassword()).isEqualTo("admin");
         assertThat(connectionFactory.isSSL()).isEqualTo(true);
+    }
+
+    @Test
+    void newConnectionWithEmptyAddressListShouldThrowException() {
+        ConnectionFactory cf = new ConnectionFactory();
+        assertThatThrownBy(() -> cf.newConnection(Collections.emptyList()));
+        assertThatThrownBy(() -> cf.newConnection(new Address[] {}));
     }
 
 }
