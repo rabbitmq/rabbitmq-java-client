@@ -58,6 +58,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     private final ScheduledExecutorService heartbeatExecutor;
     private final ExecutorService shutdownExecutor;
     private Thread mainLoopThread;
+    private final AtomicBoolean ioLoopThreadSet = new AtomicBoolean(false);
+    private volatile Thread ioLoopThread;
     private ThreadFactory threadFactory = Executors.defaultThreadFactory();
     private String id;
 
@@ -504,6 +506,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         MainLoop loop = new MainLoop();
         final String name = "AMQP Connection " + getHostAddress() + ":" + getPort();
         mainLoopThread = Environment.newThread(threadFactory, loop, name);
+        ioLoopThread(mainLoopThread);
         mainLoopThread.start();
     }
 
@@ -1104,7 +1107,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                       boolean abort)
         throws IOException
     {
-        boolean sync = !(Thread.currentThread() == mainLoopThread);
+        boolean sync = !(Thread.currentThread() == ioLoopThread);
 
         try {
             AMQP.Connection.Close reason =
@@ -1193,6 +1196,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     @Override
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void ioLoopThread(Thread thread) {
+        if (this.ioLoopThreadSet.compareAndSet(false, true)) {
+            this.ioLoopThread = thread;
+        }
     }
 
     public int getChannelRpcTimeout() {

@@ -73,7 +73,8 @@ import org.junit.platform.suite.api.Suite;
     OAuth2ClientCredentialsGrantCredentialsProviderTest.class,
     RefreshCredentialsTest.class,
     AMQConnectionRefreshCredentialsTest.class,
-    ValueWriterTest.class
+    ValueWriterTest.class,
+    BlockedConnectionTest.class
 })
 public class ClientTestSuite {
 

@@ -157,6 +157,7 @@ public class NioLoop implements Runnable {
 
                                     if (frame != null) {
                                         try {
+                                            state.getConnection().ioLoopThread(Thread.currentThread());
                                             boolean noProblem = state.getConnection().handleReadFrame(frame);
                                             if (noProblem && (!state.getConnection().isRunning() || state.getConnection().hasBrokerInitiatedShutdown())) {
                                                 // looks like the frame was Close-Ok or Close
