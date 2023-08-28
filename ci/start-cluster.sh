@@ -23,6 +23,7 @@ mkdir -p rabbitmq-configuration/tls
 
 cp -R "${PWD}"/tls-gen/basic/* rabbitmq-configuration/tls
 chmod -R o+r rabbitmq-configuration/tls/*
+chmod -R g+r rabbitmq-configuration/tls/*
 ./mvnw -q clean resources:testResources -Dtest-tls-certs.dir=/etc/rabbitmq/tls
 cp target/test-classes/rabbit@localhost.config rabbitmq-configuration/rabbit@localhost.config
 cp target/test-classes/hare@localhost.config rabbitmq-configuration/hare@localhost.config
