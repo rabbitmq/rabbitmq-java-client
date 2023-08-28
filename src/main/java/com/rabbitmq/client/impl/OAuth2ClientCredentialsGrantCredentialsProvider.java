@@ -18,13 +18,11 @@ package com.rabbitmq.client.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.TrustEverythingTrustManager;
 
+import java.net.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import javax.net.ssl.*;
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -230,7 +228,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
             }
             byte[] postData = urlParameters.toString().getBytes(StandardCharsets.UTF_8);
             int postDataLength = postData.length;
-            URL url = new URL(tokenEndpointUri);
+            URL url = new URI(tokenEndpointUri).toURL();
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -256,7 +254,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
             checkContentType(conn.getHeaderField("content-type"));
 
             return parseToken(extractResponseBody(conn.getInputStream()));
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException e) {
             throw new OAuthTokenManagementException("Error while retrieving OAuth 2 token", e);
         }
     }
