@@ -67,7 +67,7 @@
     <assertj.version>3.24.2</assertj.version>
     <micrometer-tracing-test.version>1.1.4</micrometer-tracing-test.version>
     <micrometer-docs-generator.version>1.0.2</micrometer-docs-generator.version>
-    <jetty.version>9.4.51.v20230217</jetty.version>
+    <jetty.version>9.4.52.v20230823</jetty.version>
     <bouncycastle.version>1.70</bouncycastle.version>
     <netcrusher.version>0.10</netcrusher.version>
     <gson.version>2.10.1</gson.version>
