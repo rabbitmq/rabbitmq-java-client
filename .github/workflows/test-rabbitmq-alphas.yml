@@ -19,9 +19,9 @@ jobs:
         rabbitmq-image: [ 'pivotalrabbitmq/rabbitmq:v3.12.x-otp-max-bazel', 'pivotalrabbitmq/rabbitmq:main-otp-max-bazel' ]
     name:  Test against ${{ matrix.rabbitmq-image }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Checkout tls-gen
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: rabbitmq/tls-gen
           path: './tls-gen'
