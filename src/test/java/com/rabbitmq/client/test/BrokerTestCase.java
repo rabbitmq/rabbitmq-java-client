@@ -68,7 +68,9 @@ public class BrokerTestCase {
         Assumptions.assumeTrue(shouldRun());
         this.testInfo = testInfo;
         openConnection();
-        this.brokerVersion = currentVersion(this.connection.getServerProperties().get("version").toString());
+        if (this.connection != null) {
+            this.brokerVersion = currentVersion(this.connection.getServerProperties().get("version").toString());
+        }
         openChannel();
 
         createResources();
