@@ -28,10 +28,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
+import static com.rabbitmq.client.test.TestUtils.currentVersion;
+import static com.rabbitmq.client.test.TestUtils.versionCompare;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BrokerTestCase {
 
+    private String brokerVersion;
     private boolean ha = false;
 
     protected volatile TestInfo testInfo;
@@ -65,6 +68,7 @@ public class BrokerTestCase {
         Assumptions.assumeTrue(shouldRun());
         this.testInfo = testInfo;
         openConnection();
+        this.brokerVersion = currentVersion(this.connection.getServerProperties().get("version").toString());
         openChannel();
 
         createResources();
@@ -341,6 +345,10 @@ public class BrokerTestCase {
 
     protected boolean ha() {
         return this.ha;
+    }
+
+    protected boolean beforeMessageContainers() {
+       return versionCompare(this.brokerVersion, "3.13.0") < 0;
     }
 
 }

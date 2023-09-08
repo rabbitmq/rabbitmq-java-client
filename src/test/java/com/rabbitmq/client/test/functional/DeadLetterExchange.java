@@ -394,7 +394,9 @@ public class DeadLetterExchange extends BrokerTestCase {
         consumeN(DLQ2, MSG_COUNT, getResponse -> {
             Map<String, Object> headers1 = getResponse.getProps().getHeaders();
             assertNotNull(headers1);
-            assertNull(headers1.get("CC"));
+            if (beforeMessageContainers()) {
+                assertNull(headers1.get("CC"));
+            }
             assertNull(headers1.get("BCC"));
 
             ArrayList<Object> death = (ArrayList<Object>) headers1.get("x-death");
