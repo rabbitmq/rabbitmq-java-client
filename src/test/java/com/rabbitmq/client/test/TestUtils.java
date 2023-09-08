@@ -141,7 +141,7 @@ public class TestUtils {
         }
     }
 
-    private static String currentVersion(String currentVersion) {
+    static String currentVersion(String currentVersion) {
         // versions built from source: 3.7.0+rc.1.4.gedc5d96
         if (currentVersion.contains("+")) {
             currentVersion = currentVersion.substring(0, currentVersion.indexOf("+"));
