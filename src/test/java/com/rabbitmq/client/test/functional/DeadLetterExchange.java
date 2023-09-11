@@ -410,95 +410,97 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     @SuppressWarnings("unchecked")
     @Test public void republish() throws Exception {
-        Map<String, Object> args = new HashMap<>();
-        args.put("x-message-ttl", 100);
-        declareQueue(TEST_QUEUE_NAME, DLX, null, args);
-        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
-        channel.queueBind(DLQ, DLX, "test");
-        publishN(1);
+        if (TestUtils.atMost312(connection)) {
+            Map<String, Object> args = new HashMap<>();
+            args.put("x-message-ttl", 100);
+            declareQueue(TEST_QUEUE_NAME, DLX, null, args);
+            channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+            channel.queueBind(DLQ, DLX, "test");
+            publishN(1);
 
-        AtomicReference<GetResponse> responseRefeference = new AtomicReference<>();
-        waitAtMost(
-            ofSeconds(1),
-            () -> {
-                GetResponse response = channel.basicGet(DLQ, true);
-                responseRefeference.set(response);
-                return responseRefeference.get() != null;
-        });
-        GetResponse getResponse = responseRefeference.get();
-        assertNotNull(getResponse, "Message not dead-lettered");
-        assertEquals("test message", new String(getResponse.getBody()));
-        BasicProperties props = getResponse.getProps();
-        Map<String, Object> headers = props.getHeaders();
-        assertNotNull(headers);
-        ArrayList<Object> death = (ArrayList<Object>) headers.get("x-death");
-        assertNotNull(death);
-        assertEquals(1, death.size());
-        assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired", "amq.direct",
+            AtomicReference<GetResponse> responseRefeference = new AtomicReference<>();
+            waitAtMost(
+                ofSeconds(1),
+                () -> {
+                    GetResponse response = channel.basicGet(DLQ, true);
+                    responseRefeference.set(response);
+                    return responseRefeference.get() != null;
+                });
+            GetResponse getResponse = responseRefeference.get();
+            assertNotNull(getResponse, "Message not dead-lettered");
+            assertEquals("test message", new String(getResponse.getBody()));
+            BasicProperties props = getResponse.getProps();
+            Map<String, Object> headers = props.getHeaders();
+            assertNotNull(headers);
+            ArrayList<Object> death = (ArrayList<Object>) headers.get("x-death");
+            assertNotNull(death);
+            assertEquals(1, death.size());
+            assertDeathReason(death, 0, TEST_QUEUE_NAME, "expired", "amq.direct",
                 Collections.singletonList("test"));
 
-        // Make queue zero length
-        args = new HashMap<>();
-        args.put("x-max-length", 0);
-        channel.queueDelete(TEST_QUEUE_NAME);
-        declareQueue(TEST_QUEUE_NAME, DLX, null, args);
-        channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
+            // Make queue zero length
+            args = new HashMap<>();
+            args.put("x-max-length", 0);
+            channel.queueDelete(TEST_QUEUE_NAME);
+            declareQueue(TEST_QUEUE_NAME, DLX, null, args);
+            channel.queueBind(TEST_QUEUE_NAME, "amq.direct", "test");
 
-        sleep(100);
-        //Queueing second time with same props
-        channel.basicPublish("amq.direct", "test",
-            new AMQP.BasicProperties.Builder()
-               .headers(headers)
-               .build(), "test message".getBytes());
+            sleep(100);
+            //Queueing second time with same props
+            channel.basicPublish("amq.direct", "test",
+                new AMQP.BasicProperties.Builder()
+                    .headers(headers)
+                    .build(), "test message".getBytes());
 
-        responseRefeference.set(null);
-        waitAtMost(
-            ofSeconds(1),
-            () -> {
-                GetResponse response = channel.basicGet(DLQ, true);
-                responseRefeference.set(response);
-                return responseRefeference.get() != null;
-            });
-        getResponse = responseRefeference.get();
-        assertNotNull(getResponse, "Message not dead-lettered");
-        assertEquals("test message", new String(getResponse.getBody()));
-        headers = getResponse.getProps().getHeaders();
-        assertNotNull(headers);
-        death = (ArrayList<Object>) headers.get("x-death");
-        assertNotNull(death);
-        assertEquals(2, death.size());
-        assertDeathReason(death, 0, TEST_QUEUE_NAME, "maxlen", "amq.direct",
+            responseRefeference.set(null);
+            waitAtMost(
+                ofSeconds(1),
+                () -> {
+                    GetResponse response = channel.basicGet(DLQ, true);
+                    responseRefeference.set(response);
+                    return responseRefeference.get() != null;
+                });
+            getResponse = responseRefeference.get();
+            assertNotNull(getResponse, "Message not dead-lettered");
+            assertEquals("test message", new String(getResponse.getBody()));
+            headers = getResponse.getProps().getHeaders();
+            assertNotNull(headers);
+            death = (ArrayList<Object>) headers.get("x-death");
+            assertNotNull(death);
+            assertEquals(2, death.size());
+            assertDeathReason(death, 0, TEST_QUEUE_NAME, "maxlen", "amq.direct",
                 Collections.singletonList("test"));
-        assertDeathReason(death, 1, TEST_QUEUE_NAME, "expired", "amq.direct",
-                Collections.singletonList("test"));
-
-        //Set invalid headers
-        headers.put("x-death", "[I, am, not, array]");
-        channel.basicPublish("amq.direct", "test",
-            new AMQP.BasicProperties.Builder()
-               .headers(headers)
-               .build(), "test message".getBytes());
-
-        responseRefeference.set(null);
-        waitAtMost(
-            ofSeconds(1),
-            () -> {
-                GetResponse response = channel.basicGet(DLQ, true);
-                responseRefeference.set(response);
-                return responseRefeference.get() != null;
-            });
-        getResponse = responseRefeference.get();
-
-        assertNotNull(getResponse, "Message not dead-lettered");
-        assertEquals("test message", new String(getResponse.getBody()));
-        headers = getResponse.getProps().getHeaders();
-        assertNotNull(headers);
-        death = (ArrayList<Object>) headers.get("x-death");
-        assertNotNull(death);
-        assertEquals(1, death.size());
-        assertDeathReason(death, 0, TEST_QUEUE_NAME, "maxlen", "amq.direct",
+            assertDeathReason(death, 1, TEST_QUEUE_NAME, "expired", "amq.direct",
                 Collections.singletonList("test"));
 
+            //Set invalid headers
+            headers.put("x-death", "[I, am, not, array]");
+            channel.basicPublish("amq.direct", "test",
+                new AMQP.BasicProperties.Builder()
+                    .headers(headers)
+                    .build(), "test message".getBytes());
+
+            responseRefeference.set(null);
+            waitAtMost(
+                ofSeconds(1),
+                () -> {
+                    GetResponse response = channel.basicGet(DLQ, true);
+                    responseRefeference.set(response);
+                    return responseRefeference.get() != null;
+                });
+            getResponse = responseRefeference.get();
+
+            assertNotNull(getResponse, "Message not dead-lettered");
+            assertEquals("test message", new String(getResponse.getBody()));
+            headers = getResponse.getProps().getHeaders();
+            assertNotNull(headers);
+            death = (ArrayList<Object>) headers.get("x-death");
+            assertNotNull(death);
+            assertEquals(1, death.size());
+            assertDeathReason(death, 0, TEST_QUEUE_NAME, "maxlen", "amq.direct",
+                Collections.singletonList("test"));
+
+        }
     }
 
     private void rejectionTest(final boolean useNack) throws Exception {
