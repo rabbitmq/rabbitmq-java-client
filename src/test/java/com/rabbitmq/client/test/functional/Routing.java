@@ -21,9 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.client.test.TestUtils.BrokerVersion;
 import com.rabbitmq.client.test.TestUtils.BrokerVersionAtLeast;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +49,7 @@ public class Routing extends BrokerTestCase
     protected final String Q2 = "bar";
 
     private volatile BlockingCell<Integer> returnCell;
+    private static final int TIMEOUT = (int) Duration.ofSeconds(10).toMillis();
 
     protected void createResources() throws IOException {
         channel.exchangeDeclare(E, "direct");
@@ -289,13 +292,13 @@ public class Routing extends BrokerTestCase
         checkGet(Q2, false);
     }
 
-    @Test public void basicReturn() throws IOException {
+    @Test public void basicReturn() throws Exception {
         channel.addReturnListener(makeReturnListener());
         returnCell = new BlockingCell<Integer>();
 
         //returned 'mandatory' publish
         channel.basicPublish("", "unknown", true, false, null, "mandatory1".getBytes());
-        checkReturn(AMQP.NO_ROUTE);
+        checkReturn();
 
         //routed 'mandatory' publish
         channel.basicPublish("", Q1, true, false, null, "mandatory2".getBytes());
@@ -313,7 +316,7 @@ public class Routing extends BrokerTestCase
         }
     }
 
-    @Test public void basicReturnTransactional() throws IOException {
+    @Test public void basicReturnTransactional() throws Exception {
         channel.txSelect();
         channel.addReturnListener(makeReturnListener());
         returnCell = new BlockingCell<Integer>();
@@ -325,39 +328,31 @@ public class Routing extends BrokerTestCase
             fail("basic.return issued prior to tx.commit");
         } catch (TimeoutException toe) {}
         channel.txCommit();
-        checkReturn(AMQP.NO_ROUTE);
+        checkReturn();
 
         //routed 'mandatory' publish
         channel.basicPublish("", Q1, true, false, null, "mandatory2".getBytes());
         channel.txCommit();
         assertNotNull(channel.basicGet(Q1, true));
 
-        //returned 'mandatory' publish when message is routable on
-        //publish but not on commit
-        channel.basicPublish("", Q1, true, false, null, "mandatory2".getBytes());
-        channel.queueDelete(Q1);
-        channel.txCommit();
-        checkReturn(AMQP.NO_ROUTE);
-        channel.queueDeclare(Q1, false, false, false, null);
+        if (TestUtils.atMost312(connection)) {
+            //returned 'mandatory' publish when message is routable on
+            //publish but not on commit
+            channel.basicPublish("", Q1, true, false, null, "mandatory2".getBytes());
+            channel.queueDelete(Q1);
+            channel.txCommit();
+            checkReturn();
+            channel.queueDeclare(Q1, false, false, false, null);
+        }
     }
 
     protected ReturnListener makeReturnListener() {
-        return new ReturnListener() {
-            public void handleReturn(int replyCode,
-                                     String replyText,
-                                     String exchange,
-                                     String routingKey,
-                                     AMQP.BasicProperties properties,
-                                     byte[] body)
-                throws IOException {
-                Routing.this.returnCell.set(replyCode);
-            }
-        };
+        return (replyCode, replyText, exchange, routingKey, properties, body) -> Routing.this.returnCell.set(replyCode);
     }
 
-    protected void checkReturn(int replyCode) {
-        assertEquals((int)returnCell.uninterruptibleGet(), AMQP.NO_ROUTE);
-        returnCell = new BlockingCell<Integer>();
+    protected void checkReturn() throws TimeoutException {
+        assertEquals((int)returnCell.uninterruptibleGet(TIMEOUT), AMQP.NO_ROUTE);
+        returnCell = new BlockingCell<>();
     }
 
 }
