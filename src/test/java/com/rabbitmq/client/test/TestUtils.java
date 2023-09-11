@@ -116,6 +116,10 @@ public class TestUtils {
         }
     }
 
+    public static boolean atMost312(Connection connection) {
+        return atMostVersion("3.12.999", currentVersion(connection.getServerProperties().get("version").toString()));
+    }
+
     public static boolean isVersion37orLater(Connection connection) {
         return atLeastVersion("3.7.0", connection);
     }
@@ -135,6 +139,15 @@ public class TestUtils {
     private static boolean atLeastVersion(String expectedVersion, String currentVersion) {
         try {
             return "0.0.0".equals(currentVersion) || versionCompare(currentVersion, expectedVersion) >= 0;
+        } catch (RuntimeException e) {
+            LoggerFactory.getLogger(TestUtils.class).warn("Unable to parse broker version {}", currentVersion, e);
+            throw e;
+        }
+    }
+
+    private static boolean atMostVersion(String expectedVersion, String currentVersion) {
+        try {
+            return versionCompare(currentVersion, expectedVersion) <= 0;
         } catch (RuntimeException e) {
             LoggerFactory.getLogger(TestUtils.class).warn("Unable to parse broker version {}", currentVersion, e);
             throw e;
