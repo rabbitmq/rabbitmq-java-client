@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
-import com.rabbitmq.client.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -330,7 +329,7 @@ public class Transactions extends BrokerTestCase
 
     @Test public void commitWithDeletedQueue()
             throws IOException, TimeoutException {
-        if (TestUtils.atMost312(connection)) {
+        if (beforeMessageContainers()) {
             txSelect();
             basicPublish();
             releaseResources();

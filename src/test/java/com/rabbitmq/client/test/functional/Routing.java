@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.client.test.TestUtils.BrokerVersion;
 import com.rabbitmq.client.test.TestUtils.BrokerVersionAtLeast;
 import java.io.IOException;
@@ -335,7 +334,7 @@ public class Routing extends BrokerTestCase
         channel.txCommit();
         assertNotNull(channel.basicGet(Q1, true));
 
-        if (TestUtils.atMost312(connection)) {
+        if (beforeMessageContainers()) {
             //returned 'mandatory' publish when message is routable on
             //publish but not on commit
             channel.basicPublish("", Q1, true, false, null, "mandatory2".getBytes());
