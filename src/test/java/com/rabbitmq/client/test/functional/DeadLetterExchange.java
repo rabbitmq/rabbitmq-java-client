@@ -410,7 +410,7 @@ public class DeadLetterExchange extends BrokerTestCase {
 
     @SuppressWarnings("unchecked")
     @Test public void republish() throws Exception {
-        if (TestUtils.atMost312(connection)) {
+        if (beforeMessageContainers()) {
             Map<String, Object> args = new HashMap<>();
             args.put("x-message-ttl", 100);
             declareQueue(TEST_QUEUE_NAME, DLX, null, args);

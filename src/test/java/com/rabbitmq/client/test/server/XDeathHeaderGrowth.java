@@ -173,23 +173,36 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
 
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         List<Map<String, Object>> events = (List<Map<String, Object>>)cons.getHeaders().get("x-death");
-        assertEquals(6, events.size());
+        if (beforeMessageContainers()) {
+            assertEquals(6, events.size());
+        } else {
+            assertEquals(3, events.size());
+        }
 
         List<String> qs = new ArrayList<String>();
         for (Map<String, Object> evt : events) {
             qs.add(evt.get("queue").toString());
         }
         Collections.sort(qs);
-        assertEquals(Arrays.asList(qz, q1, q2,
-                                   "issues.rabbitmq-server-152.queue97",
-                                   "issues.rabbitmq-server-152.queue98",
-                                   "issues.rabbitmq-server-152.queue99"), qs);
+        if (beforeMessageContainers()) {
+            assertEquals(Arrays.asList(qz, q1, q2,
+                "issues.rabbitmq-server-152.queue97",
+                "issues.rabbitmq-server-152.queue98",
+                "issues.rabbitmq-server-152.queue99"), qs);
+        } else {
+            assertEquals(Arrays.asList(qz, q1, q2), qs);
+        }
+
         List<Long> cs = new ArrayList<Long>();
         for (Map<String, Object> evt : events) {
             cs.add((Long)evt.get("count"));
         }
         Collections.sort(cs);
-        assertEquals(Arrays.asList(1L, 1L, 4L, 4L, 9L, 12L), cs);
+        if (beforeMessageContainers()) {
+            assertEquals(Arrays.asList(1L, 1L, 4L, 4L, 9L, 12L), cs);
+        } else {
+            assertEquals(Arrays.asList(1L, 1L, 9L), cs);
+        }
 
         cleanUpExchanges(x1, x2);
         cleanUpQueues(q1, q2, qz,
