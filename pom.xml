@@ -175,6 +175,16 @@
     </profile>
 
     <profile>
+      <id>jvm-test-arguments-java-21-and-more</id>
+      <activation>
+        <jdk>[21,)</jdk>
+      </activation>
+      <properties>
+        <test-arguments>-XX:+EnableDynamicAgentLoading</test-arguments>
+      </properties>
+    </profile>
+
+    <profile>
       <!--
       Java 8's Javadoc is way more sensible to documentation
       correctness. For now, disable all those errors until we fix them.
@@ -406,6 +416,7 @@
             <version>${maven.failsafe.plugin.version}</version>
             <configuration>
               <systemPropertyVariables>
+                <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
                 <make.bin>${make.bin}</make.bin>
                 <rabbitmq.dir>${rabbitmq.dir}</rabbitmq.dir>
                 <rabbitmqctl.bin>${rabbitmqctl.bin}</rabbitmqctl.bin>
@@ -434,11 +445,7 @@
                 <include>**/ServerTestSuite.*</include>
                 <include>**/HaTestSuite.*</include>
               </includes>
-              <!--
-                needed because of bug in OpenJDK 8 u181 on Debian distros
-                see https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class
-              -->
-              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <argLine>${test-arguments}</argLine>
             </configuration>
             <executions>
               <execution>
@@ -473,13 +480,10 @@
             <version>${maven.failsafe.plugin.version}</version>
             <configuration>
               <systemPropertyVariables>
+                <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
                 <use.nio>true</use.nio>
               </systemPropertyVariables>
-              <!--
-                needed because of bug in OpenJDK 8 u181 on Debian distros
-                see https://stackoverflow.com/questions/53010200/maven-surefire-could-not-find-forkedbooter-class
-              -->
-              <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+              <argLine>${test-arguments}</argLine>
             </configuration>
           </plugin>
         </plugins>
