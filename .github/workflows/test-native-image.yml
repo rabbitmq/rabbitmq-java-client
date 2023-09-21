@@ -30,7 +30,6 @@ jobs:
         with:
           version: 'latest'
           java-version: '21'
-          components: 'native-image'
           cache: 'maven'
       - name: Start broker
         run: ci/start-broker.sh
