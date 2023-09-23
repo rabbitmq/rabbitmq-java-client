@@ -166,8 +166,6 @@ Tests run: 121, Failures: 0, Errors: 0, Skipped: 0
 
 Test reports can be found in `target/failsafe-reports`.
 
-<<<<<<< HEAD
-
 ## Running tests against an externally provided broker or cluster
 
 By default, if the RabbitMQ broker sources are available, the testsuite
