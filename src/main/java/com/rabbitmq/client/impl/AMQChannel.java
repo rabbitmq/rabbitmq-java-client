@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
@@ -56,7 +57,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * so that clients can themselves use the channel to synchronize
      * on.
      */
-    protected final ReentrantLock _channelLock = new ReentrantLock();
+    protected final Lock _channelLock = new ReentrantLock();
     protected final Condition _channelLockCondition = _channelLock.newCondition();
 
     /** The connection this channel is associated with. */

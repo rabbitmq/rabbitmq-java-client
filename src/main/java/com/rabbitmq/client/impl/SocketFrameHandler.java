@@ -29,6 +29,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -49,11 +50,11 @@ public class SocketFrameHandler implements FrameHandler {
 
     /** Socket's inputstream - data from the broker - synchronized on */
     private final DataInputStream _inputStream;
-    private final ReentrantLock _inputStreamLock = new ReentrantLock();
+    private final Lock _inputStreamLock = new ReentrantLock();
 
     /** Socket's outputstream - data to the broker - synchronized on */
     private final DataOutputStream _outputStream;
-    private final ReentrantLock _outputStreamLock = new ReentrantLock();
+    private final Lock _outputStreamLock = new ReentrantLock();
 
     private final int maxInboundMessageBodySize;
 

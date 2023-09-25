@@ -18,6 +18,7 @@ package com.rabbitmq.client.impl;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.rabbitmq.client.AMQP;
@@ -44,7 +45,7 @@ public class AMQCommand implements Command {
 
     /** The assembler for this command - synchronised on - contains all the state */
     private final CommandAssembler assembler;
-    private final ReentrantLock assemblerLock = new ReentrantLock();
+    private final Lock assemblerLock = new ReentrantLock();
 
     AMQCommand(int maxBodyLength) {
         this(null, null, null, maxBodyLength);
