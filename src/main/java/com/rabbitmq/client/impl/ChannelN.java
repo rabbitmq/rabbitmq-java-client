@@ -361,10 +361,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 return true;
             } else if (method instanceof Channel.Flow) {
                 Channel.Flow channelFlow = (Channel.Flow) method;
-                synchronized (_channelMutex) {
+                _channelLock.lock();
+                try {
                     _blockContent = !channelFlow.getActive();
                     transmit(new Channel.FlowOk(!_blockContent));
-                    _channelMutex.notifyAll();
+                    _channelLockCondition.signalAll();
+                } finally {
+                    _channelLock.unlock();
                 }
                 return true;
             } else if (method instanceof Basic.Ack) {
@@ -524,7 +527,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                                                      false,
                                                                      command.getMethod(),
                                                                      this);
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             try {
                 processShutdownSignal(signal, true, false);
                 quiescingTransmit(new Channel.CloseOk());
@@ -532,6 +536,9 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 releaseChannel();
                 notifyOutstandingRpc(signal);
             }
+        }
+        finally {
+            _channelLock.unlock();
         }
         notifyListeners();
     }
@@ -612,9 +619,12 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         try {
             // Synchronize the block below to avoid race conditions in case
             // connection wants to send Connection-CloseOK
-            synchronized (_channelMutex) {
+            _channelLock.lock();
+            try {
                 startProcessShutdownSignal(signal, !initiatedByApplication, true);
                 quiescingRpc(reason, k);
+            } finally {
+                _channelLock.unlock();
             }
 
             // Now that we're in quiescing state, channel.close was sent and
@@ -1602,16 +1612,22 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
 
     @Override
     public void enqueueRpc(RpcContinuation k) {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             super.enqueueRpc(k);
             dispatcher.setUnlimited(true);
+        } finally {
+            _channelLock.unlock();
         }
     }
 
     @Override
     protected void markRpcFinished() {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             dispatcher.setUnlimited(false);
+        } finally {
+            _channelLock.unlock();
         }
     }
 

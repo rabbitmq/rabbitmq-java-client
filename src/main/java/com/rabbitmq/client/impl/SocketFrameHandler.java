@@ -29,6 +29,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A socket-based frame handler.
@@ -48,9 +49,11 @@ public class SocketFrameHandler implements FrameHandler {
 
     /** Socket's inputstream - data from the broker - synchronized on */
     private final DataInputStream _inputStream;
+    private final ReentrantLock _inputStreamLock = new ReentrantLock();
 
     /** Socket's outputstream - data to the broker - synchronized on */
     private final DataOutputStream _outputStream;
+    private final ReentrantLock _outputStreamLock = new ReentrantLock();
 
     private final int maxInboundMessageBodySize;
 
@@ -127,7 +130,8 @@ public class SocketFrameHandler implements FrameHandler {
      * @see #sendHeader()
      */
     public void sendHeader(int major, int minor) throws IOException {
-        synchronized (_outputStream) {
+        _outputStreamLock.lock();
+        try {
             _outputStream.write("AMQP".getBytes("US-ASCII"));
             _outputStream.write(1);
             _outputStream.write(1);
@@ -139,6 +143,8 @@ public class SocketFrameHandler implements FrameHandler {
                 LOGGER.error("TLS connection failed: {}", e.getMessage());
                 throw e;
             }
+        } finally {
+            _outputStreamLock.unlock();
         }
     }
 
@@ -154,7 +160,8 @@ public class SocketFrameHandler implements FrameHandler {
      * @see #sendHeader()
      */
   public void sendHeader(int major, int minor, int revision) throws IOException {
-        synchronized (_outputStream) {
+        _outputStreamLock.lock();
+        try {
             _outputStream.write("AMQP".getBytes("US-ASCII"));
             _outputStream.write(0);
             _outputStream.write(major);
@@ -166,6 +173,8 @@ public class SocketFrameHandler implements FrameHandler {
                 LOGGER.error("TLS connection failed: {}", e.getMessage());
                 throw e;
             }
+        } finally {
+            _outputStreamLock.unlock();
         }
     }
 
@@ -184,15 +193,21 @@ public class SocketFrameHandler implements FrameHandler {
 
     @Override
     public Frame readFrame() throws IOException {
-        synchronized (_inputStream) {
+        _inputStreamLock.lock();
+        try {
             return Frame.readFrom(_inputStream, this.maxInboundMessageBodySize);
+        } finally {
+            _inputStreamLock.unlock();
         }
     }
 
     @Override
     public void writeFrame(Frame frame) throws IOException {
-        synchronized (_outputStream) {
+        _outputStreamLock.lock();
+        try {
             frame.writeTo(_outputStream);
+        } finally {
+            _outputStreamLock.unlock();
         }
     }
 

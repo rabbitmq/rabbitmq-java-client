@@ -18,6 +18,7 @@ package com.rabbitmq.client.impl;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
@@ -43,6 +44,7 @@ public class AMQCommand implements Command {
 
     /** The assembler for this command - synchronised on - contains all the state */
     private final CommandAssembler assembler;
+    private final ReentrantLock assemblerLock = new ReentrantLock();
 
     AMQCommand(int maxBodyLength) {
         this(null, null, null, maxBodyLength);
@@ -115,7 +117,8 @@ public class AMQCommand implements Command {
         int channelNumber = channel.getChannelNumber();
         AMQConnection connection = channel.getConnection();
 
-        synchronized (assembler) {
+        assemblerLock.lock();
+        try {
             Method m = this.assembler.getMethod();
             if (m.hasContent()) {
                 byte[] body = this.assembler.getContentBody();
@@ -145,6 +148,8 @@ public class AMQCommand implements Command {
             } else {
                 connection.writeFrame(m.toFrame(channelNumber));
             }
+        } finally {
+            assemblerLock.unlock();
         }
 
         connection.flush();
@@ -155,7 +160,8 @@ public class AMQCommand implements Command {
     }
 
     public String toString(boolean suppressBody){
-        synchronized (assembler) {
+        assemblerLock.lock();
+        try {
             return new StringBuilder()
                 .append('{')
                 .append(this.assembler.getMethod())
@@ -165,6 +171,8 @@ public class AMQCommand implements Command {
                 .append(contentBodyStringBuilder(
                         this.assembler.getContentBody(), suppressBody))
                 .append('}').toString();
+        } finally {
+            assemblerLock.unlock();
         }
     }
 

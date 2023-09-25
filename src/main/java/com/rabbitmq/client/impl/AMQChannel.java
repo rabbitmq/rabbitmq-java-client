@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 /**
@@ -54,7 +56,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * so that clients can themselves use the channel to synchronize
      * on.
      */
-    protected final Object _channelMutex = new Object();
+    protected final ReentrantLock _channelLock = new ReentrantLock();
+    protected final Condition _channelLockCondition = _channelLock.newCondition();
 
     /** The connection this channel is associated with. */
     private final AMQConnection _connection;
@@ -191,7 +194,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             // so it must be a response to an earlier RPC.
 
             if (_checkRpcResponseType) {
-                synchronized (_channelMutex) {
+                _channelLock.lock();
+                try {
                     // check if this reply command is intended for the current waiting request before calling nextOutstandingRpc()
                     if (_activeRpc != null && !_activeRpc.canHandleReply(command)) {
                         // this reply command is not intended for the current waiting request
@@ -199,6 +203,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                         // Throw this reply command away so we don't stop the current request from waiting for its reply
                         return;
                     }
+                } finally {
+                    _channelLock.unlock();
                 }
             }
             final RpcWrapper nextOutstandingRpc = nextOutstandingRpc();
@@ -220,11 +226,12 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     private void doEnqueueRpc(Supplier<RpcWrapper> rpcWrapperSupplier) {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             boolean waitClearedInterruptStatus = false;
             while (_activeRpc != null) {
                 try {
-                    _channelMutex.wait();
+                    _channelLockCondition.await();
                 } catch (InterruptedException e) { //NOSONAR
                     waitClearedInterruptStatus = true;
                     // No Sonar: we re-interrupt the thread later
@@ -234,23 +241,31 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                 Thread.currentThread().interrupt();
             }
             _activeRpc = rpcWrapperSupplier.get();
+        } finally {
+            _channelLock.unlock();
         }
     }
 
     public boolean isOutstandingRpc()
     {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             return (_activeRpc != null);
+        } finally {
+            _channelLock.unlock();
         }
     }
 
     public RpcWrapper nextOutstandingRpc()
     {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             RpcWrapper result = _activeRpc;
             _activeRpc = null;
-            _channelMutex.notifyAll();
+            _channelLockCondition.signalAll();
             return result;
+        } finally {
+            _channelLock.unlock();
         }
     }
 
@@ -344,36 +359,48 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     public void rpc(Method m, RpcContinuation k)
         throws IOException
     {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             ensureIsOpen();
             quiescingRpc(m, k);
+        } finally {
+            _channelLock.unlock();
         }
     }
 
     public void quiescingRpc(Method m, RpcContinuation k)
         throws IOException
     {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             enqueueRpc(k);
             quiescingTransmit(m);
+        } finally {
+            _channelLock.unlock();
         }
     }
 
     public void asyncRpc(Method m, CompletableFuture<Command> future)
         throws IOException
     {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             ensureIsOpen();
             quiescingAsyncRpc(m, future);
+        } finally {
+            _channelLock.unlock();
         }
     }
 
     public void quiescingAsyncRpc(Method m, CompletableFuture<Command> future)
         throws IOException
     {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             enqueueAsyncRpc(m, future);
             quiescingTransmit(m);
+        } finally {
+            _channelLock.unlock();
         }
     }
 
@@ -402,13 +429,16 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
                                       boolean ignoreClosed,
                                       boolean notifyRpc) {
         try {
-            synchronized (_channelMutex) {
+            _channelLock.lock();
+            try {
                 if (!setShutdownCauseIfOpen(signal)) {
                     if (!ignoreClosed)
                         throw new AlreadyClosedException(getCloseReason());
                 }
 
-                _channelMutex.notifyAll();
+                _channelLockCondition.signalAll();
+            } finally {
+                _channelLock.unlock();
             }
         } finally {
             if (notifyRpc)
@@ -424,30 +454,40 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
     }
 
     public void transmit(Method m) throws IOException {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             transmit(new AMQCommand(m));
+        } finally {
+            _channelLock.unlock();
         }
     }
 
     public void transmit(AMQCommand c) throws IOException {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             ensureIsOpen();
             quiescingTransmit(c);
+        } finally {
+            _channelLock.unlock();
         }
     }
 
     public void quiescingTransmit(Method m) throws IOException {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             quiescingTransmit(new AMQCommand(m));
+        } finally {
+            _channelLock.unlock();
         }
     }
 
     public void quiescingTransmit(AMQCommand c) throws IOException {
-        synchronized (_channelMutex) {
+        _channelLock.lock();
+        try {
             if (c.getMethod().hasContent()) {
                 while (_blockContent) {
                     try {
-                        _channelMutex.wait();
+                        _channelLockCondition.await();
                     } catch (InterruptedException ignored) {
                         Thread.currentThread().interrupt();
                     }
@@ -460,6 +500,8 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
             }
             this._trafficListener.write(c);
             c.transmit(this);
+        } finally {
+            _channelLock.unlock();
         }
     }
 
