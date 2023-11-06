@@ -62,7 +62,7 @@
     <opentelemetry.version>1.31.0</opentelemetry.version>
     <jackson.version>2.15.3</jackson.version>
     <logback.version>1.2.12</logback.version>
-    <junit.jupiter.version>5.10.0</junit.jupiter.version>
+    <junit.jupiter.version>5.10.1</junit.jupiter.version>
     <mockito.version>5.7.0</mockito.version>
     <assertj.version>3.24.2</assertj.version>
     <micrometer-tracing-test.version>1.1.6</micrometer-tracing-test.version>
