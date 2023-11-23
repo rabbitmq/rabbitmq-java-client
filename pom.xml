@@ -33,7 +33,7 @@
     <developer>
       <email>info@rabbitmq.com</email>
       <name>Team RabbitMQ</name>
-      <organization>Broadcom Inc. and/or its subsidiaries</organization>
+      <organization>Broadcom Inc. and its subsidiaries</organization>
       <organizationUrl>https://rabbitmq.com</organizationUrl>
     </developer>
   </developers>
@@ -46,7 +46,7 @@
   </scm>
 
   <organization>
-    <name>Broadcom Inc. and/or its subsidiaries</name>
+    <name>Broadcom Inc. and its subsidiaries</name>
     <url>https://www.rabbitmq.com</url>
   </organization>
 
