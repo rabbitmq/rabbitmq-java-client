@@ -33,7 +33,7 @@
     <developer>
       <email>info@rabbitmq.com</email>
       <name>Team RabbitMQ</name>
-      <organization>VMware, Inc. or its affiliates.</organization>
+      <organization>Broadcom Inc. and its subsidiaries.</organization>
       <organizationUrl>https://rabbitmq.com</organizationUrl>
     </developer>
   </developers>
@@ -46,7 +46,7 @@
   </scm>
 
   <organization>
-    <name>VMware, Inc. or its affiliates.</name>
+    <name>Broadcom Inc. and its subsidiaries.</name>
     <url>https://www.rabbitmq.com</url>
   </organization>
 
@@ -1130,7 +1130,7 @@
           </java>
           <!--          <ratchetFrom>origin/main</ratchetFrom>-->
           <licenseHeader> <!-- specify either content or file, but not both -->
-            <content>// Copyright (c) $YEAR VMware, Inc. or its affiliates.  All rights reserved.
+            <content>// Copyright (c) $YEAR Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
               //
               // This software, the RabbitMQ Java client library, is triple-licensed under the
               // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
