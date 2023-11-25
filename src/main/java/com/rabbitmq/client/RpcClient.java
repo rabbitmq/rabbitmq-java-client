@@ -160,7 +160,9 @@ public class RpcClient implements AutoCloseable {
     public void close() throws IOException {
         if (this.closed.compareAndSet(false, true)) {
             _channel.basicCancel(_consumer.getConsumerTag());
-            _channel.removeReturnListener(this._returnListener);
+            if (this._returnListener != null) {
+                _channel.removeReturnListener(this._returnListener);
+            }
         }
     }
 
