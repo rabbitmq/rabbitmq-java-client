@@ -93,6 +93,7 @@ public class RpcClient implements AutoCloseable {
      * @since 5.9.0
      */
     private final Supplier<String> _correlationIdSupplier;
+    private final ReturnListener _returnListener;
 
     private String lastCorrelationId = "0";
 
@@ -123,7 +124,7 @@ public class RpcClient implements AutoCloseable {
 
         _consumer = setupConsumer();
         if (_useMandatory) {
-            this._channel.addReturnListener(returnMessage -> {
+            this._returnListener = this._channel.addReturnListener(returnMessage -> {
                 synchronized (_continuationMap) {
                     String replyId = returnMessage.getProperties().getCorrelationId();
                     BlockingCell<Object> blocker = _continuationMap.remove(replyId);
@@ -136,6 +137,8 @@ public class RpcClient implements AutoCloseable {
                     }
                 }
             });
+        } else {
+            this._returnListener = null;
         }
     }
 
@@ -157,6 +160,9 @@ public class RpcClient implements AutoCloseable {
     public void close() throws IOException {
         if (this.closed.compareAndSet(false, true)) {
             _channel.basicCancel(_consumer.getConsumerTag());
+            if (this._returnListener != null) {
+                _channel.removeReturnListener(this._returnListener);
+            }
         }
     }
 
