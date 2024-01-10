@@ -88,7 +88,9 @@ import com.rabbitmq.utility.Utility;
  * to extend <code>DefaultConsumer</code> and <code>QueueingConsumer</code>
  * is a lot less relevant.</p>
  *
+ * @deprecated Use {@link DefaultConsumer} instead
  */
+@Deprecated
 public class QueueingConsumer extends DefaultConsumer {
     private final BlockingQueue<Delivery> _queue;
 
