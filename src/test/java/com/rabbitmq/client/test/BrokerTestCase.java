@@ -63,8 +63,6 @@ public class BrokerTestCase {
 
     @BeforeEach
     public void setUp(TestInfo testInfo) throws IOException, TimeoutException {
-
-
         Assumptions.assumeTrue(shouldRun());
         this.testInfo = testInfo;
         openConnection();
