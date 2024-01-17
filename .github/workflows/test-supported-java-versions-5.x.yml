@@ -10,8 +10,12 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        java: [ '8', '11', '17', '21', '22-ea' ]
-    name:  Test against Java ${{ matrix.java }}
+        distribution: [ 'temurin' ]
+        version: [ '8', '11', '17', '21', '22-ea' ]
+        include:
+          - distribution: 'semeru'
+            version: '17'
+    name:  Test against Java ${{ matrix.distribution }} ${{ matrix.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,8 +32,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: ${{ matrix.java }}
+          distribution: ${{ matrix.distribution }}
+          java-version: ${{ matrix.version }}
           cache: 'maven'
       - name: Start broker
         run: ci/start-broker.sh
