@@ -322,9 +322,9 @@ public class ConnectionFactory implements Cloneable {
     public ConnectionFactory setUri(URI uri)
         throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException
     {
-        if ("amqp".equals(uri.getScheme().toLowerCase())) {
+        if ("amqp".equalsIgnoreCase(uri.getScheme())) {
             // nothing special to do
-        } else if ("amqps".equals(uri.getScheme().toLowerCase())) {
+        } else if ("amqps".equalsIgnoreCase(uri.getScheme())) {
             setPort(DEFAULT_AMQP_OVER_SSL_PORT);
             // SSL context factory not set yet, we use the default one
             if (this.sslContextFactory == null) {
@@ -1253,7 +1253,7 @@ public class ConnectionFactory implements Cloneable {
         ConnectionParams params = params(executor);
         // set client-provided via a client property
         if (clientProvidedName != null) {
-            Map<String, Object> properties = new HashMap<String, Object>(params.getClientProperties());
+            Map<String, Object> properties = new HashMap<>(params.getClientProperties());
             properties.put("connection_name", clientProvidedName);
             params.setClientProperties(properties);
         }
@@ -1277,16 +1277,14 @@ public class ConnectionFactory implements Cloneable {
                     conn.start();
                     this.metricsCollector.newConnection(conn);
                     return conn;
-                } catch (IOException e) {
+                } catch (IOException | TimeoutException e) {
                     lastException = e;
-                } catch (TimeoutException te) {
-                    lastException = te;
                 }
             }
             if (lastException != null) {
                 if (lastException instanceof IOException) {
                     throw (IOException) lastException;
-                } else if (lastException instanceof TimeoutException) {
+                } else {
                     throw (TimeoutException) lastException;
                 }
             }
@@ -1761,5 +1759,9 @@ public class ConnectionFactory implements Cloneable {
     public ConnectionFactory setTrafficListener(TrafficListener trafficListener) {
         this.trafficListener = trafficListener;
         return this;
+    }
+
+    public static ConnectionFactoryConfiguration configure() {
+        return null;
     }
 }
