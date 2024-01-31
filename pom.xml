@@ -93,6 +93,10 @@
     <jshell-maven-plugin.version>1.4</jshell-maven-plugin.version>
     <spotless.version>2.43.0</spotless.version>
     <google-java-format.version>1.19.2</google-java-format.version>
+    <buildnumber.plugin.version>3.2.0</buildnumber.plugin.version>
+    <asciidoctor.maven.plugin.version>2.2.5</asciidoctor.maven.plugin.version>
+    <asciidoctorj.version>2.5.11</asciidoctorj.version>
+    <asciidoctorj.diagram.version>2.2.14</asciidoctorj.diagram.version>
     <!--
     These groovy scripts are used later in this POM file to generate
     source files and resources for the library itself and for the
@@ -1078,6 +1082,76 @@
           <tagNameFormat>v@{project.version}</tagNameFormat>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>${buildnumber.plugin.version}</version>
+        <configuration>
+          <doCheck>false</doCheck>
+          <doUpdate>false</doUpdate>
+          <revisionOnScmFailure>unknown</revisionOnScmFailure>
+          <shortRevisionLength>7</shortRevisionLength>
+        </configuration>
+      </plugin>
+
+
+      <plugin>
+        <groupId>org.asciidoctor</groupId>
+        <artifactId>asciidoctor-maven-plugin</artifactId>
+        <version>${asciidoctor.maven.plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.asciidoctor</groupId>
+            <artifactId>asciidoctorj</artifactId>
+            <version>${asciidoctorj.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.asciidoctor</groupId>
+            <artifactId>asciidoctorj-diagram</artifactId>
+            <version>${asciidoctorj.diagram.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <sourceDirectory>src/docs/asciidoc</sourceDirectory>
+          <doctype>article</doctype>
+          <embedAssets>true</embedAssets>
+          <requires>
+            <require>asciidoctor-diagram</require>
+          </requires>
+          <attributes>
+            <project-artifact-id>${project.artifactId}</project-artifact-id>
+            <project-version>${project.version}</project-version>
+            <build-number>${buildNumber}</build-number>
+            <imagesdir>./images</imagesdir>
+            <idprefix />
+            <idseparator>-</idseparator>
+            <source-highlighter>coderay</source-highlighter>
+            <test-examples>../../test/java/com/rabbitmq/docs</test-examples>
+            <build-directory>${project.build.directory}</build-directory>
+          </attributes>
+
+        </configuration>
+        <executions>
+          <execution>
+            <id>generate-html</id>
+            <phase>pre-site</phase>
+            <goals>
+              <goal>process-asciidoc</goal>
+            </goals>
+            <configuration>
+              <backend>html5</backend>
+              <attributes>
+                <toc>left</toc>
+                <toclevels>5</toclevels>
+                <icons>font</icons>
+                <sectanchors>true</sectanchors>
+              </attributes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

@@ -1,0 +1,8 @@
+= RabbitMQ AMQP 0.9.1 Java Client
+:revnumber: {project-version}
+:revremark: ({build-number})
+ifndef::imagesdir[:imagesdir: images]
+ifndef::sourcedir[:sourcedir: ../../main/java]
+:source-highlighter: prettify
+
+include::api-guide.adoc[]
