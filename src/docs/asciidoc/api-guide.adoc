@@ -502,338 +502,203 @@ include::{test-examples}/Api.java[tag=basic-get-ack]
 [[returning]]
 == Handling unroutable messages
 
-If a message is published with the "mandatory" flags set,
-but cannot be routed, the broker will return it to the
-sending client (via an `AMQP.Basic.Return`
-command).
+If a message is published with the "mandatory" flags set, but cannot be routed, the broker will return it to the sending client (via an `AMQP.Basic.Return` command).
 
-To be notified of such returns, clients can implement the `ReturnListener`
-interface and call `Channel.addReturnListener`.
-If the client has not configured a return listener for a particular channel,
-then the associated returned messages will be silently dropped.
+To be notified of such returns, clients can implement the `ReturnListener` interface and call `Channel.addReturnListener`.
+If the client has not configured a return listener for a particular channel, then the associated returned messages will be silently dropped.
 
-[,]
-----
+.Registering a `ReturnListener`
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=returning]
+--------
 
-channel.addReturnListener(new ReturnListener() {
-    public void handleReturn(int replyCode,
-                                  String replyText,
-                                  String exchange,
-                                  String routingKey,
-                                  AMQP.BasicProperties properties,
-                                  byte[] body)
-    throws IOException {
-        ...
-    }
-});
-----
+A return listener will be called, for example, if the client publishes a message with the "mandatory" flag set to an exchange of "direct" type which is not bound to a queue.
 
-A return listener will be called, for example, if the client publishes a message with
-the "mandatory" flag set to an exchange of "direct" type which is not bound to a queue.
+[[shutdown]]
+== Shutdown Protocol
 
-== <<shutdown,Shutdown Protocol>>
+[[shutdown-overview]]
+=== Overview of the Client Shutdown Process
 
-=== <<shutdown-overview,Overview of the Client Shutdown Process>>
-
-The AMQP 0-9-1 connection and channel share the same general
-approach to managing network failure, internal failure,
-and explicit local shutdown.
+The AMQP 0-9-1 connection and channel share the same general approach to managing network failure, internal failure, and explicit local shutdown.
 
 The AMQP 0-9-1 connection and channel have the following lifecycle states:
 
 * `open`: the object is ready to use
-* `closing`: the object has been explicitly
-notified to shut down locally, has issued a shutdown
-request to any supporting lower-layer objects, and is
-waiting for their shutdown procedures to complete
-* `closed`: the object has received all
-shutdown-complete notification(s) from any lower-layer
-objects, and as a consequence has shut itself down
+* `closing`: the object has been explicitly notified to shut down locally, has issued a shutdown request to any supporting lower-layer objects, and is waiting for their shutdown procedures to complete
+* `closed`: the object has received all shutdown-complete notification(s) from any lower-layer objects, and as a consequence has shut itself down
 
-Those objects always end up in the closed state,
-regardless of the reason that caused the closure, like
-an application request, an internal client library
-failure, a remote network request or network failure.
+Those objects always end up in the closed state, regardless of the reason that caused the closure, like an application request, an internal client library failure, a remote network request or network failure.
 
-The connection and channel objects possess the
-following shutdown-related methods:
+The connection and channel objects possess the following shutdown-related methods:
 
-* `addShutdownListener(ShutdownListener listener)` and
-* `removeShutdownListener(ShutdownListener listener)`, to manage any listeners, which will
-be fired when the object transitions to
-`closed` state. Note that, adding a
-ShutdownListener to an object that is already closed
-will fire the listener immediately
-* `getCloseReason()`, to allow the
-investigation of what was the reason of the object's
-shutdown
-* `isOpen()`, useful for testing whether the
-object is in an open state
-* `close(int closeCode, String closeMessage)`, to explicitly notify the object
-to shut down
+* `addShutdownListener(ShutdownListener listener)` and `removeShutdownListener(ShutdownListener listener)`, to manage any listeners, which will be fired when the object transitions to`closed` state.
+Note that, adding a `ShutdownListener` to an object that is already closed will fire the listener immediately
+* `getCloseReason()`, to allow the investigation of what was the reason of the object's shutdown
+* `isOpen()`, useful for testing whether the object is in an open state
+* `close(int closeCode, String closeMessage)`, to explicitly notify the object to shut down
 
 Simple usage of listeners would look like:
 
-[,]
-----
-import com.rabbitmq.client.ShutdownSignalException;
-import com.rabbitmq.client.ShutdownListener;
+.Registering a `ShutdownListener`
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=shutdown-listener]
+--------
 
-connection.addShutdownListener(new ShutdownListener() {
-    public void shutdownCompleted(ShutdownSignalException cause)
-    {
-        ...
-    }
-});
-----
+[[shutdown-cause]]
+=== Information about the circumstances of a shutdown
 
-=== <<shutdown-cause,Information about the circumstances of a shutdown>>
+One can retrieve the `ShutdownSignalException`, which contains all the information available about the close reason, either by explicitly calling the `getCloseReason()`method or by using the `cause` parameter in the `service(ShutdownSignalException cause)` method of the `ShutdownListener` class.
 
-One can retrieve the `ShutdownSignalException`, which contains all
-the information available about the close reason, either
-by explicitly calling the `getCloseReason()`
-method or by using the `cause` parameter in
-the `service(ShutdownSignalException cause)`
-method of the `ShutdownListener` class.
+The `ShutdownSignalException` class provides methods to analyze the reason of the shutdown.
+By calling the `isHardError()` method we get information whether it was a connection or a channel error, and `getReason()` returns information about the cause, in the form an AMQP method - either `AMQP.Channel.Close` or `AMQP.Connection.Close` (or null if the cause was some exception in the library, such as a network communication failure, in which case that exception can be retrieved with `getCause()`).
 
-The `ShutdownSignalException` class provides
-methods to analyze the reason of the shutdown. By
-calling the `isHardError()` method we get
-information whether it was a connection or a channel
-error, and `getReason()` returns information
-about the cause, in the form an AMQP method - either
-`AMQP.Channel.Close` or
-`AMQP.Connection.Close` (or null if the cause
-was some exception in the library, such as a network
-communication failure, in which case that exception can
-be retrieved with `getCause()`).
+.Getting shutdown information
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=shutdown-cause]
+--------
 
-[,]
-----
-public void shutdownCompleted(ShutdownSignalException cause)
-{
-  if (cause.isHardError())
-  {
-    Connection conn = (Connection)cause.getReference();
-    if (!cause.isInitiatedByApplication())
-    {
-      Method reason = cause.getReason();
-      ...
-    }
-    ...
-  } else {
-    Channel ch = (Channel)cause.getReference();
-    ...
-  }
-}
-----
+[[shutdown-atomicity]]
+=== Atomicity and use of the `isOpen()` method
 
-=== <<shutdown-atomicity,Atomicity and use of the isOpen() method>>
+Use of the `isOpen()` method of channel and connection objects is not recommended for production code, because the value returned by the method is dependent on the existence of the shutdown cause.
+The following code illustrates the possibility of race conditions:
 
-Use of the `isOpen()` method of channel and
- connection objects is not recommended for production
- code, because the value returned by the method is
- dependent on the existence of the shutdown cause.  The
- following code illustrates the possibility of race
- conditions:
+.Avoid using `isOpen()` in production code
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=shutdown-atomicity-broken]
+--------
 
-[,]
-----
-public void brokenMethod(Channel channel)
-{
-    if (channel.isOpen())
-    {
-        // The following code depends on the channel being in open state.
-        // However there is a possibility of the change in the channel state
-        // between isOpen() and basicQos(1) call
-        ...
-        channel.basicQos(1);
-    }
-}
-----
+Instead, we should normally ignore such checking, and simply attempt the action desired.
+If during the execution of the code the channel of the connection is closed, a `ShutdownSignalException` will be thrown indicating that the object is in an invalid state.
+We should also catch for `IOException` caused either by `SocketException`, when broker closes the connection unexpectedly, or`ShutdownSignalException`, when broker initiated clean close.
 
-Instead, we should normally ignore such checking, and
-simply attempt the action desired. If during the
-execution of the code the channel of the connection is
-closed, a `ShutdownSignalException` will be
-thrown indicating that the object is in an invalid
-state. We should also catch for `IOException`
-caused either by `SocketException`, when
-broker closes the connection unexpectedly, or
-`ShutdownSignalException`, when broker
-initiated clean close.
+.Catch exceptions to handle shutdown
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=shutdown-atomicity-valid]
+--------
 
-[,]
-----
+[[advanced-connection]]
+== Advanced Connection Options
 
-public void validMethod(Channel channel)
-{
-    try {
-        ...
-        channel.basicQos(1);
-    } catch (ShutdownSignalException sse) {
-        // possibly check if channel was closed
-        // by the time we started action and reasons for
-        // closing it
-        ...
-    } catch (IOException ioe) {
-        // check why connection was closed
-        ...
-    }
-}
-----
+[[consumer-thread-pool]]
+=== Consumer Operation Thread Pool
 
-== <<advanced-connection,Advanced Connection options>>
+`Consumer` threads (see <<consuming,Receiving>>) are automatically allocated in a new `ExecutorService` thread pool by default.
+If greater control is required supply an `ExecutorService` on the `newConnection()` method, so that this pool of threads is used instead.
+Here is an example where a larger thread pool is supplied than is normally allocated:
 
-=== <<consumer-thread-pool,Consumer Operation Thread Pool>>
+.Using a custom thread pool for consumer operations
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=consumer-thread-pool]
+--------
 
-`Consumer` threads (see <<consuming,Receiving>> below) are
-automatically allocated in a new `ExecutorService` thread pool
-by default. If greater control is required supply an `ExecutorService` on the
-`newConnection()` method, so that this pool of threads is
-used instead. Here is an example where a larger thread pool is
-supplied than is normally allocated:
+Both `Executors` and `ExecutorService` classes are in the `java.util.concurrent` package.
 
-[,]
-----
+When the connection is closed a default `ExecutorService` will be `shutdown()`, but a user-supplied `ExecutorService` (like `es` above) will _not_ be `shutdown()`.
+Clients that supply a custom `ExecutorService` must ensure it is shutdown eventually (by calling its `shutdown()` method), or else the pool's threads may prevent JVM termination.
 
-ExecutorService es = Executors.newFixedThreadPool(20);
-Connection conn = factory.newConnection(es);
-----
+The same executor service may be shared between multiple connections, or serially re-used on re-connection but it cannot be used after it is `shutdown()`.
 
-Both `Executors` and `ExecutorService` classes
-are in the `java.util.concurrent` package.
-
-When the connection is closed a default `ExecutorService`
-will be `shutdown()`, but a user-supplied
-`ExecutorService` (like `es` above) will
-_not_ be `shutdown()`.
-Clients that supply a custom `ExecutorService` must ensure
-it is shutdown eventually (by calling its `shutdown()`
-method), or else the pool's threads may prevent JVM termination.
-
-The same executor service may be shared between multiple connections,
-or serially re-used on re-connection but it cannot be used after it is
-`shutdown()`.
-
-Use of this feature should only be considered if there is evidence
-that there is a severe bottleneck in the processing of `Consumer`
-callbacks.
-If there are no `Consumer` callbacks executed, or very few, the default
-allocation is more than sufficient. The overhead is initially minimal and
-the total thread resources allocated are bounded, even if a burst of consumer
-activity may occasionally occur.
+Use of this feature should only be considered if there is evidence that there is a severe bottleneck in the processing of `Consumer` callbacks.
+If there are no `Consumer` callbacks executed, or very few, the default allocation is more than sufficient.
+The overhead is initially minimal and the total thread resources allocated are bounded, even if a burst of consumer activity may occasionally occur.
 
 [[service-discovery-with-address-resolver]]
 === Service discovery with the AddressResolver interface
 
-It is possible to use an implementation of `AddressResolver` to change the endpoint resolution algorithm
-used at connection time:
+It is possible to use an implementation of `AddressResolver` to change the endpoint resolution algorithm used at connection time:
 
-[,]
-----
-
-Connection conn = factory.newConnection(addressResolver);
-----
+.Using an `AddressResolver` when opening a connection
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=address-resolver]
+--------
 
 The `AddressResolver` interface is like the following:
 
-[,]
-----
+.`AddressResolver` interface
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=address-resolver-interface]
+--------
 
-public interface AddressResolver {
+Just like with <<endpoints-list,a list of endpoints>>, the first `Address` returned will be tried first, then the second if the client fails to connect to the first, and so on.
 
-  List<Address> getAddresses() throws IOException;
+If an `ExecutorService` is provided as well (using the form `factory.newConnection(es, addressResolver)`) the thread pool is associated with the (first) successful connection.
 
-}
-----
+The `AddressResolver` is the perfect place to implement custom service discovery logic, which is especially useful in a dynamic infrastructure. Combined with <<recovery,automatic recovery>>, the client can automatically connect to nodes that weren't even up when it was first started.
+Affinity and load balancing are other scenarios where a custom `AddressResolver` could be useful.
 
-Just like with <<endpoints-list,a list of endpoints>>,
-the first `Address` returned will be tried first, then
-the second if the client fails to connect to the first, and so on.
+The Java client ships with the following implementations (see the javadoc for details):
 
-If an `ExecutorService` is provided as well (using the
-form `factory.newConnection(es, addressResolver)`) the thread pool is
-associated with the (first) successful connection.
+* `DnsRecordIpAddressResolver`: given the name of a host, returns its IP addresses (resolution against
+the platform DNS server).
+This can be useful for simple DNS-based load balancing or failover.
+* `DnsSrvRecordAddressResolver`: given the name of a service, returns hostname/port pairs.
+The search is implemented as a DNS SRV request.
+This can be useful when using a service registry like https://www.consul.io/[HashiCorp Consul].
 
-The `AddressResolver` is the perfect place to implement
-custom service discovery logic, which is especially useful in a dynamic
-infrastructure. Combined with <<recovery,automatic recovery>>,
-the client can automatically connect to nodes that weren't even up
-when it was first started. Affinity and load balancing are other
-scenarios where a custom `AddressResolver` could be useful.
+[[heartbeats-timeout]]
+=== Heartbeat Timeout
 
-The Java client ships with the following implementations
-(see the javadoc for details):
+See the https://rabbitmq.com/heartbeats.html[Heartbeats guide] for more information about heartbeats and how to configure them in the Java client.
 
-* `DnsRecordIpAddressResolver`: given the name
-of a host, returns its IP addresses (resolution against
-the platform DNS server). This can be useful for simple
-DNS-based load balancing or failover.
-* `DnsSrvRecordAddressResolver`: given the name
-of a service, returns hostname/port pairs. The search is
-implemented as a DNS SRV request. This can be useful
-when using a service registry like https://www.consul.io/[HashiCorp Consul].
+[[thread-factories]]
+=== Custom Thread Factories
 
-=== <<heartbeats-timeout,Heartbeat Timeout>>
+Environments such as Google App Engine (GAE) can https://developers.google.com/appengine/docs/java/#Java_The_sandbox[restrict direct thread instantiation].
+To use RabbitMQ Java client in such environments, it's necessary to configure a custom `ThreadFactory` that uses an appropriate method to instantiate threads, e.g. GAE's `ThreadManager`.
 
-See the link:heartbeats.html[Heartbeats guide] for more information about heartbeats and how to configure them in the Java client.
+Below is an example for Google App Engine:
 
-=== <<thread-factories,Custom Thread Factories>>
-
-Environments such as Google App Engine (GAE) can https://developers.google.com/appengine/docs/java/#Java_The_sandbox[restrict direct thread instantiation]. To use RabbitMQ Java client in such environments,
-it's necessary to configure a custom `ThreadFactory` that uses
-an appropriate method to instantiate threads, e.g. GAE's `ThreadManager`.
-
-Below is an example for Google App Engine.
-
-[,]
-----
-
+.Setting a custom `ThreadFactory`
+[source,java,indent=0]
+--------
 import com.google.appengine.api.ThreadManager;
 
 ConnectionFactory cf = new ConnectionFactory();
 cf.setThreadFactory(ThreadManager.backgroundThreadFactory());
-----
+--------
 
-=== <<java-nio,Support for Java non-blocking IO>>
+[[java-nio]]
+=== Support for Java non-blocking IO
 
-Version 4.0 of the Java client brings support for Java non-blocking
-IO (a.k.a Java NIO). NIO isn't supposed to be faster than blocking IO,
-it simply allows to control resources (in this case, threads) more easily.
+Version 4.0 of the Java client brings support for Java non-blocking IO (a.k.a Java NIO).
+NIO isn't supposed to be faster than blocking IO, it simply allows to control resources (in this case, threads) more easily.
 
-With the default blocking IO mode, each connection uses a thread to read
-from the network socket. With the NIO mode, you can control the number of
-threads that read and write from/to the network socket.
+With the default blocking IO mode, each connection uses a thread to read from the network socket.
+With the NIO mode, you can control the number of threads that read and write from/to the network socket.
 
 Use the NIO mode if your Java process uses many connections (dozens or hundreds).
-You should use fewer threads than with the default blocking mode. With the
-appropriate number of threads set, you shouldn't
-experience any decrease in performance, especially if the connections are
-not so busy.
+You should use fewer threads than with the default blocking mode.
+With the appropriate number of threads set, you shouldn't experience any decrease in performance, especially if the connections are not so busy.
 
-NIO must be enabled explicitly:
+NIO must be explicitly activated:
 
-[,]
-----
-
-ConnectionFactory connectionFactory = new ConnectionFactory();
-connectionFactory.useNio();
-----
+.Activating NIO
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=nio-on]
+--------
 
 The NIO mode can be configured through the `NioParams` class:
 
-[,]
-----
+.Configuring NIO
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=nio-params]
+--------
 
-  connectionFactory.setNioParams(new NioParams().setNbIoThreads(4));
-----
-
-The NIO mode uses reasonable defaults, but you may need to change them according
-to your own workload. Some of the settings are: the total number of IO
-threads used, the size of buffers, a service executor to use for the IO loops,
-parameters for the in-memory write queue (write requests are enqueued before
-being sent on the network). Please read the Javadoc for details and defaults.
+The NIO mode uses reasonable defaults, but you may need to change them according to your own workload.
+Some of the settings are: the total number of IO threads used, the size of buffers, a service executor to use for the IO loops, parameters for the in-memory write queue (write requests are enqueued before being sent on the network).
+Please read the Javadoc for details and defaults.
 
 [[recovery]]
 == Automatic Recovery From Network Failures
@@ -842,8 +707,7 @@ being sent on the network). Please read the Javadoc for details and defaults.
 === Connection Recovery
 
 Network connection between clients and RabbitMQ nodes can fail.
-RabbitMQ Java client supports automatic recovery of connections
-and topology (queues, exchanges, bindings, and consumers).
+RabbitMQ Java client supports automatic recovery of connections and topology (queues, exchanges, bindings, and consumers).
 
 The automatic recovery process for many applications follows the following steps:
 
@@ -853,264 +717,195 @@ The automatic recovery process for many applications follows the following steps
 * Restore channel listeners
 * Restore channel `basic.qos` setting, publisher confirms and transaction settings
 
-Topology recovery includes the following actions, performed for every channel
+Topology recovery includes the following actions, performed for every channel:
 
 * Re-declare exchanges (except for predefined ones)
 * Re-declare queues
 * Recover all bindings
 * Recover all consumers
 
-As of version 4.0.0 of the Java client, automatic recovery is enabled
-by default (and thus topology recovery as well).
+As of version 4.0.0 of the Java client, automatic recovery is enabled by default (and thus topology recovery as well).
 
 Topology recovery relies on a per-connection cache of entities (queues, exchanges,
-bindings, consumers). When, say, a queue is declared on a connection, it will be added to the cache.
-When it is deleted or is scheduled for deletion (e.g. because it is link:queues.html[auto-deleted])
-it will be removed. This model has some limitations covered below.
+bindings, consumers).
+When, say, a queue is declared on a connection, it will be added to the cache.
+When it is deleted or is scheduled for deletion (e.g. because it is https://rabbitmq.com/queues.html[auto-deleted]) it will be removed.
+This model has some limitations covered below.
 
-To disable or enable automatic connection recovery, use
-the `factory.setAutomaticRecoveryEnabled(boolean)`
-method. The following snippet shows how to explicitly
-enable automatic recovery (e.g. for Java client prior 4.0.0):
+To disable or enable automatic connection recovery, use the `factory.setAutomaticRecoveryEnabled(boolean)` method.
+The following snippet shows how to explicitly enable automatic recovery (e.g. for Java client prior 4.0.0):
 
-[,]
-----
+.Enabling recovery explicitly
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=recovery-enable]
+--------
+<1> Enable recovery
 
-ConnectionFactory factory = new ConnectionFactory();
-factory.setUsername(userName);
-factory.setPassword(password);
-factory.setVirtualHost(virtualHost);
-factory.setHost(hostName);
-factory.setPort(portNumber);
-factory.setAutomaticRecoveryEnabled(true);
-// connection that will recover automatically
-Connection conn = factory.newConnection();
-----
+If recovery fails due to an exception (e.g. RabbitMQ node is still not reachable), it will be retried after a fixed time interval (default is 5 seconds).
+The interval can be configured (in milliseconds):
 
-If recovery fails due to an exception (e.g. RabbitMQ node is
-still not reachable), it will be retried after a fixed time interval (default
-is 5 seconds). The interval can be configured:
+.Setting recovery interval
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=recovery-interval]
+--------
+<1> Attempt recovery every 10 seconds
 
-[,]
-----
+When a list of addresses is provided, the first <<endpoints-list,reachable endpoint>> will be used for the initial connection.
+In case of recovery, the list is shuffled and all addresses are tried, one after the next:
 
-ConnectionFactory factory = new ConnectionFactory();
-// attempt recovery every 10 seconds
-factory.setNetworkRecoveryInterval(10000);
-----
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=recovery-endpoint-list]
+--------
 
-When a list of addresses is provided, the list is shuffled and
-all addresses are tried, one after the next:
-
-[,]
-----
-
-ConnectionFactory factory = new ConnectionFactory();
-
-Address[] addresses = {new Address("192.168.1.4"), new Address("192.168.1.5")};
-factory.newConnection(addresses);
-----
-
-=== <<recovery-triggers,When Will Connection Recovery Be Triggered?>>
+[[recovery-triggers]]
+=== When Will Connection Recovery Be Triggered?
 
 Automatic connection recovery, if enabled, will be triggered by the following events:
 
 * An I/O exception is thrown in connection's I/O loop
 * A socket read operation times out
-* Missed server link:./heartbeats.html[heartbeats] are detected
+* Missed server https://rabbitmq.com/heartbeats.html[heartbeats] are detected
 * Any other unexpected exception is thrown in connection's I/O loop
 
 whichever happens first.
 
-If initial client connection to a RabbitMQ node fails, automatic connection
-recovery won't kick in. Applications developers are responsible for retrying
-such connections, logging failed attempts, implementing a limit to the number
-of retries and so on. Here's a very basic example:
+If initial client connection to a RabbitMQ node fails, automatic connection recovery won't kick in.
+Applications developers are responsible for retrying such connections, logging failed attempts, implementing a limit to the number of retries and so on.
+Here's a very basic example:
 
-[,]
-----
+.Retrying initial connection
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=recovery-retry-initial-connection]
+--------
 
-ConnectionFactory factory = new ConnectionFactory();
-// configure various connection settings
+When a connection is closed by the application via the `Connection.Close` method, connection recovery will not be initiated.
 
-try {
-  Connection conn = factory.newConnection();
-} catch (java.net.ConnectException e) {
-  Thread.sleep(5000);
-  // apply retry logic
-}
-----
+Channel-level exceptions will not trigger any kind of recovery as they usually indicate a semantic issue in the application (e.g. an attempt to consume from a non-existent queue).
 
-When a connection is closed by the application via the `Connection.Close` method,
-connection recovery will not be initiated.
+[[recovery-listeners]]
+=== Recovery Listeners
 
-Channel-level exceptions will not trigger any kind of recovery as they usually
-indicate a semantic issue in the application (e.g. an attempt to consume from a
-non-existent queue).
-
-=== <<recovery-listeners,Recovery Listeners>>
-
-It is possible to register one or more recovery listeners on recoverable connections
-and channels. When connection recovery is enabled, connections returned by
-`ConnectionFactory#newConnection` and `Connection#createChannel`
-implement `com.rabbitmq.client.Recoverable`, providing two methods with
+It is possible to register one or more recovery listeners on recoverable connections and channels.
+When connection recovery is enabled, connections returned by `ConnectionFactory#newConnection` and `Connection#createChannel` implement `com.rabbitmq.client.Recoverable`, providing two methods with
 fairly descriptive names:
 
 * `addRecoveryListener`
 * `removeRecoveryListener`
 
-Note that you currently need to cast connections and channels to `Recoverable`
-in order to use those methods.
+Note that you currently need to cast connections and channels to `Recoverable` in order to use those methods.
 
-=== <<publishers,Effects on Publishing>>
+[[publishers]]
+=== Effects on Publishing
 
-Messages that are published using `Channel.basicPublish` when connection is down
-will be lost. The client does not enqueue them for delivery after connection has recovered.
-To ensure that published messages reach RabbitMQ applications need to use link:confirms.html[Publisher Confirms]
-and account for connection failures.
+Messages that are published using `Channel.basicPublish` when connection is down will be lost.
+The client does not enqueue them for delivery after connection has recovered.
+To ensure that published messages reach RabbitMQ applications need to use https://rabbitmq.com/confirms.html[Publisher Confirms] and account for connection failures.
 
-=== <<topology-recovery,Topology Recovery>>
+[[topology-recovery]]
+=== Topology Recovery
 
-Topology recovery involves recovery of exchanges, queues, bindings
-and consumers. It is enabled by default when automatic recovery is
-enabled. Topology recovery is enabled by default in modern versions of the client.
+Topology recovery involves recovery of exchanges, queues, bindings and consumers.
+It is enabled by default when automatic recovery is enabled.
+Topology recovery is enabled by default in modern versions of the client.
 
 Topology recovery can be disabled explicitly if needed:
 
-[,]
-----
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=topology-recovery-enable]
+--------
+<1> Enable automatic recovery (e.g. Java client prior 4.0.0)
+<2> Disable topology recovery
 
-ConnectionFactory factory = new ConnectionFactory();
+[[automatic-recovery-limitations]]
+=== Failure Detection and Recovery Limitations
 
-Connection conn = factory.newConnection();
-// enable automatic recovery (e.g. Java client prior 4.0.0)
-factory.setAutomaticRecoveryEnabled(true);
-// disable topology recovery
-factory.setTopologyRecoveryEnabled(false);
-----
+Automatic connection recovery has a number of limitations and intentional design decisions that applications developers need to be aware of.
 
-=== <<automatic-recovery-limitations,Failure Detection and Recovery Limitations>>
+Topology recovery relies on a per-connection cache of entities (queues, exchanges, bindings, consumers).
+When, say, a queue is declared on a connection, it will be added to the cache.
+When it is deleted or is scheduled for deletion (e.g. because it is https://rabbitmq.com/queues.html[auto-deleted]) it will be removed.
+This makes it possible to declare and delete entities on different channels without having unexpected results.
+It also means that consumer tags (a channel-specific identifier) must be unique across all channels on connections that use automatic connection recovery.
 
-Automatic connection recovery has a number of limitations and intentional
-design decisions that applications developers need to be aware of.
+When a connection is down or lost, it https://rabbitmq.com/heartbeats.html[takes time to detect].
+Therefore there is a window of time in which both the library and the application are unaware of effective connection failure.
+Any messages published during this time frame are serialised and written to the TCP socket as usual.
+Their delivery to the broker can only be guaranteed via https://rabbitmq.com/confirms.html[publisher confirms]: publishing in AMQP 0-9-1 is entirely asynchronous by design.
 
-Topology recovery relies on a per-connection cache of entities (queues, exchanges,
-bindings, consumers). When, say, a queue is declared on a connection, it will be added to the cache.
-When it is deleted or is scheduled for deletion (e.g. because it is link:queues.html[auto-deleted])
-it will be removed. This makes it possible to declare and delete entities on different
-channels without having unexpected results. It also means that consumer tags (a channel-specific identifier)
-must be unique across all channels on connections that use automatic connection recovery.
+When a socket or I/O operation error is detected by a connection with automatic recovery enabled, recovery begins after a configurable delay, 5 seconds by default.
+This design assumes that even though a lot of network failures are transient and generally short-lived, they do not go away in an instant.
+Having a delay also avoids an inherent race condition between server-side resource cleanup (such as https://rabbitmq.com/queues.html[exclusive or auto-delete queue] deletion) and operations performed on a newly opened connection on the same resources.
 
-When a connection is down or lost, it link:./heartbeats.html[takes time to detect].
-Therefore there is a window of time in which both the
-library and the application are unaware of effective
-connection failure.  Any messages published during this
-time frame are serialised and written to the TCP socket
-as usual. Their delivery to the broker can only be
-guaranteed via link:./confirms.html[publisher
-confirms]: publishing in AMQP 0-9-1 is entirely
-asynchronous by design.
+Connection recovery attempts by default will continue at identical time intervals until a new connection is successfully opened.
+Recovery delay can be made dynamic by providing a `RecoveryDelayHandler` implementation instance to `ConnectionFactory#setRecoveryDelayHandler`.
+Implementations that use dynamically computed delay intervals should avoid values that are too low (such as values that are lower than 2 seconds).
 
-When a socket or I/O operation error is detected by a
-connection with automatic recovery enabled, recovery
-begins after a configurable delay, 5 seconds by
-default. This design assumes that even though a lot of
-network failures are transient and generally short
-lived, they do not go away in an instant. Having a delay
-also avoids an inherent race condition between server-side resource
-cleanup (such as link:queues.html[exclusive or auto-delete queue] deletion)
-and operations performed on a newly opened connection on the same resources.
+When a connection is in the recovering state, any publishing attempt on its channels will be rejected with an exception.
+The client currently does not perform any internal buffering of such outgoing messages.
+It is an application developer's responsibility to keep track of such messages and republish them when recovery succeeds.
+https://rabbitmq.com/confirms.html[Publisher confirms] is a protocol extension that should be used by publishers that cannot afford message loss.
 
-Connection recovery attempts by default will continue at identical time intervals until
-a new connection is successfully opened.
-Recovery delay can be made dynamic by providing a `RecoveryDelayHandler`
-implementation instance to `ConnectionFactory#setRecoveryDelayHandler`.
-Implementations that use dynamically computed delay intervals should avoid
-values that are too low (such as values that are lower than 2 seconds).
-
-When a connection is in the recovering state, any
-publishes attempted on its channels will be rejected
-with an exception. The client currently does not perform
-any internal buffering of such outgoing messages. It is
-an application developer's responsibility to keep track of such
-messages and republish them when recovery succeeds.
-link:./confirms.html[Publisher confirms] is a protocol extension
-that should be used by publishers that cannot afford message loss.
-
-Connection recovery will not kick in when a channel is closed due to a
-channel-level exception. Such exceptions often indicate application-level
-issues. The library cannot make an informed decision about when that's
-the case.
+Connection recovery will not kick in when a channel is closed due to a channel-level exception.
+Such exceptions often indicate application-level issues.
+The library cannot make an informed decision about when that's the case.
 
 Closed channels won't be recovered even after connection recovery kicks in.
-This includes both explicitly closed channels and the channel-level exception
-case above.
+This includes both explicitly closed channels and the channel-level exception case above.
 
-=== <<recovery-and-acknowledgements,Manual Acknowledgements and Automatic Recovery>>
+[[recovery-and-acknowledgements]]
+=== Manual Acknowledgements and Automatic Recovery
 
-When manual acknowledgements are used, it is possible that
-network connection to RabbitMQ node fails between message
-delivery and acknowledgement. After connection recovery,
-RabbitMQ will reset delivery tags on all channels.
+When manual acknowledgements are used, it is possible that network connection to RabbitMQ node fails between message delivery and acknowledgement.
+After connection recovery, RabbitMQ will reset delivery tags on all channels.
 
-This means that _basic.ack_, _basic.nack_, and _basic.reject_
-with old delivery tags will cause a channel exception. To avoid this,
-RabbitMQ Java client keeps track of and updates delivery tags to make them monotonically
-growing between recoveries.
+This means that _basic.ack_, _basic.nack_, and _basic.reject_with old delivery tags will cause a channel exception.
+To avoid this, RabbitMQ Java client keeps track of and updates delivery tags to make them monotonically growing between recoveries.
 
-`Channel.basicAck`,
-`Channel.basicNack`, and
-`Channel.basicReject` then translate adjusted
-delivery tags into those used by RabbitMQ.
+`Channel.basicAck`, `Channel.basicNack`, and `Channel.basicReject` then translate adjusted delivery tags into those used by RabbitMQ.
 
-Acknowledgements with stale delivery tags will not be sent. Applications
-that use manual acknowledgements and automatic recovery must
-be capable of handling redeliveries.
+Acknowledgements with stale delivery tags will not be sent.
+Applications that use manual acknowledgements and automatic recovery must be capable of handling redeliveries.
 
-=== <<recovery-channel-lifecycle,Channels Lifecycle and Topology Recovery>>
+[[recovery-channel-lifecycle]]
+=== Channels Lifecycle and Topology Recovery
 
-Automatic connection recovery is meant to be as transparent as possible
-for the application developer, that's why `Channel` instances
-remain the same even if several connections fail and recover behind the scenes.
-Technically, when automatic recovery is on, `Channel` instances
-act as proxies or decorators: they delegate the AMQP business to an
-actual AMQP channel implementation and implement some recovery machinery around it.
-That is why you shouldn't close a channel after it has created some resources
-(queues, exchanges, bindings) or topology recovery for those resources
-will fail later, as the channel has been closed. Instead, leave creating channels open
-for the life of the application.
+Automatic connection recovery is meant to be as transparent as possible for the application developer, that's why `Channel` instances remain the same even if several connections fail and recover behind the scenes.
+Technically, when automatic recovery is on, `Channel` instances act as proxies or decorators: they delegate the AMQP business to an actual AMQP channel implementation and implement some recovery machinery around it.
+That is why you shouldn't close a channel after it has created some resources (queues, exchanges, bindings) or topology recovery for those resources will fail later, as the channel has been closed.
+Instead, leave creating channels open for the life of the application.
 
-== <<unhandled-exceptions,Unhandled Exceptions>>
+[[unhandled-exceptions]]
+== Unhandled Exceptions
 
-Unhandled exceptions related to connection, channel, recovery,
-and consumer lifecycle are delegated to the exception
-handler. Exception handler is any object that implements the
-`ExceptionHandler` interface.  By default, an
-instance of `DefaultExceptionHandler` is used. It
-prints exception details to the standard output.
+Unhandled exceptions related to connection, channel, recovery, and consumer lifecycle are delegated to the exception handler.
+Exception handler is any object that implements the `ExceptionHandler` interface.
+By default, an instance of `DefaultExceptionHandler` is used.
+It prints exception details to the standard output.
 
-It is possible to override the handler using
-`ConnectionFactory#setExceptionHandler`. It will be
-used for all connections created by the factory:
+It is possible to override the handler using `ConnectionFactory#setExceptionHandler`.
+It will be used for all connections created by the factory:
 
-[,]
-----
-
-ConnectionFactory factory = new ConnectionFactory();
-cf.setExceptionHandler(customHandler);
-----
+.Setting a customer exception handler
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=exception-handler]
+--------
 
 Exception handlers should be used for exception logging.
 
-== <<metrics,Metrics and Monitoring>>
+[[metrics]]
+== Metrics and Monitoring
 
-The client collects runtime metrics (e.g. number
-of published messages) for active connections. Metric collection is optional feature that should be set up
-at the `ConnectionFactory` level, using the `setMetricsCollector(metricsCollector)` method.
-This method expects a `MetricsCollector` instance, which is
-called in several places of the client code.
+The client collects runtime metrics (e.g. number of published messages) for active connections.
+Metric collection is an optional feature that should be set up at the `ConnectionFactory` level, using the `setMetricsCollector(metricsCollector)` method.
+This method expects a `MetricsCollector` instance, which is called in several places of the client code.
 
-The client supports http://micrometer.io[Micrometer], http://metrics.dropwizard.io[Dropwizard Metrics] and https://opentelemetry.io/[OpenTelemetry] out of the box.
+The client supports https://micrometer.io[Micrometer] and https://metrics.dropwizard.io[Dropwizard Metrics].
 
 Here are the collected metrics:
 
@@ -1125,123 +920,84 @@ Here are the collected metrics:
 * Number of acknowledged messages
 * Number of rejected messages
 
-Both Micrometer and Dropwizard Metrics provide counts, but also
-mean rate, last five minute rate, etc, for messages-related
-metrics. They also support common tools for monitoring and reporting
-(JMX, Graphite, Ganglia, Datadog, etc). See the dedicated
-sections below for more details.
+Both Micrometer and Dropwizard Metrics provide counts, but also mean rate, last five minute rate, etc, for messages-related metrics.
+They also support common tools for monitoring and reporting (JMX, Graphite, Ganglia, Datadog, etc).
+See the dedicated sections below for more details.
 
 Developers should keep a few things in mind when enabling metric collection.
 
 * Don't forget to add the appropriate dependencies (in Maven, Gradle, or even as JAR files) to JVM
 classpath when using Micrometer or Dropwizard Metrics.
 Those are optional dependencies and will not be pulled automatically with the Java client.
-You may also need to add other dependencies depending on the reporting
-backend(s) used.
-* Metrics collection is extensible. Implementing a custom
-`MetricsCollector` for specific needs is encouraged.
-* The `MetricsCollector` is set at the `ConnectionFactory`
-level but can be shared across different instances.
-* Metrics collection doesn't support transactions. E.g. if an acknowledgment
-is sent in a transaction and the transaction is then rolled back,
-the acknowledgment is counted in the client metrics (but not by the broker
-obviously). Note the acknowledgment is actually sent to the broker and
-then cancelled by the transaction rollback, so the client metrics
-are correct in term of acknowledgments sent. As a summary, don't use
-client metrics for critical business logic, they're not guaranteed
-to be perfectly accurate. They are meant to be used to simplify reasoning
-about a running system and make operations more efficient.
+You may also need to add other dependencies depending on the reporting backend(s) used.
+* Metrics collection is extensible.
+Implementing a custom `MetricsCollector` for specific needs is encouraged.
+* The `MetricsCollector` is set at the `ConnectionFactory` level but can be shared across different instances.
+* Metrics collection doesn't support transactions.
+E.g. if an acknowledgment is sent in a transaction and the transaction is then rolled back, the acknowledgment is counted in the client metrics (but not by the broker obviously).
+Note the acknowledgment is actually sent to the broker and then cancelled by the transaction rollback, so the client metrics are correct in terms of acknowledgments sent.
+As a summary, don't use client metrics for critical business logic, they are not guaranteed to be perfectly accurate.
+They are meant to be used to simplify reasoning about a running system and make operations more efficient.
 
-=== <<metrics-micrometer,Micrometer support>>
+[[metrics-micrometer]]
+=== Micrometer support
 
-Metric collection has to be enabled first:
+For Micrometer you must set the `MeterRegistry` for one or several of the http://micrometer.io/docs[supported reporting backends] (Netflix Atlas, Prometheus, Datadog, Influx, JMX, etc).
+Here is an example with Prometheus:
 
-http://micrometer.io[Micrometer] the following way:
+.Setting Micrometer with Prometheus
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=metrics-prometheus]
+--------
+<1> Create Micrometer's `MeterRegistry` for Prometheus
+<2> Create `MetricsCollector`
+<3> Set `MetricsCollector` on `ConnectionFactory`
 
-[,]
-----
+Note an application needs also to expose https://docs.micrometer.io/micrometer/reference/implementations/prometheus.html#_configuring[an HTTP endpoint to Prometheus' scraper].
 
-ConnectionFactory connectionFactory = new ConnectionFactory();
-MicrometerMetricsCollector metrics = new MicrometerMetricsCollector();
-connectionFactory.setMetricsCollector(metrics);
-...
-metrics.getPublishedMessages(); // get Micrometer's Counter object
-----
+[[metrics-dropwizard-metrics]]
+=== Dropwizard Metrics support
 
-Micrometer supports http://micrometer.io/docs[several reporting backends]:
-Netflix Atlas, Prometheus, Datadog, Influx, JMX, etc.
+Enable metrics collection with https://metrics.dropwizard.io[Dropwizard] like so:
 
-You would typically pass in an instance of `MeterRegistry`
-to the `MicrometerMetricsCollector`. Here is an example
-with JMX:
+.Enabling Dropwizard Metrics
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=metrics-dropwizard]
+--------
+<1> Get Metrics' `Meter` object
 
-[,]
-----
+Dropwizard Metrics supports http://metrics.dropwizard.io/4.2.0/getting-started.html[several reporting backends]: console, JMX, HTTP, Graphite, etc.
 
-JmxMeterRegistry registry = new JmxMeterRegistry();
-MicrometerMetricsCollector metrics = new MicrometerMetricsCollector(registry);
-ConnectionFactory connectionFactory = new ConnectionFactory();
-connectionFactory.setMetricsCollector(metrics);
-----
+You would typically pass in an instance of `MetricsRegistry` to the `StandardMetricsCollector`.
+Here is an example with JMX:
 
-=== <<metrics-dropwizard-metrics,Dropwizard Metrics support>>
+.Enabling JMX support for Dropwizard Metrics
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=metrics-dropwizard-jmx]
+--------
 
-Enable metrics collection with http://metrics.dropwizard.io[Dropwizard] like so:
+[[gae-pitfalls]]
+== RabbitMQ Java Client on Google App Engine
 
-[,]
-----
+Using RabbitMQ Java client on Google App Engine (GAE) requires using a <<thread-factories,a custom thread factory>> that instantiates thread using GAE's `ThreadManager` (see above).
+In addition, it is necessary to set a low heartbeat interval (4-5 seconds) to avoid running into the low `InputStream` read timeouts on GAE:
 
-ConnectionFactory connectionFactory = new ConnectionFactory();
-StandardMetricsCollector metrics = new StandardMetricsCollector();
-connectionFactory.setMetricsCollector(metrics);
-...
-metrics.getPublishedMessages(); // get Metrics' Meter object
-----
+.Setting a 5-second heartbeat for GAE
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=gae-heartbeat]
+--------
 
-Dropwizard Metrics supports http://metrics.dropwizard.io/3.2.3/getting-started.html[several reporting backends]:
-console, JMX, HTTP, Graphite, Ganglia, etc.
+[[cache-pitfalls]]
+== Caveats and Limitations
 
-You would typically pass in an instance of `MetricsRegistry`
-to the `StandardMetricsCollector`. Here is an example
-with JMX:
-
-[,]
-----
-
-MetricRegistry registry = new MetricRegistry();
-StandardMetricsCollector metrics = new StandardMetricsCollector(registry);
-
-ConnectionFactory connectionFactory = new ConnectionFactory();
-connectionFactory.setMetricsCollector(metrics);
-
-JmxReporter reporter = JmxReporter
-  .forRegistry(registry)
-  .inDomain("com.rabbitmq.client.jmx")
-  .build();
-reporter.start();
-----
-
-== <<gae-pitfalls,RabbitMQ Java Client on Google App Engine>>
-
-Using RabbitMQ Java client on Google App Engine (GAE) requires using a custom
-thread factory that instantiates thread using GAE's `ThreadManager` (see above).
-In addition, it is necessary to set a low heartbeat interval (4-5 seconds) to avoid running
-into the low `InputStream` read timeouts on GAE:
-
-[,]
-----
-
-ConnectionFactory factory = new ConnectionFactory();
-cf.setRequestedHeartbeat(5);
-----
-
-== <<cache-pitfalls,Caveats and Limitations>>
-
-To make topology recovery possible, RabbitMQ Java client maintains a cache
-of declared queues, exchanges, and bindings. The cache is per-connection. Certain
-RabbitMQ features make it impossible for clients to observe some topology changes,
-e.g. when a queue is deleted due to TTL. RabbitMQ Java client tries to invalidate
-cache entries in the most common cases:
+To make topology recovery possible, RabbitMQ Java client maintains a cache of declared queues, exchanges, and bindings.
+The cache is per-connection.
+Certain RabbitMQ features make it impossible for clients to observe some topology changes, e.g. when a queue is deleted due to TTL.
+RabbitMQ Java client tries to invalidate cache entries in the most common cases:
 
 * When a queue is deleted.
 * When an exchange is deleted.
@@ -1250,184 +1006,116 @@ cache entries in the most common cases:
 * When a queue or exchange is unbound from an auto-deleted exchange.
 
 However, the client cannot track these topology changes beyond a single connection.
-Applications that rely on auto-delete queues or exchanges, as well as queue TTL (note: not message TTL!),
-and use <<connection-recovery,automatic connection recovery>>, should explicitly delete entities know to be unused
-or deleted, to purge client-side topology cache. This is facilitated by `Channel#queueDelete`,
-`Channel#exchangeDelete`, `Channel#queueUnbind`, and `Channel#exchangeUnbind`
-being idempotent in RabbitMQ 3.3.x (deleting what's not there does not result in an exception).
+Applications that rely on auto-delete queues or exchanges, as well as queue TTL (note: not message TTL!), and use <<connection-recovery,automatic connection recovery>>, should explicitly delete entities known to be unused or deleted, to purge client-side topology cache.
+This is facilitated by `Channel#queueDelete`, `Channel#exchangeDelete`, `Channel#queueUnbind`, and `Channel#exchangeUnbind` being idempotent in RabbitMQ 3.3.x (deleting what's not there does not result in an exception).
 
-== <<rpc,The RPC (Request/Reply) Pattern: an Example>>
+[[rpc]]
+== The RPC (Request/Reply) Pattern: an Example
 
-As a programming convenience, the Java client API offers a
-class `RpcClient` which uses a temporary reply
-queue to provide simple link:./tutorials/tutorial-six-java.html[RPC-style communication] facilities via AMQP 0-9-1.
+As a programming convenience, the Java client API offers a class `RpcClient` which uses a temporary reply queue to provide simple https://rabbitmq.com/tutorials/tutorial-six-java.html[RPC-style communication] facilities via AMQP 0-9-1.
 
 The class doesn't impose any particular format on the RPC arguments and return values.
-It simply provides a mechanism for sending a message to a given exchange with a particular
-routing key, and waiting for a response on a reply queue.
+It simply provides a mechanism for sending a message to a given exchange with a particular routing key, and waiting for a response on a reply queue.
 
-[,]
-----
+.Declaring an RPC client
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=rpc-client]
+--------
 
-import com.rabbitmq.client.RpcClient;
-
-RpcClient rpc = new RpcClient(channel, exchangeName, routingKey);
-----
-
-(The implementation details of how this class uses AMQP 0-9-1 are as follows: request messages are sent with the
-`basic.correlation_id` field set to a value unique for this `RpcClient` instance,
-and with `basic.reply_to` set to the name of the reply queue.)
+The implementation details of how this class uses AMQP 0-9-1 are as follows: request messages are sent with the `basic.correlation_id` field set to a value unique for this `RpcClient` instance,
+and with `basic.reply_to` set to the name of the reply queue.
 
 Once you have created an instance of this class, you can use it to send RPC requests by using any of the following methods:
 
-[,]
-----
-
+.`RpcClient` methods
+[source,java,indent=0]
+--------
 byte[] primitiveCall(byte[] message);
-String stringCall(String message)
-Map mapCall(Map message)
-Map mapCall(Object[] keyValuePairs)
-----
+String stringCall(String message);
+Map mapCall(Map message);
+Map mapCall(Object[] keyValuePairs);
+--------
 
-The `primitiveCall` method transfers raw byte arrays as the request and response
-bodies. The method `stringCall` is a thin
-convenience wrapper around `primitiveCall`,
-treating the message bodies as `String` instances
-in the default character encoding.
+The `primitiveCall` method transfers raw byte arrays as the request and response bodies.
+The method `stringCall` is a thin convenience wrapper around `primitiveCall`, treating the message bodies as `String` instances in the default character encoding.
 
-The `mapCall` variants are a little more sophisticated: they encode
-a `java.util.Map` containing ordinary Java values
-into an AMQP 0-9-1 binary table representation, and decode the
-response in the same way. (Note that there are some restrictions on what value
-types can be used here - see the javadoc for details.)
+The `mapCall` variants are a little more sophisticated: they encode a `java.util.Map` containing ordinary Java values into an AMQP 0-9-1 binary table representation, and decode the response in the same way.
+Note that there are some restrictions on what value types can be used here - see the Javadoc for details.
 
-All the marshalling/unmarshalling convenience methods use `primitiveCall` as a
-transport mechanism, and just provide a wrapping layer on top of it.
+All the marshalling/unmarshalling convenience methods use `primitiveCall` as a transport mechanism, and just provide a wrapping layer on top of it.
 
-== <<tls,TLS Support>>
+[[tls]]
+== TLS Support
 
-It's possible to encrypt the communication between the client and the broker
-link:./ssl.html[using TLS]. Client and server authentication (a.k.a. peer verification) is also supported.
+It's possible to encrypt the communication between the client and the broker https://rabbitmq.com/ssl.html[using TLS].
+Client and server authentication (a.k.a. peer verification) is also supported.
 Here is the simplest, most naive way to use encryption with the Java client:
 
-[,]
-----
+.TLS simplest configuration, do not use in production
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=tls-simple]
+--------
 
-ConnectionFactory factory = new ConnectionFactory();
-factory.setHost("localhost");
-factory.setPort(5671);
+Note the client doesn't enforce any server authentication (https://rabbitmq.com/ssl.html#peer-verification[peer certificate chain verification]) in the above sample as the default, "trust all certificates" `TrustManager` is used.
+This is convenient for local development but *prone to man-in-the-middle attacks* and therefore https://rabbitmq.com/production-checklist.html[not recommended for production].
 
-// Only suitable for development.
-// This code will not perform peer certificate chain verification and prone
-// to man-in-the-middle attacks.
-// See the main TLS guide to learn about peer verification and how to enable it.
-factory.useSslProtocol();
-----
+To learn more about TLS support in RabbitMQ, see the https://rabbitmq.com/ssl.html[TLS guide].
+If you only want to configure the Java client (especially the peer verification and trust manager parts), read https://rabbitmq.com/ssl.html#java-client[the appropriate section] of the TLS guide.
 
-Note the client doesn't enforce any server authentication (link:./ssl.html#peer-verification[peer certificate chain verification]) in the above
-sample as the default, "trust all certificates" `TrustManager` is used.
-This is convenient for local development but *prone to man-in-the-middle attacks*
-and therefore link:./production-checklist.html[not recommended for production].
-
-To learn more about TLS support in RabbitMQ, see
-the link:ssl.html[TLS guide]. If you only want to configure
-the Java client (especially the peer verification and trust manager parts),
-read link:ssl.html#java-client[the appropriate section] of the TLS guide.
-
-== <<oauth2-support,OAuth 2 Support>>
+[[oauth2-support]]
+== OAuth 2 Support
 
 The client can authenticate against an OAuth 2 server like https://github.com/cloudfoundry/uaa[UAA].
-The https://github.com/rabbitmq/rabbitmq-server/tree/main/deps/rabbitmq_auth_backend_oauth2[OAuth 2 plugin]
-must be enabled on the server side and configured to use the same
-OAuth 2 server as the client.
+The https://github.com/rabbitmq/rabbitmq-server/tree/main/deps/rabbitmq_auth_backend_oauth2[OAuth 2 plugin] must be enabled on the server side and configured to use the same OAuth 2 server as the client.
 
-=== <<oauth2-getting-token,Getting the OAuth 2 Token>>
+[[oauth2-getting-token]]
+=== Getting the OAuth 2 Token
 
-The Java client provides the `OAuth2ClientCredentialsGrantCredentialsProvider`
-class to get a JWT token using the https://tools.ietf.org/html/rfc6749#section-4.4[OAuth 2 Client Credentials flow].
+The Java client provides the `OAuth2ClientCredentialsGrantCredentialsProvider` class to get a JWT token using the https://tools.ietf.org/html/rfc6749#section-4.4[OAuth 2 Client Credentials flow].
 The client will send the JWT token in the password field when opening a connection.
-The broker will then verify the JWT token signature, validity, and permissions
-before authorising the connection and granting access to the requested
-virtual host.
+The broker will then verify the JWT token signature, validity, and permissions before authorising the connection and granting access to the requested virtual host.
 
-Prefer the use of `OAuth2ClientCredentialsGrantCredentialsProviderBuilder`
-to create an `OAuth2ClientCredentialsGrantCredentialsProvider` instance and
-then set it up on the `ConnectionFactory`. The
-following snippet shows how to configure and create an instance of the OAuth 2 credentials provider
-for the https://github.com/rabbitmq/rabbitmq-server/tree/main/deps/rabbitmq_auth_backend_oauth2#examples[example setup of the OAuth 2 plugin]:
+Prefer the use of `OAuth2ClientCredentialsGrantCredentialsProviderBuilder` to create an `OAuth2ClientCredentialsGrantCredentialsProvider` instance and then set it up on the `ConnectionFactory`.
+The following snippet shows how to configure and create an instance of the OAuth 2 credentials provider for the https://github.com/rabbitmq/rabbitmq-server/tree/main/deps/rabbitmq_auth_backend_oauth2#examples[example setup of the OAuth 2 plugin]:
 
-[,]
-----
+.Configuring OAuth2 `CredentialsProvider`
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=oauth2-credentials]
+--------
 
-import com.rabbitmq.client.impl.OAuth2ClientCredentialsGrantCredentialsProvider.
-        OAuth2ClientCredentialsGrantCredentialsProviderBuilder;
-...
-CredentialsProvider credentialsProvider =
-  new OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
-    .tokenEndpointUri("http://localhost:8080/uaa/oauth/token/")
-    .clientId("rabbit_client").clientSecret("rabbit_secret")
-    .grantType("password")
-    .parameter("username", "rabbit_super")
-    .parameter("password", "rabbit_super")
-    .build();
+In production, make sure to use HTTPS for the token endpoint URI and configure the `SSLContext` if necessary for the HTTPS requests (to verify and trust the identity of the OAuth 2 server).
+The following snippet does so by using the `tls().sslContext(SSLContext)` method from `OAuth2ClientCredentialsGrantCredentialsProviderBuilder`:
 
-connectionFactory.setCredentialsProvider(credentialsProvider);
-----
+.Configuring TLS for OAuth2 `CredentialsProvider`
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=oauth2-credentials-tls]
+--------
+<1> Create then initialise `SSLContext`
+<2> Configure TLS
+<3> Set `SSLContext`
+<4> Go back to main configuration
 
-In production, make sure to use HTTPS for the token endpoint URI and configure
-the `SSLContext` if necessary for the HTTPS requests (to verify and trust
-the identity of the OAuth 2 server). The following snippet does
-so by using the `tls().sslContext()` method from
-`OAuth2ClientCredentialsGrantCredentialsProviderBuilder`:
+Please consult the https://rabbitmq.github.io/rabbitmq-java-client/api/current/com/rabbitmq/client/impl/OAuth2ClientCredentialsGrantCredentialsProvider.html[Javadoc] to see all the available options.
 
-[,]
-----
+[[oauth2-refreshing-token]]
+=== Refreshing the Token
 
-SSLContext sslContext = ... // create and initialise SSLContext
+Tokens expire and the broker will refuse operations on connections with expired tokens.
+To avoid this, it is possible to call `CredentialsProvider#refresh()` before expiration and send the new token to the server.
+This is cumbersome from an application point of view, so the Java client provides help with the `DefaultCredentialsRefreshService`.
+This utility tracks used tokens, refreshes them before they expire, and send the new tokens for the connections it is responsible for.
 
-CredentialsProvider credentialsProvider =
-  new OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
-    .tokenEndpointUri("http://localhost:8080/uaa/oauth/token/")
-    .clientId("rabbit_client").clientSecret("rabbit_secret")
-    .grantType("password")
-    .parameter("username", "rabbit_super")
-    .parameter("password", "rabbit_super")
-    .tls()                    // configure TLS
-      .sslContext(sslContext) // set SSLContext
-      .builder()              // back to main configuration
-    .build();
-----
+The following snippet shows how to create a `DefaultCredentialsRefreshService` instance and set it up on the `ConnectionFactory`:
 
-Please consult the https://rabbitmq.github.io/rabbitmq-java-client/api/current/com/rabbitmq/client/impl/OAuth2ClientCredentialsGrantCredentialsProvider.html[Javadoc]
-to see all the available options.
+.Configuring the token refresh service
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=oauth2-refresh]
+--------
 
-=== <<oauth2-refreshing-token,Refreshing the Token>>
-
-Tokens expire and the broker will refuse operations on connections with
-expired tokens. To avoid this, it is possible to call
-`CredentialsProvider#refresh()` before expiration and send the new
-token to the server. This is cumbersome
-from an application point of view, so the Java client provides
-help with the `DefaultCredentialsRefreshService`. This utility
-tracks used tokens, refreshes them before they expire, and send
-the new tokens for the connections it is responsible for.
-
-The following snippet shows how to create a `DefaultCredentialsRefreshService`
-instance and set it up on the `ConnectionFactory`:
-
-[,]
-----
-
-import com.rabbitmq.client.impl.DefaultCredentialsRefreshService.
-        DefaultCredentialsRefreshServiceBuilder;
-...
-CredentialsRefreshService refreshService =
-  new DefaultCredentialsRefreshServiceBuilder().build();
-cf.setCredentialsRefreshService(refreshService);
-----
-
-The `DefaultCredentialsRefreshService` schedules a refresh after 80%
-of the token validity time, e.g. if the token expires in 60 minutes,
-it will be refreshed after 48 minutes. This is the default behaviour,
-please consult the https://rabbitmq.github.io/rabbitmq-java-client/api/current/com/rabbitmq/client/impl/DefaultCredentialsRefreshService.html[Javadoc]
-for more information.
+The `DefaultCredentialsRefreshService` schedules a refresh after 80% of the token validity time, e.g. if the token expires in 60 minutes, it will be refreshed after 48 minutes.
+This is the default behaviour, please consult the https://rabbitmq.github.io/rabbitmq-java-client/api/current/com/rabbitmq/client/impl/DefaultCredentialsRefreshService.html[Javadoc] for more information.

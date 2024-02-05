@@ -1,12 +1,27 @@
 package com.rabbitmq.docs;
 
 // tag::imports[]
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.jmx.JmxReporter;
 import com.rabbitmq.client.*;
+import com.rabbitmq.client.Method;
+import com.rabbitmq.client.impl.*;
+import com.rabbitmq.client.impl.DefaultCredentialsRefreshService.DefaultCredentialsRefreshServiceBuilder;
+import com.rabbitmq.client.impl.nio.NioParams;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 // end::imports[]
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static com.rabbitmq.client.impl.OAuth2ClientCredentialsGrantCredentialsProvider.*;
 
 public class Api {
 
@@ -28,7 +43,7 @@ public class Api {
   void uri() throws Exception {
     // tag::uri[]
     ConnectionFactory factory = new ConnectionFactory();
-    factory.setUri("amqp://userName:password@hostName:portNumber/virtualHost");
+    factory.setUri("amqp://username:password@host:port/virtualHost");
     Connection conn = factory.newConnection();
     // end::uri[]
   }
@@ -227,5 +242,288 @@ public class Api {
     // tag::basic-get-ack[]
     channel.basicAck(response.getEnvelope().getDeliveryTag(), false);  // <1>
     // end::basic-get-ack[]
+  }
+
+  void returning() {
+    Channel channel = null;
+    // tag::returning[]
+    channel.addReturnListener((replyCode, replyText, exchange,
+                               routingKey, properties, body) -> {
+      // handle unroutable message
+    });
+    // end::returning[]
+  }
+
+  void shutdownListener() {
+    Connection connection = null;
+    // tag::shutdown-listener[]
+    connection.addShutdownListener(cause -> {
+      // action to run after shutdown, e.g. logging
+    });
+    // end::shutdown-listener[]
+  }
+
+  void shutdownCause() {
+    Connection connection = null;
+    // tag::shutdown-cause[]
+    connection.addShutdownListener(cause -> {
+      if (cause.isHardError()) {
+        Connection conn = (Connection) cause.getReference();
+        if (!cause.isInitiatedByApplication()) {
+          Method reason = cause.getReason();
+          // ...
+        }
+      } else {
+        Channel ch = (Channel) cause.getReference();
+        // ...
+      }
+    });
+    // end::shutdown-cause[]
+  }
+
+  void shutdownAtomicity() throws Exception {
+    Channel channel = null;
+    // tag::shutdown-atomicity-broken[]
+    // broken code, do not do this
+    if (channel.isOpen()) {
+      // The following code depends on the channel being in open state.
+      // However, there is a possibility of the change in the channel state
+      // between isOpen() and basicQos(1) call
+      // ...
+      channel.basicQos(1);
+    }
+    // end::shutdown-atomicity-broken[]
+
+    // tag::shutdown-atomicity-valid[]
+    try {
+      // ...
+      channel.basicQos(1);
+    } catch (ShutdownSignalException sse) {
+      // possibly check if channel was closed
+      // by the time we started action and reasons for
+      // closing it
+      // ...
+    } catch (IOException ioe) {
+      // check why connection was closed
+      // ...
+    }
+    // end::shutdown-atomicity-valid[]
+  }
+
+  void consumerThreadPool() throws Exception {
+    ConnectionFactory factory = null;
+    // tag::consumer-thread-pool[]
+    ExecutorService es = Executors.newFixedThreadPool(20);
+    Connection conn = factory.newConnection(es);
+    // end::consumer-thread-pool[]
+  }
+
+  void addressResolver() throws Exception {
+    ConnectionFactory factory = null;
+    com.rabbitmq.client.AddressResolver addressResolver = null;
+    // tag::address-resolver[]
+    Connection conn = factory.newConnection(addressResolver);
+    // end::address-resolver[]
+  }
+
+  // tag::address-resolver-interface[]
+  public interface AddressResolver {
+
+    List<Address> getAddresses() throws IOException;
+
+  }
+  // end::address-resolver-interface[]
+
+  void nio() throws Exception {
+    ConnectionFactory factory = null;
+    // tag::nio-on[]
+    ConnectionFactory connectionFactory = new ConnectionFactory();
+    connectionFactory.useNio();
+    // end::nio-on[]
+    // tag::nio-params[]
+    connectionFactory.setNioParams(new NioParams().setNbIoThreads(4));
+    // end::nio-params[]
+  }
+
+  void recoveryEnable() throws Exception {
+    String username = null, password = null, virtualHost = null, host = null;
+    int port = 5672;
+    // tag::recovery-enable[]
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setUsername(username);
+    factory.setPassword(password);
+    factory.setVirtualHost(virtualHost);
+    factory.setHost(host);
+    factory.setPort(port);
+    factory.setAutomaticRecoveryEnabled(true);  // <1>
+    Connection conn = factory.newConnection();
+    // end::recovery-enable[]
+  }
+
+  void recoveryInterval() {
+    // tag::recovery-interval[]
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setNetworkRecoveryInterval(10_000);  // <1>
+    // end::recovery-interval[]
+  }
+
+  void recoveryEndpointList() throws Exception {
+    // tag::recovery-endpoint-list[]
+    ConnectionFactory factory = new ConnectionFactory();
+    Address[] addresses = {new Address("192.168.1.4"),
+                           new Address("192.168.1.5")};
+    factory.newConnection(addresses);
+    // end::recovery-endpoint-list[]
+  }
+
+  void recoveryRetryInitialConnection() throws Exception {
+    // tag::recovery-retry-initial-connection[]
+    ConnectionFactory factory = new ConnectionFactory();
+    // configure various connection settings
+    try {
+      Connection conn = factory.newConnection();
+    } catch (java.net.ConnectException e) {
+      Thread.sleep(5000);
+      // apply retry logic
+    }
+    // end::recovery-retry-initial-connection[]
+  }
+
+  void topologyRecoveryEnable() throws Exception {
+    // tag::topology-recovery-enable[]
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setAutomaticRecoveryEnabled(true);  // <1>
+    factory.setTopologyRecoveryEnabled(false);  // <2>
+    Connection conn = factory.newConnection();
+    // end::topology-recovery-enable[]
+  }
+
+  void exceptionHandler() throws Exception {
+    ExceptionHandler customHandler = null;
+    // tag::exception-handler[]
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setExceptionHandler(customHandler);
+    // end::exception-handler[]
+  }
+
+  void metricsPrometheus() {
+    // tag::metrics-prometheus[]
+    ConnectionFactory factory = new ConnectionFactory();
+    MeterRegistry registry = new PrometheusMeterRegistry(  // <1>
+        PrometheusConfig.DEFAULT
+    );
+    MetricsCollector metricsCollector = new MicrometerMetricsCollector(  // <2>
+        registry
+    );
+    factory.setMetricsCollector(metricsCollector);  // <3>
+    // end::metrics-prometheus[]
+  }
+
+  void metricsDropwizard() {
+    // tag::metrics-dropwizard[]
+    ConnectionFactory connectionFactory = new ConnectionFactory();
+    StandardMetricsCollector metricsCollector =
+        new StandardMetricsCollector();
+    connectionFactory.setMetricsCollector(metricsCollector);
+    // ...
+    metricsCollector.getPublishedMessages();  // <1>
+    // end::metrics-dropwizard[]
+  }
+
+  void metricsDropwizardJmx() {
+    // tag::metrics-dropwizard-jmx[]
+    MetricRegistry registry = new MetricRegistry();
+    MetricsCollector metricsCollector = new StandardMetricsCollector(
+        registry
+    );
+
+    ConnectionFactory connectionFactory = new ConnectionFactory();
+    connectionFactory.setMetricsCollector(metricsCollector);
+
+    JmxReporter reporter = JmxReporter.forRegistry(registry)
+        .inDomain("com.rabbitmq.client.jmx")
+        .build();
+    reporter.start();
+    // end::metrics-dropwizard-jmx[]
+  }
+
+  void googleAppEngineHeartbeart() {
+    // tag::gae-heartbeat[]
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setRequestedHeartbeat(5);
+    // end::gae-heartbeat[]
+  }
+
+  void rpc() throws Exception {
+    Channel channel = null;
+    String exchangeName = null;
+    String routingKey = null;
+    // tag::rpc-client[]
+    RpcClient rpc = new RpcClient(new RpcClientParams()
+        .channel(channel)
+        .exchange(exchangeName)
+        .routingKey(routingKey));
+    // end::rpc-client[]
+  }
+
+  void tlsSimple() throws Exception {
+    // tag::tls-simple[]
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setHost("localhost");
+    factory.setPort(5671);
+    // Only suitable for development.
+    // This code will not perform peer certificate chain verification
+    // and is prone to man-in-the-middle attacks.
+    // See the main TLS guide to learn about peer verification
+    // and how to enable it.
+    factory.useSslProtocol();
+    // end::tls-simple[]
+  }
+
+  void oauth2() {
+    ConnectionFactory connectionFactory = new ConnectionFactory();
+    // tag::oauth2-credentials[]
+    // from com.rabbitmq.client.impl package
+    CredentialsProvider credentialsProvider =
+        new OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
+            .tokenEndpointUri("http://localhost:8080/uaa/oauth/token/")
+            .clientId("rabbit_client").clientSecret("rabbit_secret")
+            .grantType("password")
+            .parameter("username", "rabbit_super")
+            .parameter("password", "rabbit_super")
+            .build();
+
+    connectionFactory.setCredentialsProvider(credentialsProvider);
+    // end::oauth2-credentials[]
+  }
+
+  void oauth2Tls() throws Exception {
+    ConnectionFactory connectionFactory = new ConnectionFactory();
+    // tag::oauth2-credentials-tls[]
+    SSLContext sslContext = SSLContext.getInstance("TLSv1.3"); // <1>
+
+    CredentialsProvider credentialsProvider =
+        new OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
+            .tokenEndpointUri("https://localhost:8443/uaa/oauth/token/")
+            .clientId("rabbit_client")
+            .clientSecret("rabbit_secret")
+            .grantType("password")
+            .parameter("username", "rabbit_super")
+            .parameter("password", "rabbit_super")
+            .tls() // <2>
+                .sslContext(sslContext) // <3>
+                .builder() // <4>
+            .build();
+    // end::oauth2-credentials-tls[]
+  }
+
+  void oauth2Refresh() throws Exception {
+    ConnectionFactory connectionFactory = new ConnectionFactory();
+    // tag::oauth2-refresh[]
+    // from com.rabbitmq.client.impl
+    CredentialsRefreshService refreshService =
+        new DefaultCredentialsRefreshServiceBuilder().build();
+    connectionFactory.setCredentialsRefreshService(refreshService);
+    // end::oauth2-refresh[]
   }
 }
