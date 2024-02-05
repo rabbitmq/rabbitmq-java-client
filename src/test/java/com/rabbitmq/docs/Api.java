@@ -1,9 +1,9 @@
 package com.rabbitmq.docs;
 
 // tag::imports[]
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.jmx.JmxReporter;
 import com.rabbitmq.client.*;
+// end::imports[]
+
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.impl.DefaultCredentialsRefreshService.DefaultCredentialsRefreshServiceBuilder;
@@ -11,8 +11,8 @@ import com.rabbitmq.client.impl.nio.NioParams;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-// end::imports[]
-
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.jmx.JmxReporter;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.util.HashMap;

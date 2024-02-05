@@ -1,0 +1,198 @@
+:test-examples: ../../test/java/com/rabbitmq/docs
+
+[[recovery]]
+== Automatic Recovery From Network Failures
+
+[[connection-recovery]]
+=== Connection Recovery
+
+Network connection between clients and RabbitMQ nodes can fail.
+RabbitMQ Java client supports automatic recovery of connections and topology (queues, exchanges, bindings, and consumers).
+
+The automatic recovery process for many applications follows the following steps:
+
+* Reconnect
+* Restore connection listeners
+* Re-open channels
+* Restore channel listeners
+* Restore channel `basic.qos` setting, publisher confirms and transaction settings
+
+Topology recovery includes the following actions, performed for every channel:
+
+* Re-declare exchanges (except for predefined ones)
+* Re-declare queues
+* Recover all bindings
+* Recover all consumers
+
+As of version 4.0.0 of the Java client, automatic recovery is enabled by default (and thus topology recovery as well).
+
+Topology recovery relies on a per-connection cache of entities (queues, exchanges,
+bindings, consumers).
+When, say, a queue is declared on a connection, it will be added to the cache.
+When it is deleted or is scheduled for deletion (e.g. because it is https://rabbitmq.com/queues.html[auto-deleted]) it will be removed.
+This model has some limitations covered below.
+
+To disable or enable automatic connection recovery, use the `factory.setAutomaticRecoveryEnabled(boolean)` method.
+The following snippet shows how to explicitly enable automatic recovery (e.g. for Java client prior 4.0.0):
+
+.Enabling recovery explicitly
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=recovery-enable]
+--------
+<1> Enable recovery
+
+If recovery fails due to an exception (e.g. RabbitMQ node is still not reachable), it will be retried after a fixed time interval (default is 5 seconds).
+The interval can be configured (in milliseconds):
+
+.Setting recovery interval
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=recovery-interval]
+--------
+<1> Attempt recovery every 10 seconds
+
+When a list of addresses is provided, the first <<endpoints-list,reachable endpoint>> will be used for the initial connection.
+In case of recovery, the list is shuffled and all addresses are tried, one after the next:
+
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=recovery-endpoint-list]
+--------
+
+[[recovery-triggers]]
+=== When Will Connection Recovery Be Triggered?
+
+Automatic connection recovery, if enabled, will be triggered by the following events:
+
+* An I/O exception is thrown in connection's I/O loop
+* A socket read operation times out
+* Missed server https://rabbitmq.com/heartbeats.html[heartbeats] are detected
+* Any other unexpected exception is thrown in connection's I/O loop
+
+whichever happens first.
+
+If initial client connection to a RabbitMQ node fails, automatic connection recovery won't kick in.
+Applications developers are responsible for retrying such connections, logging failed attempts, implementing a limit to the number of retries and so on.
+Here's a very basic example:
+
+.Retrying initial connection
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=recovery-retry-initial-connection]
+--------
+
+When a connection is closed by the application via the `Connection.Close` method, connection recovery will not be initiated.
+
+Channel-level exceptions will not trigger any kind of recovery as they usually indicate a semantic issue in the application (e.g. an attempt to consume from a non-existent queue).
+
+[[recovery-listeners]]
+=== Recovery Listeners
+
+It is possible to register one or more recovery listeners on recoverable connections and channels.
+When connection recovery is enabled, connections returned by `ConnectionFactory#newConnection` and `Connection#createChannel` implement `com.rabbitmq.client.Recoverable`, providing two methods with
+fairly descriptive names:
+
+* `addRecoveryListener`
+* `removeRecoveryListener`
+
+Note that you currently need to cast connections and channels to `Recoverable` in order to use those methods.
+
+[[publishers]]
+=== Effects on Publishing
+
+Messages that are published using `Channel.basicPublish` when connection is down will be lost.
+The client does not enqueue them for delivery after connection has recovered.
+To ensure that published messages reach RabbitMQ applications need to use https://rabbitmq.com/confirms.html[Publisher Confirms] and account for connection failures.
+
+[[topology-recovery]]
+=== Topology Recovery
+
+Topology recovery involves recovery of exchanges, queues, bindings and consumers.
+It is enabled by default when automatic recovery is enabled.
+Topology recovery is enabled by default in modern versions of the client.
+
+Topology recovery can be disabled explicitly if needed:
+
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=topology-recovery-enable]
+--------
+<1> Enable automatic recovery (e.g. Java client prior 4.0.0)
+<2> Disable topology recovery
+
+[[automatic-recovery-limitations]]
+=== Failure Detection and Recovery Limitations
+
+Automatic connection recovery has a number of limitations and intentional design decisions that applications developers need to be aware of.
+
+Topology recovery relies on a per-connection cache of entities (queues, exchanges, bindings, consumers).
+When, say, a queue is declared on a connection, it will be added to the cache.
+When it is deleted or is scheduled for deletion (e.g. because it is https://rabbitmq.com/queues.html[auto-deleted]) it will be removed.
+This makes it possible to declare and delete entities on different channels without having unexpected results.
+It also means that consumer tags (a channel-specific identifier) must be unique across all channels on connections that use automatic connection recovery.
+
+When a connection is down or lost, it https://rabbitmq.com/heartbeats.html[takes time to detect].
+Therefore there is a window of time in which both the library and the application are unaware of effective connection failure.
+Any messages published during this time frame are serialised and written to the TCP socket as usual.
+Their delivery to the broker can only be guaranteed via https://rabbitmq.com/confirms.html[publisher confirms]: publishing in AMQP 0-9-1 is entirely asynchronous by design.
+
+When a socket or I/O operation error is detected by a connection with automatic recovery enabled, recovery begins after a configurable delay, 5 seconds by default.
+This design assumes that even though a lot of network failures are transient and generally short-lived, they do not go away in an instant.
+Having a delay also avoids an inherent race condition between server-side resource cleanup (such as https://rabbitmq.com/queues.html[exclusive or auto-delete queue] deletion) and operations performed on a newly opened connection on the same resources.
+
+Connection recovery attempts by default will continue at identical time intervals until a new connection is successfully opened.
+Recovery delay can be made dynamic by providing a `RecoveryDelayHandler` implementation instance to `ConnectionFactory#setRecoveryDelayHandler`.
+Implementations that use dynamically computed delay intervals should avoid values that are too low (such as values that are lower than 2 seconds).
+
+When a connection is in the recovering state, any publishing attempt on its channels will be rejected with an exception.
+The client currently does not perform any internal buffering of such outgoing messages.
+It is an application developer's responsibility to keep track of such messages and republish them when recovery succeeds.
+https://rabbitmq.com/confirms.html[Publisher confirms] is a protocol extension that should be used by publishers that cannot afford message loss.
+
+Connection recovery will not kick in when a channel is closed due to a channel-level exception.
+Such exceptions often indicate application-level issues.
+The library cannot make an informed decision about when that's the case.
+
+Closed channels won't be recovered even after connection recovery kicks in.
+This includes both explicitly closed channels and the channel-level exception case above.
+
+[[recovery-and-acknowledgements]]
+=== Manual Acknowledgements and Automatic Recovery
+
+When manual acknowledgements are used, it is possible that network connection to RabbitMQ node fails between message delivery and acknowledgement.
+After connection recovery, RabbitMQ will reset delivery tags on all channels.
+
+This means that _basic.ack_, _basic.nack_, and _basic.reject_with old delivery tags will cause a channel exception.
+To avoid this, RabbitMQ Java client keeps track of and updates delivery tags to make them monotonically growing between recoveries.
+
+`Channel.basicAck`, `Channel.basicNack`, and `Channel.basicReject` then translate adjusted delivery tags into those used by RabbitMQ.
+
+Acknowledgements with stale delivery tags will not be sent.
+Applications that use manual acknowledgements and automatic recovery must be capable of handling redeliveries.
+
+[[recovery-channel-lifecycle]]
+=== Channels Lifecycle and Topology Recovery
+
+Automatic connection recovery is meant to be as transparent as possible for the application developer, that's why `Channel` instances remain the same even if several connections fail and recover behind the scenes.
+Technically, when automatic recovery is on, `Channel` instances act as proxies or decorators: they delegate the AMQP business to an actual AMQP channel implementation and implement some recovery machinery around it.
+That is why you shouldn't close a channel after it has created some resources (queues, exchanges, bindings) or topology recovery for those resources will fail later, as the channel has been closed.
+Instead, leave creating channels open for the life of the application.
+
+[[cache-pitfalls]]
+=== Caveats and Limitations
+
+To make topology recovery possible, RabbitMQ Java client maintains a cache of declared queues, exchanges, and bindings.
+The cache is per-connection.
+Certain RabbitMQ features make it impossible for clients to observe some topology changes, e.g. when a queue is deleted due to TTL.
+RabbitMQ Java client tries to invalidate cache entries in the most common cases:
+
+* When a queue is deleted.
+* When an exchange is deleted.
+* When a binding is deleted.
+* When a consumer is cancelled on an auto-deleted queue.
+* When a queue or exchange is unbound from an auto-deleted exchange.
+
+However, the client cannot track these topology changes beyond a single connection.
+Applications that rely on auto-delete queues or exchanges, as well as queue TTL (note: not message TTL!), and use <<connection-recovery,automatic connection recovery>>, should explicitly delete entities known to be unused or deleted, to purge client-side topology cache.
+This is facilitated by `Channel#queueDelete`, `Channel#exchangeDelete`, `Channel#queueUnbind`, and `Channel#exchangeUnbind` being idempotent in RabbitMQ 3.3.x (deleting what's not there does not result in an exception).

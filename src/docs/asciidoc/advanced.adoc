@@ -1,0 +1,224 @@
+:test-examples: ../../test/java/com/rabbitmq/docs
+
+[[unhandled-exceptions]]
+== Unhandled Exceptions
+
+Unhandled exceptions related to connection, channel, recovery, and consumer lifecycle are delegated to the exception handler.
+Exception handler is any object that implements the `ExceptionHandler` interface.
+By default, an instance of `DefaultExceptionHandler` is used.
+It prints exception details to the standard output.
+
+It is possible to override the handler using `ConnectionFactory#setExceptionHandler`.
+It will be used for all connections created by the factory:
+
+.Setting a customer exception handler
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=exception-handler]
+--------
+
+Exception handlers should be used for exception logging.
+
+[[metrics]]
+== Metrics and Monitoring
+
+The client collects runtime metrics (e.g. number of published messages) for active connections.
+Metric collection is an optional feature that should be set up at the `ConnectionFactory` level, using the `setMetricsCollector(metricsCollector)` method.
+This method expects a `MetricsCollector` instance, which is called in several places of the client code.
+
+The client supports https://micrometer.io[Micrometer] and https://metrics.dropwizard.io[Dropwizard Metrics].
+
+Here are the collected metrics:
+
+* Number of open connections
+* Number of open channels
+* Number of published messages
+* Number of confirmed messages
+* Number of negatively acknowledged (nack-ed) outbound messages
+* Number of unroutable outbound messages that got returned
+* Number of failures of outbound messages
+* Number of consumed messages
+* Number of acknowledged messages
+* Number of rejected messages
+
+Both Micrometer and Dropwizard Metrics provide counts, but also mean rate, last five minute rate, etc, for messages-related metrics.
+They also support common tools for monitoring and reporting (JMX, Graphite, Ganglia, Datadog, etc).
+See the dedicated sections below for more details.
+
+Developers should keep a few things in mind when enabling metric collection.
+
+* Don't forget to add the appropriate dependencies (in Maven, Gradle, or even as JAR files) to JVM
+classpath when using Micrometer or Dropwizard Metrics.
+Those are optional dependencies and will not be pulled automatically with the Java client.
+You may also need to add other dependencies depending on the reporting backend(s) used.
+* Metrics collection is extensible.
+Implementing a custom `MetricsCollector` for specific needs is encouraged.
+* The `MetricsCollector` is set at the `ConnectionFactory` level but can be shared across different instances.
+* Metrics collection doesn't support transactions.
+E.g. if an acknowledgment is sent in a transaction and the transaction is then rolled back, the acknowledgment is counted in the client metrics (but not by the broker obviously).
+Note the acknowledgment is actually sent to the broker and then cancelled by the transaction rollback, so the client metrics are correct in terms of acknowledgments sent.
+As a summary, don't use client metrics for critical business logic, they are not guaranteed to be perfectly accurate.
+They are meant to be used to simplify reasoning about a running system and make operations more efficient.
+
+[[metrics-micrometer]]
+=== Micrometer support
+
+For Micrometer you must set the `MeterRegistry` for one or several of the http://micrometer.io/docs[supported reporting backends] (Netflix Atlas, Prometheus, Datadog, Influx, JMX, etc).
+Here is an example with Prometheus:
+
+.Setting Micrometer with Prometheus
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=metrics-prometheus]
+--------
+<1> Create Micrometer's `MeterRegistry` for Prometheus
+<2> Create `MetricsCollector`
+<3> Set `MetricsCollector` on `ConnectionFactory`
+
+Note an application needs also to expose https://docs.micrometer.io/micrometer/reference/implementations/prometheus.html#_configuring[an HTTP endpoint to Prometheus' scraper].
+
+[[metrics-dropwizard-metrics]]
+=== Dropwizard Metrics support
+
+Enable metrics collection with https://metrics.dropwizard.io[Dropwizard] like so:
+
+.Enabling Dropwizard Metrics
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=metrics-dropwizard]
+--------
+<1> Get Metrics' `Meter` object
+
+Dropwizard Metrics supports http://metrics.dropwizard.io/4.2.0/getting-started.html[several reporting backends]: console, JMX, HTTP, Graphite, etc.
+
+You would typically pass in an instance of `MetricsRegistry` to the `StandardMetricsCollector`.
+Here is an example with JMX:
+
+.Enabling JMX support for Dropwizard Metrics
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=metrics-dropwizard-jmx]
+--------
+
+[[gae-pitfalls]]
+== RabbitMQ Java Client on Google App Engine
+
+Using RabbitMQ Java client on Google App Engine (GAE) requires using a <<thread-factories,a custom thread factory>> that instantiates thread using GAE's `ThreadManager` (see above).
+In addition, it is necessary to set a low heartbeat interval (4-5 seconds) to avoid running into the low `InputStream` read timeouts on GAE:
+
+.Setting a 5-second heartbeat for GAE
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=gae-heartbeat]
+--------
+
+[[rpc]]
+== The RPC (Request/Reply) Pattern: an Example
+
+As a programming convenience, the Java client API offers a class `RpcClient` which uses a temporary reply queue to provide simple https://rabbitmq.com/tutorials/tutorial-six-java.html[RPC-style communication] facilities via AMQP 0-9-1.
+
+The class doesn't impose any particular format on the RPC arguments and return values.
+It simply provides a mechanism for sending a message to a given exchange with a particular routing key, and waiting for a response on a reply queue.
+
+.Declaring an RPC client
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=rpc-client]
+--------
+
+The implementation details of how this class uses AMQP 0-9-1 are as follows: request messages are sent with the `basic.correlation_id` field set to a value unique for this `RpcClient` instance,
+and with `basic.reply_to` set to the name of the reply queue.
+
+Once you have created an instance of this class, you can use it to send RPC requests by using any of the following methods:
+
+.`RpcClient` methods
+[source,java,indent=0]
+--------
+byte[] primitiveCall(byte[] message);
+String stringCall(String message);
+Map mapCall(Map message);
+Map mapCall(Object[] keyValuePairs);
+--------
+
+The `primitiveCall` method transfers raw byte arrays as the request and response bodies.
+The method `stringCall` is a thin convenience wrapper around `primitiveCall`, treating the message bodies as `String` instances in the default character encoding.
+
+The `mapCall` variants are a little more sophisticated: they encode a `java.util.Map` containing ordinary Java values into an AMQP 0-9-1 binary table representation, and decode the response in the same way.
+Note that there are some restrictions on what value types can be used here - see the Javadoc for details.
+
+All the marshalling/unmarshalling convenience methods use `primitiveCall` as a transport mechanism, and just provide a wrapping layer on top of it.
+
+[[tls]]
+== TLS Support
+
+It's possible to encrypt the communication between the client and the broker https://rabbitmq.com/ssl.html[using TLS].
+Client and server authentication (a.k.a. peer verification) is also supported.
+Here is the simplest, most naive way to use encryption with the Java client:
+
+.TLS simplest configuration, do not use in production
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=tls-simple]
+--------
+
+Note the client doesn't enforce any server authentication (https://rabbitmq.com/ssl.html#peer-verification[peer certificate chain verification]) in the above sample as the default, "trust all certificates" `TrustManager` is used.
+This is convenient for local development but *prone to man-in-the-middle attacks* and therefore https://rabbitmq.com/production-checklist.html[not recommended for production].
+
+To learn more about TLS support in RabbitMQ, see the https://rabbitmq.com/ssl.html[TLS guide].
+If you only want to configure the Java client (especially the peer verification and trust manager parts), read https://rabbitmq.com/ssl.html#java-client[the appropriate section] of the TLS guide.
+
+[[oauth2-support]]
+== OAuth 2 Support
+
+The client can authenticate against an OAuth 2 server like https://github.com/cloudfoundry/uaa[UAA].
+The https://github.com/rabbitmq/rabbitmq-server/tree/main/deps/rabbitmq_auth_backend_oauth2[OAuth 2 plugin] must be enabled on the server side and configured to use the same OAuth 2 server as the client.
+
+[[oauth2-getting-token]]
+=== Getting the OAuth 2 Token
+
+The Java client provides the `OAuth2ClientCredentialsGrantCredentialsProvider` class to get a JWT token using the https://tools.ietf.org/html/rfc6749#section-4.4[OAuth 2 Client Credentials flow].
+The client will send the JWT token in the password field when opening a connection.
+The broker will then verify the JWT token signature, validity, and permissions before authorising the connection and granting access to the requested virtual host.
+
+Prefer the use of `OAuth2ClientCredentialsGrantCredentialsProviderBuilder` to create an `OAuth2ClientCredentialsGrantCredentialsProvider` instance and then set it up on the `ConnectionFactory`.
+The following snippet shows how to configure and create an instance of the OAuth 2 credentials provider for the https://github.com/rabbitmq/rabbitmq-server/tree/main/deps/rabbitmq_auth_backend_oauth2#examples[example setup of the OAuth 2 plugin]:
+
+.Configuring OAuth2 `CredentialsProvider`
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=oauth2-credentials]
+--------
+
+In production, make sure to use HTTPS for the token endpoint URI and configure the `SSLContext` if necessary for the HTTPS requests (to verify and trust the identity of the OAuth 2 server).
+The following snippet does so by using the `tls().sslContext(SSLContext)` method from `OAuth2ClientCredentialsGrantCredentialsProviderBuilder`:
+
+.Configuring TLS for OAuth2 `CredentialsProvider`
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=oauth2-credentials-tls]
+--------
+<1> Create then initialise `SSLContext`
+<2> Configure TLS
+<3> Set `SSLContext`
+<4> Go back to main configuration
+
+Please consult the https://rabbitmq.github.io/rabbitmq-java-client/api/current/com/rabbitmq/client/impl/OAuth2ClientCredentialsGrantCredentialsProvider.html[Javadoc] to see all the available options.
+
+[[oauth2-refreshing-token]]
+=== Refreshing the Token
+
+Tokens expire and the broker will refuse operations on connections with expired tokens.
+To avoid this, it is possible to call `CredentialsProvider#refresh()` before expiration and send the new token to the server.
+This is cumbersome from an application point of view, so the Java client provides help with the `DefaultCredentialsRefreshService`.
+This utility tracks used tokens, refreshes them before they expire, and send the new tokens for the connections it is responsible for.
+
+The following snippet shows how to create a `DefaultCredentialsRefreshService` instance and set it up on the `ConnectionFactory`:
+
+.Configuring the token refresh service
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=oauth2-refresh]
+--------
+
+The `DefaultCredentialsRefreshService` schedules a refresh after 80% of the token validity time, e.g. if the token expires in 60 minutes, it will be refreshed after 48 minutes.
+This is the default behaviour, please consult the https://rabbitmq.github.io/rabbitmq-java-client/api/current/com/rabbitmq/client/impl/DefaultCredentialsRefreshService.html[Javadoc] for more information.
