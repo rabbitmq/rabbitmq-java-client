@@ -11,7 +11,7 @@ MESSAGE=$(git log -1 --pretty=%B)
 ./mvnw buildnumber:create pre-site --no-transfer-progress
 
 make deps
-./mvnw -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
+./mvnw -q javadoc:javadoc -Dmaven.javadoc.failOnError=false
 
 if [ -e target/site/apidocs/element-list ]
   then cp target/site/apidocs/element-list target/site/apidocs/package-list
