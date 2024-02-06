@@ -4,6 +4,7 @@
 ifndef::imagesdir[:imagesdir: images]
 ifndef::sourcedir[:sourcedir: ../../main/java]
 :source-highlighter: prettify
+:appendix-caption: Appendix
 
 The RabbitMQ Java client library allows Java and JVM-based applications to connect to and interact with RabbitMQ nodes using AMQP 0.9.1.
 
@@ -14,3 +15,5 @@ include::usage.adoc[]
 include::recovery.adoc[]
 
 include::advanced.adoc[]
+
+include::appendixes.adoc[]

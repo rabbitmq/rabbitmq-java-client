@@ -52,7 +52,7 @@ include::{test-examples}/Api.java[tag=recovery-interval]
 --------
 <1> Attempt recovery every 10 seconds
 
-When a list of addresses is provided, the first <<endpoints-list,reachable endpoint>> will be used for the initial connection.
+When a list of addresses is provided, the first <<usage.adoc#endpoints-list,reachable endpoint>> will be used for the initial connection.
 In case of recovery, the list is shuffled and all addresses are tried, one after the next:
 
 [source,java,indent=0]
@@ -194,5 +194,5 @@ RabbitMQ Java client tries to invalidate cache entries in the most common cases:
 * When a queue or exchange is unbound from an auto-deleted exchange.
 
 However, the client cannot track these topology changes beyond a single connection.
-Applications that rely on auto-delete queues or exchanges, as well as queue TTL (note: not message TTL!), and use <<connection-recovery,automatic connection recovery>>, should explicitly delete entities known to be unused or deleted, to purge client-side topology cache.
+Applications that rely on auto-delete queues or exchanges, as well as queue TTL (note: not message TTL!), and use <<recovery.adoc#connection-recovery,automatic connection recovery>>, should explicitly delete entities known to be unused or deleted, to purge client-side topology cache.
 This is facilitated by `Channel#queueDelete`, `Channel#exchangeDelete`, `Channel#queueUnbind`, and `Channel#exchangeUnbind` being idempotent in RabbitMQ 3.3.x (deleting what's not there does not result in an exception).

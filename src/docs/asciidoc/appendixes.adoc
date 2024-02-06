@@ -1,0 +1,26 @@
+ifndef::build-directory[:build-directory: ../../../target]
+:test-examples: ../../test/java/com/rabbitmq/docs
+
+[appendix]
+== Micrometer Observation
+
+It is possible to use https://docs.micrometer.io/micrometer/reference/observation.html[Micrometer Observation] to instrument publishing and consuming in the Java client.
+Micrometer Observation provides https://spring.io/blog/2022/10/12/observability-with-spring-boot-3[metrics, tracing, and log correlation with one single API].
+
+The Java client provides an `ObservationCollector` abstraction and an implementation for Micrometer Observation.
+The following snippet shows how to create and set up the Micrometer `ObservationCollector` implementation with an existing `ObservationRegistry`:
+
+.Configuring Micrometer Observation
+[source,java,indent=0]
+--------
+include::{test-examples}/Api.java[tag=micrometer-observation]
+--------
+<1> Configure Micrometer `ObservationCollector` with builder
+<2> Set Micrometer `ObservationRegistry` on `ConnectionFactory`
+
+The next sections document the conventions, spans, and metrics made available by the instrumentation.
+They are automatically generated from the source code with the https://github.com/micrometer-metrics/micrometer-docs-generator[Micrometer documentation generator].
+
+include::{build-directory}/micrometer-observation-docs/_conventions.adoc[]
+include::{build-directory}/micrometer-observation-docs/_spans.adoc[]
+include::{build-directory}/micrometer-observation-docs/_metrics.adoc[]

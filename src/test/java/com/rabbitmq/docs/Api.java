@@ -8,7 +8,10 @@ import com.rabbitmq.client.Method;
 import com.rabbitmq.client.impl.*;
 import com.rabbitmq.client.impl.DefaultCredentialsRefreshService.DefaultCredentialsRefreshServiceBuilder;
 import com.rabbitmq.client.impl.nio.NioParams;
+import com.rabbitmq.client.observation.ObservationCollector;
+import com.rabbitmq.client.observation.micrometer.MicrometerObservationCollectorBuilder;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import com.codahale.metrics.MetricRegistry;
@@ -525,5 +528,19 @@ public class Api {
         new DefaultCredentialsRefreshServiceBuilder().build();
     connectionFactory.setCredentialsRefreshService(refreshService);
     // end::oauth2-refresh[]
+  }
+
+  void micrometerObservation() {
+    ObservationRegistry observationRegistry = ObservationRegistry.NOOP;
+    ConnectionFactory factory = new ConnectionFactory();
+    // tag::micrometer-observation[]
+    // from com.rabbitmq.client.observation and
+    // com.rabbitmq.client.observation.micrometer packages
+    ObservationCollector observationCollector =
+        new MicrometerObservationCollectorBuilder() // <1>
+              .registry(observationRegistry)
+              .build();
+    factory.setObservationCollector(observationCollector); // <2>
+    // end::micrometer-observation[]
   }
 }

@@ -103,7 +103,7 @@ include::{test-examples}/Api.java[tag=metrics-dropwizard-jmx]
 [[gae-pitfalls]]
 == RabbitMQ Java Client on Google App Engine
 
-Using RabbitMQ Java client on Google App Engine (GAE) requires using a <<thread-factories,a custom thread factory>> that instantiates thread using GAE's `ThreadManager` (see above).
+Using RabbitMQ Java client on Google App Engine (GAE) requires using a <<usage.adoc#thread-factories,a custom thread factory>> that instantiates thread using GAE's `ThreadManager` (see above).
 In addition, it is necessary to set a low heartbeat interval (4-5 seconds) to avoid running into the low `InputStream` read timeouts on GAE:
 
 .Setting a 5-second heartbeat for GAE

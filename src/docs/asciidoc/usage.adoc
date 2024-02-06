@@ -113,7 +113,7 @@ The channel can now be used to send and receive messages, as described in subseq
 
 It is possible to specify a list of endpoints to use when connecting.
 The first reachable endpoint will be used.
-In case of <<recovery,connection failures>>, using a list of endpoints makes it possible for the application to connect to a different node if the original one is down.
+In case of <<recovery.adoc#recovery,connection failures>>, using a list of endpoints makes it possible for the application to connect to a different node if the original one is down.
 
 To use multiple endpoints, provide a list of ``Address``es to `ConnectionFactory#newConnection`.
 An `Address` represents a hostname and port pair.
@@ -404,7 +404,7 @@ To let RabbitMQ generate a node-wide unique tag, use a `Channel#basicConsume` ov
 Consumer tags are used to cancel consumers.
 
 Distinct `Consumer` instances must have distinct consumer tags.
-Duplicate consumer tags on a connection is strongly discouraged and can lead to issues with <<connection-recovery,automatic connection recovery>> and confusing monitoring data when consumers are monitored.
+Duplicate consumer tags on a connection is strongly discouraged and can lead to issues with <<recovery.adoc#connection-recovery,automatic connection recovery>> and confusing monitoring data when consumers are monitored.
 
 The easiest way to implement a `Consumer` is to subclass the convenience class `DefaultConsumer`.
 An object of this subclass can be passed on a `basicConsume` call to set up the subscription:
@@ -598,11 +598,11 @@ The `AddressResolver` interface is like the following:
 include::{test-examples}/Api.java[tag=address-resolver-interface]
 --------
 
-Just like with <<endpoints-list,a list of endpoints>>, the first `Address` returned will be tried first, then the second if the client fails to connect to the first, and so on.
+Just like with <<usage.adoc#endpoints-list,a list of endpoints>>, the first `Address` returned will be tried first, then the second if the client fails to connect to the first, and so on.
 
 If an `ExecutorService` is provided as well (using the form `factory.newConnection(es, addressResolver)`) the thread pool is associated with the (first) successful connection.
 
-The `AddressResolver` is the perfect place to implement custom service discovery logic, which is especially useful in a dynamic infrastructure. Combined with <<recovery,automatic recovery>>, the client can automatically connect to nodes that weren't even up when it was first started.
+The `AddressResolver` is the perfect place to implement custom service discovery logic, which is especially useful in a dynamic infrastructure. Combined with <<recovery.adoc#recovery,automatic recovery>>, the client can automatically connect to nodes that weren't even up when it was first started.
 Affinity and load balancing are other scenarios where a custom `AddressResolver` could be useful.
 
 The Java client ships with the following implementations (see the javadoc for details):
