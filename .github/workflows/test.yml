@@ -1,4 +1,4 @@
-name: Test against RabbitMQ 3.12 stable
+name: Test against RabbitMQ 3.13 stable
 
 on:
   pull_request:
