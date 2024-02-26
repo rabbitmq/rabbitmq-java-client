@@ -5,8 +5,12 @@ ifndef::imagesdir[:imagesdir: images]
 ifndef::sourcedir[:sourcedir: ../../main/java]
 :source-highlighter: prettify
 :appendix-caption: Appendix
+:javadoc-url: https://rabbitmq.github.io/rabbitmq-java-client/{project-version}/api
 
 The RabbitMQ Java client library allows Java and JVM-based applications to connect to and interact with RabbitMQ nodes using AMQP 0.9.1.
+
+This documentation covers the usage of the library.
+An {javadoc-url}[API reference] (JavaDoc) is available separately.
 
 include::introduction.adoc[]
 

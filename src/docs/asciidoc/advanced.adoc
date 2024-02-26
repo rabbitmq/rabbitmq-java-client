@@ -202,7 +202,7 @@ include::{test-examples}/Api.java[tag=oauth2-credentials-tls]
 <3> Set `SSLContext`
 <4> Go back to main configuration
 
-Please consult the https://rabbitmq.github.io/rabbitmq-java-client/api/current/com/rabbitmq/client/impl/OAuth2ClientCredentialsGrantCredentialsProvider.html[Javadoc] to see all the available options.
+Please consult the {javadoc-url}/com/rabbitmq/client/impl/OAuth2ClientCredentialsGrantCredentialsProvider.html[Javadoc] to see all the available options.
 
 [[oauth2-refreshing-token]]
 === Refreshing the Token
