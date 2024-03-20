@@ -1,0 +1,100 @@
+:test-examples: ../../test/java/com/rabbitmq/docs
+
+[[support-timeline]]
+== Support Timeline
+
+Please see the https://rabbitmq.com/java-versions.html[RabbitMQ Java libraries support page] for the support timeline.
+
+[[jdk-versions]]
+== JDK and Android Version Support
+
+5.x release series of this library https://rabbitmq.com/java-versions.html[require JDK 8], both for compilation and at runtime.
+On Android, this means only https://developer.android.com/guide/platform/j8-jack.html[Android 7.0 or later] versions are supported.
+
+[[license]]
+== License
+
+The library is open source, developed https://github.com/rabbitmq/rabbitmq-java-client/[on GitHub], and is triple-licensed under
+
+* https://www.apache.org/licenses/LICENSE-2.0.html[Apache Public License 2.0]
+* https://www.mozilla.org/MPL/2.0/[Mozilla Public License 2.0]
+* http://www.gnu.org/licenses/gpl-2.0.html[GPL 2.0]
+
+This means that the user can consider the library to be licensed under *any of the licenses from the list above*.
+For example, the user may choose the Apache Public License 2.0 and include this client into
+a commercial product.
+Codebases that are licensed under the GPLv2 may choose GPLv2, and so on.
+
+== Prerequisites
+
+RabbitMQ Java client connects to RabbitMQ server nodes.
+
+You will need a running https://rabbitmq.com/download.html[RabbitMQ node] to use with the client library.
+
+== Dependencies
+
+Use your favorite build management tool to add the client dependencies to your project.
+
+=== Maven
+
+.pom.xml
+[source,xml,subs="attributes,specialcharacters"]
+----
+<dependencies>
+
+  <dependency>
+    <groupId>com.rabbitmq</groupId>
+    <artifactId>{project-artifact-id}</artifactId>
+    <version>{project-version}</version>
+  </dependency>
+
+</dependencies>
+----
+
+Snapshots require to declare the <<snapshots,appropriate repository>>.
+
+=== Gradle
+
+.build.gradle
+[source,groovy,subs="attributes,specialcharacters"]
+----
+dependencies {
+  compile "com.rabbitmq:{project-artifact-id}:{project-version}"
+}
+----
+
+Snapshots require to declare the <<snapshots,appropriate repository>>.
+
+[[snapshots]]
+=== Snapshots
+
+Releases are available from Maven Central, which does not require specific declaration.
+Snapshots are available from a repository which must be declared in the dependency management configuration.
+
+With Maven:
+
+.Snapshot repository declaration for Maven
+[source,xml,subs="attributes,specialcharacters"]
+----
+<repositories>
+
+  <repository>
+    <id>ossrh</id>
+    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    <snapshots><enabled>true</enabled></snapshots>
+    <releases><enabled>false</enabled></releases>
+  </repository>
+
+</repositories>
+----
+
+With Gradle:
+
+.Snapshot repository declaration for Gradle:
+[source,groovy,subs="attributes,specialcharacters"]
+----
+repositories {
+  maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+  mavenCentral()
+}
+----
