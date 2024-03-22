@@ -244,7 +244,7 @@ This library uses https://semver.org/[semantic versioning].
 
 == Support
 
-See the https://www.rabbitmq.com/java-versions.html[RabbitMQ Java libraries support page]
+See the https://www.rabbitmq.com/client-libraries/java-versions[RabbitMQ Java libraries support page]
 for the support timeline of this library.
 
 == License
