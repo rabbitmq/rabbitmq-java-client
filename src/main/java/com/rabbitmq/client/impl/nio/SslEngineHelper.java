@@ -110,6 +110,7 @@ public class SslEngineHelper {
         SSLEngineResult unwrapResult;
         do {
             int positionBeforeUnwrapping = cipherIn.position();
+            LOGGER.debug("Before unwrapping cipherIn is {}, with {} remaining byte(s)", cipherIn, cipherIn.remaining());
             unwrapResult = sslEngine.unwrap(cipherIn, plainIn);
             LOGGER.debug("SSL engine result is {} after unwrapping", unwrapResult);
             status = unwrapResult.getStatus();
@@ -118,14 +119,7 @@ public class SslEngineHelper {
                 plainIn.clear();
                 if (unwrapResult.getHandshakeStatus() == NEED_TASK) {
                     handshakeStatus = runDelegatedTasks(sslEngine);
-                    int newPosition = positionBeforeUnwrapping + unwrapResult.bytesConsumed();
-                    if (newPosition == cipherIn.limit()) {
-                        LOGGER.debug("Clearing cipherIn because all bytes have been read and unwrapped");
-                        cipherIn.clear();
-                    } else {
-                        LOGGER.debug("Setting cipherIn position to {} (limit is {})", newPosition, cipherIn.limit());
-                        cipherIn.position(positionBeforeUnwrapping + unwrapResult.bytesConsumed());
-                    }
+                    cipherIn.position(positionBeforeUnwrapping + unwrapResult.bytesConsumed());
                 } else {
                     handshakeStatus = unwrapResult.getHandshakeStatus();
                 }
