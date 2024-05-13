@@ -180,7 +180,7 @@ public class NioParams {
      * @return this {@link NioParams} instance
      */
     public NioParams setWriteByteBufferSize(int writeByteBufferSize) {
-        if (readByteBufferSize <= 0) {
+        if (writeByteBufferSize <= 0) {
             throw new IllegalArgumentException("Buffer size must be greater than 0");
         }
         this.writeByteBufferSize = writeByteBufferSize;
