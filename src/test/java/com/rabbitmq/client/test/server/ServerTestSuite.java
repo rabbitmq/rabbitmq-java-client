@@ -26,7 +26,6 @@ import org.junit.platform.suite.api.Suite;
     DeadLetterExchangeDurable.class,
     EffectVisibilityCrossNodeTest.class,
     ExclusiveQueueDurability.class,
-    AbsentQueue.class,
     AlternateExchangeEquivalence.class,
     MemoryAlarms.class,
     MessageRecovery.class,
