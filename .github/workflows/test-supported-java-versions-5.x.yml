@@ -43,14 +43,14 @@ jobs:
         run: ./mvnw --version
       - name: Test with NIO
         run: |
-          ./mvnw verify -P '!setup-test-cluster,use-nio' -Drabbitmqctl.bin=DOCKER:rabbitmq \
+          ./mvnw verify -P use-nio -Drabbitmqctl.bin=DOCKER:rabbitmq \
             -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
             -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
             -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
             --no-transfer-progress
       - name: Test with blocking IO
         run: |
-          ./mvnw verify -P '!setup-test-cluster' -Drabbitmqctl.bin=DOCKER:rabbitmq \
+          ./mvnw verify -Drabbitmqctl.bin=DOCKER:rabbitmq \
           -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
           -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
           -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
