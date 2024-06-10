@@ -50,9 +50,6 @@ public class DeadLetterExchangeDurable extends BrokerTestCase {
     }
 
     @Test public void deadLetterQueueTTLExpiredWhileDown() throws Exception {
-        // This test is nonsensical (and often breaks) in HA mode.
-        if (ha()) return;
-
         for(int x = 0; x < DeadLetterExchange.MSG_COUNT; x++) {
             channel.basicPublish("amq.direct", "test", MessageProperties.MINIMAL_PERSISTENT_BASIC, "test message".getBytes());
         }
