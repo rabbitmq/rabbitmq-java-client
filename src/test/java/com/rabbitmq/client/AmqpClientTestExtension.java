@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2023-2024 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -21,12 +21,10 @@ import static org.junit.jupiter.api.extension.ConditionEvaluationResult.enabled;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.client.test.functional.FunctionalTestSuite;
 import com.rabbitmq.client.test.server.HaTestSuite;
-import com.rabbitmq.client.test.server.LastHaTestSuite;
 import com.rabbitmq.client.test.server.ServerTestSuite;
 import com.rabbitmq.client.test.ssl.SslTestSuite;
 import com.rabbitmq.tools.Host;
 import java.io.File;
-import java.lang.reflect.Field;
 import java.net.Socket;
 import java.util.Properties;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -35,8 +33,6 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
-import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +41,6 @@ public class AmqpClientTestExtension implements ExecutionCondition, BeforeAllCal
     AfterEachCallback {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AmqpClientTestExtension.class);
-  private static final Namespace NAMESPACE = Namespace.create(AmqpClientTestExtension.class);
 
   static {
     Properties TESTS_PROPS = new Properties(System.getProperties());
@@ -66,31 +61,6 @@ public class AmqpClientTestExtension implements ExecutionCondition, BeforeAllCal
     }
   }
 
-  private static void maybeSetHaFieldValue(ExtensionContext context, boolean value) {
-    if (context.getTestClass().isPresent() && context.getTestInstance().isPresent()) {
-      try {
-        Field haField = findField(context.getTestClass().get(), "ha");
-        if (haField != null) {
-          haField.setAccessible(true);
-          haField.set(context.getTestInstance().get(), value);
-        }
-      } catch (Exception e) {
-        // OK
-      }
-    }
-  }
-
-  private static Field findField(Class<?> clazz, String fieldName) {
-    try {
-      return clazz.getDeclaredField(fieldName);
-    } catch (NoSuchFieldException e) {
-      if (clazz.getSuperclass() != null) {
-        return findField(clazz.getSuperclass(), fieldName);
-      }
-    }
-    return null;
-  }
-
   private static boolean isFunctionalSuite(ExtensionContext context) {
     return isTestSuite(context, FunctionalTestSuite.class);
   }
@@ -105,10 +75,6 @@ public class AmqpClientTestExtension implements ExecutionCondition, BeforeAllCal
 
   private static boolean isHaSuite(ExtensionContext context) {
     return isTestSuite(context, HaTestSuite.class);
-  }
-
-  private static boolean isLastHaSuite(ExtensionContext context) {
-    return isTestSuite(context, LastHaTestSuite.class);
   }
 
   private static boolean isTestSuite(ExtensionContext context, Class<?> clazz) {
@@ -162,22 +128,6 @@ public class AmqpClientTestExtension implements ExecutionCondition, BeforeAllCal
     }
   }
 
-  private static Store store(ExtensionContext context) {
-    return context.getRoot().getStore(NAMESPACE);
-  }
-
-  private static boolean hasHaSuiteStarted(ExtensionContext context) {
-    return "true".equals(store(context).get("ha"));
-  }
-
-  private static void markHaSuiteStarted(ExtensionContext context) {
-    store(context).put("ha", "true");
-  }
-
-  private static void markHaSuiteFinished(ExtensionContext context) {
-    store(context).remove("ha");
-  }
-
   @Override
   public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
     // HA test suite must be checked first because it contains other test suites
@@ -199,39 +149,23 @@ public class AmqpClientTestExtension implements ExecutionCondition, BeforeAllCal
   }
 
   @Override
-  public void beforeAll(ExtensionContext context) throws Exception {
-    if (isHaSuite(context) && !hasHaSuiteStarted(context)) {
-      LOGGER.info("Starting HA test suite");
-      Host.rabbitmqctl("set_policy HA '.*' '{\"ha-mode\":\"all\"}'");
-      markHaSuiteStarted(context);
-    }
-    if (isLastHaSuite(context)) {
-      LOGGER.info("HA suite done, clearing HA state");
-      Host.rabbitmqctl("clear_policy HA");
-      markHaSuiteFinished(context);
-    }
+  public void beforeAll(ExtensionContext context) {
+
   }
 
   @Override
   public void beforeEach(ExtensionContext context) {
     LOGGER.info(
-        "Starting test: {}.{} (nio? {}, HA? {})",
+        "Starting test: {}.{} (nio? {})",
         context.getTestClass().get().getSimpleName(), context.getTestMethod().get().getName(),
-        TestUtils.USE_NIO,
-        hasHaSuiteStarted(context)
+        TestUtils.USE_NIO
     );
-    if (isHaSuite(context)) {
-      maybeSetHaFieldValue(context, true);
-    }
   }
 
   @Override
   public void afterEach(ExtensionContext context) {
     LOGGER.info("Test finished: {}.{}",
         context.getTestClass().get().getSimpleName(), context.getTestMethod().get().getName());
-    if (isHaSuite(context)) {
-      maybeSetHaFieldValue(context, false);
-    }
   }
 
 }
