@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class BrokerTestCase {
 
     private String brokerVersion;
-    private boolean ha = false;
 
     protected volatile TestInfo testInfo;
 
@@ -341,10 +340,6 @@ public class BrokerTestCase {
         return String.format(
             "%s_%s_%s%s",
             prefix, testClass.getSimpleName(), testMethodName, uuid.substring(uuid.length() / 2));
-    }
-
-    protected boolean ha() {
-        return this.ha;
     }
 
     protected boolean beforeMessageContainers() {

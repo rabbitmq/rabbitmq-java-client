@@ -180,12 +180,6 @@ public class Policies extends BrokerTestCase {
     private final Set<String> policies = new HashSet<String>();
 
     private void setPolicy(String name, String pattern, String definition) throws IOException {
-        // We need to override the HA policy that we use in HATests, so
-        // priority 1. But we still want a valid test of HA, so add the
-        // ha-mode definition.
-        if (ha()) {
-            definition += ",\"ha-mode\":\"all\"";
-        }
         Host.rabbitmqctl("set_policy --priority 1 " + name + " " + pattern +
                          " {" + escapeDefinition(definition) + "}");
         policies.add(name);
