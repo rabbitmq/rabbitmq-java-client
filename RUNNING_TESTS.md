@@ -34,7 +34,7 @@ make deps
 To run a subset of the test suite (do not forget to start a local RabbitMQ node):
 
 ```
-./mvnw verify -P '!setup-test-cluster' \
+./mvnw verify \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
        -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite
@@ -47,7 +47,7 @@ The previous command launches tests against the blocking IO connector.
 To run the tests against the NIO connector, add `-P use-nio` to the command line:
 
 ```
-./mvnw verify -P '!setup-test-cluster',use-nio \
+./mvnw verify -P use-nio \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
        -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite
@@ -64,7 +64,7 @@ top-level directory of the source tree:
 * To run the client unit tests:
 
 ```
-./mvnw verify -P '!setup-test-cluster',use-nio \
+./mvnw verify -P use-nio \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
        -Dit.test=ClientTestSuite
@@ -73,7 +73,7 @@ top-level directory of the source tree:
 * To run the functional tests:
 
 ```
-./mvnw verify -P '!setup-test-cluster',use-nio \
+./mvnw verify -P use-nio \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
        -Dit.test=FunctionalTestSuite
@@ -82,7 +82,7 @@ top-level directory of the source tree:
 * To run a single test:
 
 ```
-./mvnw verify -P '!setup-test-cluster',use-nio \
+./mvnw verify -P use-nio \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
        -Dit.test=DeadLetterExchange
@@ -101,7 +101,7 @@ docker run -it --rm --name rabbitmq -p 5672:5672 rabbitmq:3.8
 Launch the tests:
 
 ```
-./mvnw verify -P '!setup-test-cluster' \
+./mvnw verify \
     -Drabbitmqctl.bin=DOCKER:rabbitmq \
     -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite
 ```

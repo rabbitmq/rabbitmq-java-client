@@ -181,7 +181,7 @@ make deps
 
 [source,shell]
 ----
-./mvnw clean package -Dmaven.test.skip -P '!setup-test-cluster'
+./mvnw clean package -Dmaven.test.skip
 ----
 
 === Launching Tests with the Broker Running in a Docker Container
@@ -197,7 +197,7 @@ Launch "essential" tests (takes about 10 minutes):
 
 [source,shell]
 ----
-./mvnw verify -P '!setup-test-cluster' \
+./mvnw verify \
     -Drabbitmqctl.bin=DOCKER:rabbitmq \
     -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite
 ----
@@ -206,7 +206,7 @@ Launch a single test:
 
 [source,shell]
 ----
-./mvnw verify -P '!setup-test-cluster' \
+./mvnw verify \
     -Drabbitmqctl.bin=DOCKER:rabbitmq \
     -Dit.test=DeadLetterExchange
 ----
@@ -218,7 +218,7 @@ system property must point to the `rabbitmqctl` program:
 
 [source,shell]
 ----
-./mvnw verify -P '!setup-test-cluster' \
+./mvnw verify \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
        -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite
@@ -228,7 +228,7 @@ To launch a single test:
 
 [source,shell]
 ----
-./mvnw verify -P '!setup-test-cluster' \
+./mvnw verify \
        -Dtest-broker.A.nodename=rabbit@$(hostname) \
        -Drabbitmqctl.bin=/path/to/rabbitmqctl \
        -Dit.test=DeadLetterExchange
