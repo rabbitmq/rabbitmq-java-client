@@ -35,7 +35,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class Copyright {
-    final static String COPYRIGHT="Copyright (c) 2007-2023 Broadcom Inc. or its subsidiaries..";
+    final static String COPYRIGHT="Copyright (c) 2007-2024 Broadcom Inc. and/or its subsidiaries.";
     final static String LICENSE="Licensed under the MPL. See https://www.rabbitmq.com/";
 }
 
