@@ -15,6 +15,7 @@
 
 package com.rabbitmq.client;
 
+import com.rabbitmq.client.impl.AnonymousMechanism;
 import com.rabbitmq.client.impl.ExternalMechanism;
 import com.rabbitmq.client.impl.PlainMechanism;
 
@@ -30,6 +31,7 @@ public class DefaultSaslConfig implements SaslConfig {
 
     public static final DefaultSaslConfig PLAIN = new DefaultSaslConfig("PLAIN");
     public static final DefaultSaslConfig EXTERNAL = new DefaultSaslConfig("EXTERNAL");
+    public static final DefaultSaslConfig ANONYMOUS = new DefaultSaslConfig("ANONYMOUS");
 
     /**
      * Create a DefaultSaslConfig with an explicit mechanism to use.
@@ -50,6 +52,8 @@ public class DefaultSaslConfig implements SaslConfig {
             }
             else if (mechanism.equals("EXTERNAL")) {
                 return new ExternalMechanism();
+            } else if (mechanism.equals("ANONYMOUS")) {
+                return new AnonymousMechanism();
             }
         }
         return null;

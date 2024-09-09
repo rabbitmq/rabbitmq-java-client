@@ -485,7 +485,8 @@ public class TestUtils {
 
     public enum BrokerVersion {
         RABBITMQ_3_8("3.8.0"),
-        RABBITMQ_3_10("3.10.0");
+        RABBITMQ_3_10("3.10.0"),
+        RABBITMQ_4_0("4.0.0");
 
         final String value;
 
