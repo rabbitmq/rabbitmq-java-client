@@ -22,16 +22,10 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.*;
 import com.rabbitmq.client.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
-import com.rabbitmq.client.AuthenticationFailureException;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.LongString;
-import com.rabbitmq.client.PossibleAuthenticationFailureException;
-import com.rabbitmq.client.SaslConfig;
-import com.rabbitmq.client.SaslMechanism;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.LongStringHelper;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -103,6 +97,15 @@ public class SaslMechanisms extends BrokerTestCase {
 
     @Test public void connectionCloseAuthFailurePassword() throws IOException, TimeoutException {
         connectionCloseAuthFailure(connectionFactory.getUsername(), "incorrect-password");
+    }
+
+    @Test
+    @TestUtils.BrokerVersionAtLeast(TestUtils.BrokerVersion.RABBITMQ_4_0)
+    public void anonymousShouldSucceed() throws Exception {
+        ConnectionFactory factory = TestUtils.connectionFactory();
+        factory.setSaslConfig(DefaultSaslConfig.ANONYMOUS);
+        Connection connection = factory.newConnection();
+        connection.close();
     }
 
     public void connectionCloseAuthFailure(String username, String password) throws IOException, TimeoutException {
