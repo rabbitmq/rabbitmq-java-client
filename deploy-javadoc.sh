@@ -6,13 +6,13 @@ TAG=$(git describe --exact-match --tags $(git log -n1 --pretty='%h'))
 make deps
 ./mvnw -q clean javadoc:javadoc -Dmaven.javadoc.failOnError=false
 
-if [ -e target/site/apidocs/element-list ]
-  then cp target/site/apidocs/element-list target/site/apidocs/package-list
+if [ -e target/javadoc-bundle-options/element-list ]
+  then cp target/javadoc-bundle-options/element-list target/reports/apidocs/package-list
 fi
 
 git co gh-pages
 rm -rf $DEPLOY_DIRECTORY/*
-cp -r target/site/apidocs/* $DEPLOY_DIRECTORY
+cp -r target/reports/apidocs/* $DEPLOY_DIRECTORY
 git add $DEPLOY_DIRECTORY
 git commit -m "Add Javadoc for $TAG"
 git push origin gh-pages
