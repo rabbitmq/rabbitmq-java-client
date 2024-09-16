@@ -7,7 +7,7 @@
 image:https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client/badge.svg["Maven Central", link="https://maven-badges.herokuapp.com/maven-central/com.rabbitmq/amqp-client"]
 image:https://github.com/rabbitmq/rabbitmq-java-client/actions/workflows/test.yml/badge.svg["Build Status", link="https://github.com/rabbitmq/rabbitmq-java-client/actions/workflows/test.yml"]
 
-This repository contains source code of the https://www.rabbitmq.com/api-guide.html[RabbitMQ Java client].
+This repository contains source code of the https://www.rabbitmq.com/client-libraries/java-api-guide[RabbitMQ Java client].
 The client is maintained by the https://github.com/rabbitmq/[RabbitMQ team at Broadcom].
 
 == Dependency (Maven Artifact)
