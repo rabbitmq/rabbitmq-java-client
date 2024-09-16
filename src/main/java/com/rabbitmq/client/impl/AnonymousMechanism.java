@@ -1,4 +1,5 @@
-// Copyright (c) 2007-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2007-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom
+// Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -20,15 +21,17 @@ import com.rabbitmq.client.SaslMechanism;
 
 /**
  * The ANONYMOUS auth mechanism
+ *
+ * <p>Requires RabbitMQ 4.0 or more.
  */
 public class AnonymousMechanism implements SaslMechanism {
-    @Override
-    public String getName() {
-        return "ANONYMOUS";
-    }
+  @Override
+  public String getName() {
+    return "ANONYMOUS";
+  }
 
-    @Override
-    public LongString handleChallenge(LongString challenge, String username, String password) {
-        return LongStringHelper.asLongString("");
-    }
+  @Override
+  public LongString handleChallenge(LongString challenge, String username, String password) {
+    return LongStringHelper.asLongString("");
+  }
 }
