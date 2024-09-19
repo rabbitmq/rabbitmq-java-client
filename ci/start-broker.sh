@@ -2,7 +2,7 @@
 
 LOCAL_SCRIPT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-RABBITMQ_IMAGE=${RABBITMQ_IMAGE:-rabbitmq:3.13}
+RABBITMQ_IMAGE=${RABBITMQ_IMAGE:-rabbitmq:4.0}
 
 wait_for_message() {
   while ! docker logs "$1" | grep -q "$2";
