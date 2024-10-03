@@ -82,6 +82,7 @@
     <build.helper.maven-plugin.version>3.6.0</build.helper.maven-plugin.version>
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>3.5.0</maven.surefire.plugin.version>
+    <maven-dependency-plugin.version>3.8.0</maven-dependency-plugin.version>
     <maven.failsafe.plugin.version>3.5.0</maven.failsafe.plugin.version>
     <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
     <maven.jar.plugin.version>3.4.2</maven.jar.plugin.version>
@@ -167,16 +168,6 @@
       </activation>
       <properties>
         <rabbitmqctl.bin>${rabbitmq.dir}/scripts/rabbitmqctl.bat</rabbitmqctl.bin>
-      </properties>
-    </profile>
-
-    <profile>
-      <id>jvm-test-arguments-java-21-and-more</id>
-      <activation>
-        <jdk>[21,)</jdk>
-      </activation>
-      <properties>
-        <test-arguments>-XX:+EnableDynamicAgentLoading</test-arguments>
       </properties>
     </profile>
 
@@ -536,6 +527,24 @@
         <mockito.version>4.11.0</mockito.version>
       </properties>
     </profile>
+    <profile>
+      <id>jvm-test-arguments-below-java-21</id>
+      <activation>
+        <jdk>[11,21)</jdk>
+      </activation>
+      <properties>
+        <test-arguments>-Xshare:off</test-arguments>
+      </properties>
+    </profile>
+    <profile>
+      <id>jvm-test-arguments-java-21-and-more</id>
+      <activation>
+        <jdk>[21,)</jdk>
+      </activation>
+      <properties>
+        <test-arguments>-Xshare:off -javaagent:${org.mockito:mockito-core:jar}</test-arguments>
+      </properties>
+    </profile>
 
   </profiles>
 
@@ -709,6 +718,18 @@
             <nonFilteredFileExtension>jks</nonFilteredFileExtension>
           </nonFilteredFileExtensions>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.codehaus.gmaven</groupId>
