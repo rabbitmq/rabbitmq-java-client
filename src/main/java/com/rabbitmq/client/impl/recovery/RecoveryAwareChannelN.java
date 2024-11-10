@@ -108,7 +108,7 @@ public class RecoveryAwareChannelN extends ChannelN {
             return;
         }
         transmit(new Basic.Nack(realTag, multiple, requeue));
-        metricsCollector.basicNack(this, deliveryTag);
+        metricsCollector.basicNack(this, deliveryTag, requeue);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class RecoveryAwareChannelN extends ChannelN {
         long realTag = deliveryTag - activeDeliveryTagOffset;
         if (realTag > 0) {
             transmit(new Basic.Reject(realTag, requeue));
-            metricsCollector.basicReject(this, deliveryTag);
+            metricsCollector.basicReject(this, deliveryTag, requeue);
         }
     }
 

@@ -63,6 +63,8 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
 
     private final Counter rejectedMessages;
 
+    private final Counter requeuedPublishedMessages;
+
     public MicrometerMetricsCollector(MeterRegistry registry) {
         this(registry, "rabbitmq");
     }
@@ -90,6 +92,7 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
         this.ackedPublishedMessages = (Counter) metricsCreator.apply(ACKED_PUBLISHED_MESSAGES);
         this.nackedPublishedMessages = (Counter) metricsCreator.apply(NACKED_PUBLISHED_MESSAGES);
         this.unroutedPublishedMessages = (Counter) metricsCreator.apply(UNROUTED_PUBLISHED_MESSAGES);
+        this.requeuedPublishedMessages = (Counter) metricsCreator.apply(REQUEUED_PUBLISHED_MESSAGES);
     }
 
     @Override
@@ -133,7 +136,10 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     }
 
     @Override
-    protected void markRejectedMessage() {
+    protected void markRejectedMessage(boolean requeue) {
+        if (requeue) {
+            requeuedPublishedMessages.increment();
+        }
         rejectedMessages.increment();
     }
 
@@ -251,6 +257,12 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
             @Override
             Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
                 return registry.counter(prefix + ".unrouted_published", tags);
+            }
+        },
+        REQUEUED_PUBLISHED_MESSAGES {
+            @Override
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
+                return registry.counter(prefix + ".requeued_published", tags);
             }
         };
 

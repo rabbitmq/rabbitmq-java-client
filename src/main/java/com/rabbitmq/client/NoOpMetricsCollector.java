@@ -46,12 +46,12 @@ public class NoOpMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void basicNack(Channel channel, long deliveryTag) {
+    public void basicNack(Channel channel, long deliveryTag, boolean requeue) {
 
     }
 
     @Override
-    public void basicReject(Channel channel, long deliveryTag) {
+    public void basicReject(Channel channel, long deliveryTag, boolean requeue) {
 
     }
 

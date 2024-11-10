@@ -58,9 +58,9 @@ public interface MetricsCollector {
 
     void basicAck(Channel channel, long deliveryTag, boolean multiple);
 
-    void basicNack(Channel channel, long deliveryTag);
+    void basicNack(Channel channel, long deliveryTag, boolean requeue);
 
-    void basicReject(Channel channel, long deliveryTag);
+    void basicReject(Channel channel, long deliveryTag, boolean requeue);
 
     void basicConsume(Channel channel, String consumerTag, boolean autoAck);
 
