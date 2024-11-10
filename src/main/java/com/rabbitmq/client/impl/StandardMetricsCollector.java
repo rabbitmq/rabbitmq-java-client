@@ -45,6 +45,7 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
     private final Meter publishAcknowledgedMessages;
     private final Meter publishNacknowledgedMessages;
     private final Meter publishUnroutedMessages;
+    private final Meter requeuedPublishedMessages;
 
 
     public StandardMetricsCollector(MetricRegistry registry, String metricsPrefix) {
@@ -59,6 +60,7 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
         this.consumedMessages = registry.meter(metricsPrefix+".consumed");
         this.acknowledgedMessages = registry.meter(metricsPrefix+".acknowledged");
         this.rejectedMessages = registry.meter(metricsPrefix+".rejected");
+        this.requeuedPublishedMessages = registry.meter(metricsPrefix+".requeued_published");
     }
 
     public StandardMetricsCollector() {
@@ -110,7 +112,7 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
     }
 
     @Override
-    protected void markRejectedMessage() {
+    protected void markRejectedMessage(boolean requeue) {
         rejectedMessages.mark();
     }
 

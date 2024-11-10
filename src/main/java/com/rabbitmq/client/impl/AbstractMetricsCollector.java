@@ -43,7 +43,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     private final Runnable markAcknowledgedMessageAction = () -> markAcknowledgedMessage();
 
-    private final Runnable markRejectedMessageAction = () -> markRejectedMessage();
+    private final Function<Boolean, Runnable> markRejectedMessageAction = requeue -> () -> markRejectedMessage(requeue);
 
     private final Runnable markMessagePublishAcknowledgedAction = () -> markMessagePublishAcknowledged();
 
@@ -236,18 +236,18 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void basicNack(Channel channel, long deliveryTag) {
+    public void basicNack(Channel channel, long deliveryTag, boolean requeue) {
         try {
-            updateChannelStateAfterAckReject(channel, deliveryTag, true, GET_UNACKED_DTAGS, markRejectedMessageAction);
+            updateChannelStateAfterAckReject(channel, deliveryTag, true, GET_UNACKED_DTAGS, markRejectedMessageAction.apply(requeue));
         } catch(Exception e) {
             LOGGER.info("Error while computing metrics in basicNack: " + e.getMessage());
         }
     }
 
     @Override
-    public void basicReject(Channel channel, long deliveryTag) {
+    public void basicReject(Channel channel, long deliveryTag, boolean requeue) {
         try {
-            updateChannelStateAfterAckReject(channel, deliveryTag, false, GET_UNACKED_DTAGS, markRejectedMessageAction);
+            updateChannelStateAfterAckReject(channel, deliveryTag, false, GET_UNACKED_DTAGS, markRejectedMessageAction.apply(requeue));
         } catch(Exception e) {
             LOGGER.info("Error while computing metrics in basicReject: " + e.getMessage());
         }
@@ -409,7 +409,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     /**
      * Marks the event of a rejected message.
      */
-    protected abstract void markRejectedMessage();
+    protected abstract void markRejectedMessage(boolean requeue);
 
     /**
      * Marks the event of a message publishing acknowledgement.

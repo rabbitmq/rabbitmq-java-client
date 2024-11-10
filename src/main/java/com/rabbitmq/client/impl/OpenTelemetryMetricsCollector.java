@@ -46,6 +46,7 @@ public class OpenTelemetryMetricsCollector extends AbstractMetricsCollector {
     private final LongCounter ackedPublishedMessagesCounter;
     private final LongCounter nackedPublishedMessagesCounter;
     private final LongCounter unroutedPublishedMessagesCounter;
+    private final LongCounter requeuedPublishedMessagesCounter;
 
     public OpenTelemetryMetricsCollector(OpenTelemetry openTelemetry) {
         this(openTelemetry, "rabbitmq");
@@ -123,6 +124,12 @@ public class OpenTelemetryMetricsCollector extends AbstractMetricsCollector {
             .setUnit("{messages}")
             .setDescription("The number of un-routed published messages to the RabbitMQ server")
             .build();
+
+        // requeuedPublishedMessages
+        this.requeuedPublishedMessagesCounter = meter.counterBuilder(prefix + ".requeued_published")
+                .setUnit("{messages}")
+                .setDescription("The number of re-queued published messages to the RabbitMQ server")
+                .build();
     }
 
     @Override
@@ -166,7 +173,10 @@ public class OpenTelemetryMetricsCollector extends AbstractMetricsCollector {
     }
 
     @Override
-    protected void markRejectedMessage() {
+    protected void markRejectedMessage(boolean requeue) {
+        if (requeue) {
+            requeuedPublishedMessagesCounter.add(1L, attributes);
+        }
         rejectedMessagesCounter.add(1L, attributes);
     }
 
