@@ -1213,7 +1213,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         transmit(new Basic.Nack(deliveryTag, multiple, requeue));
-        metricsCollector.basicNack(this, deliveryTag);
+        metricsCollector.basicNack(this, deliveryTag, requeue);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1222,7 +1222,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         throws IOException
     {
         transmit(new Basic.Reject(deliveryTag, requeue));
-        metricsCollector.basicReject(this, deliveryTag);
+        metricsCollector.basicReject(this, deliveryTag, requeue);
     }
 
     /** Public API - {@inheritDoc} */

@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2007-2024 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -43,7 +43,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     private final Runnable markAcknowledgedMessageAction = () -> markAcknowledgedMessage();
 
-    private final Runnable markRejectedMessageAction = () -> markRejectedMessage();
+    private final Function<Boolean, Runnable> markRejectedMessageAction;
 
     private final Runnable markMessagePublishAcknowledgedAction = () -> markMessagePublishAcknowledged();
 
@@ -52,6 +52,12 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     private static final Function<ChannelState, Set<Long>> GET_UNACKED_DTAGS = channelState -> channelState.unackedMessageDeliveryTags;
 
     private static final Function<ChannelState, Set<Long>> GET_UNCONFIRMED_DTAGS = channelState -> channelState.unconfirmedMessageDeliveryTags;
+
+    public AbstractMetricsCollector() {
+       Runnable rejectRequeue = () -> markRejectedMessage(true);
+       Runnable rejectNoRequeue = () -> markRejectedMessage(false);
+       this.markRejectedMessageAction = requeue -> requeue ? rejectRequeue : rejectNoRequeue;
+    }
 
     @Override
     public void newConnection(final Connection connection) {
@@ -237,8 +243,13 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     @Override
     public void basicNack(Channel channel, long deliveryTag) {
+        // replaced by #basicNack(Channel, long, boolean)
+    }
+
+    @Override
+    public void basicNack(Channel channel, long deliveryTag, boolean requeue) {
         try {
-            updateChannelStateAfterAckReject(channel, deliveryTag, true, GET_UNACKED_DTAGS, markRejectedMessageAction);
+            updateChannelStateAfterAckReject(channel, deliveryTag, true, GET_UNACKED_DTAGS, markRejectedMessageAction.apply(requeue));
         } catch(Exception e) {
             LOGGER.info("Error while computing metrics in basicNack: " + e.getMessage());
         }
@@ -246,8 +257,13 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     @Override
     public void basicReject(Channel channel, long deliveryTag) {
+        // replaced by #basicReject(Channel, long, boolean)
+    }
+
+    @Override
+    public void basicReject(Channel channel, long deliveryTag, boolean requeue) {
         try {
-            updateChannelStateAfterAckReject(channel, deliveryTag, false, GET_UNACKED_DTAGS, markRejectedMessageAction);
+            updateChannelStateAfterAckReject(channel, deliveryTag, false, GET_UNACKED_DTAGS, markRejectedMessageAction.apply(requeue));
         } catch(Exception e) {
             LOGGER.info("Error while computing metrics in basicReject: " + e.getMessage());
         }
@@ -408,8 +424,17 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
 
     /**
      * Marks the event of a rejected message.
+     *
+     * @deprecated Use {@link #markRejectedMessage(boolean)} instead
      */
     protected abstract void markRejectedMessage();
+
+    /**
+     * Marks the event of a rejected message.
+     */
+    protected void markRejectedMessage(boolean requeue) {
+        this.markRejectedMessage();
+    }
 
     /**
      * Marks the event of a message publishing acknowledgement.
