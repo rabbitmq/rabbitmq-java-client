@@ -63,7 +63,7 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
 
     private final Counter rejectedMessages;
 
-    private final Counter requeuedPublishedMessages;
+    private final Counter requeuedMessages;
 
     public MicrometerMetricsCollector(MeterRegistry registry) {
         this(registry, "rabbitmq");
@@ -92,7 +92,7 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
         this.ackedPublishedMessages = (Counter) metricsCreator.apply(ACKED_PUBLISHED_MESSAGES);
         this.nackedPublishedMessages = (Counter) metricsCreator.apply(NACKED_PUBLISHED_MESSAGES);
         this.unroutedPublishedMessages = (Counter) metricsCreator.apply(UNROUTED_PUBLISHED_MESSAGES);
-        this.requeuedPublishedMessages = (Counter) metricsCreator.apply(REQUEUED_PUBLISHED_MESSAGES);
+        this.requeuedMessages = (Counter) metricsCreator.apply(REQUEUED_MESSAGES);
     }
 
     @Override
@@ -136,9 +136,15 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
+    protected void markRejectedMessage() {
+
+    }
+
+    @Override
     protected void markRejectedMessage(boolean requeue) {
         if (requeue) {
-            requeuedPublishedMessages.increment();
+            requeuedMessages.increment();
         }
         rejectedMessages.increment();
     }
@@ -198,6 +204,10 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
         return rejectedMessages;
     }
 
+    public Counter getRequeuedMessages() {
+        return requeuedMessages;
+    }
+
     public enum Metrics {
         CONNECTIONS {
             @Override
@@ -235,6 +245,12 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
                 return registry.counter(prefix + ".rejected", tags);
             }
         },
+        REQUEUED_MESSAGES {
+            @Override
+            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
+                return registry.counter(prefix + ".requeued", tags);
+            }
+        },
         FAILED_TO_PUBLISH_MESSAGES {
             @Override
             Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
@@ -257,12 +273,6 @@ public class MicrometerMetricsCollector extends AbstractMetricsCollector {
             @Override
             Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
                 return registry.counter(prefix + ".unrouted_published", tags);
-            }
-        },
-        REQUEUED_PUBLISHED_MESSAGES {
-            @Override
-            Object create(MeterRegistry registry, String prefix, Iterable<Tag> tags) {
-                return registry.counter(prefix + ".requeued_published", tags);
             }
         };
 

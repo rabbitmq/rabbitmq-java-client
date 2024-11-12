@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2007-2024 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -25,7 +25,6 @@ import com.rabbitmq.client.impl.StandardMetricsCollector;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.opentelemetry.sdk.metrics.data.LongPointData;
 import io.opentelemetry.sdk.metrics.data.MetricData;
-import io.opentelemetry.sdk.testing.junit4.OpenTelemetryRule;
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -34,6 +33,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.LongConsumer;
+import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -132,6 +133,54 @@ public class MetricsCollectorTest {
 
         metrics.basicAck(channel, 10, true);
         assertThat(acknowledgedMessages(metrics)).isEqualTo(1L+2L+1L);
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void basicConsumeAndNackReject(MetricsCollectorFactory factory) {
+        AbstractMetricsCollector metrics = factory.create();
+        Connection connection = mock(Connection.class);
+        when(connection.getId()).thenReturn("connection-1");
+        Channel channel = mock(Channel.class);
+        when(channel.getConnection()).thenReturn(connection);
+        when(channel.getChannelNumber()).thenReturn(1);
+
+        metrics.newConnection(connection);
+        metrics.newChannel(channel);
+
+        String ctag = "1";
+        metrics.basicConsume(channel, ctag, false);
+
+        LongConsumer consumed = dtag -> metrics.consumedMessage(channel, dtag, ctag);
+        long count = 10;
+        LongStream.range(0, count).forEach(consumed::accept) ;
+        assertThat(consumedMessages(metrics)).isEqualTo(count);
+        assertThat(acknowledgedMessages(metrics)).isZero();
+
+        metrics.basicReject(channel, 0, false);
+        assertThat(acknowledgedMessages(metrics)).isZero();
+        assertThat(rejectedMessages(metrics)).isEqualTo(1L);
+        assertThat(requeuedMessages(metrics)).isZero();
+
+        metrics.basicReject(channel, 1, true);
+        assertThat(acknowledgedMessages(metrics)).isZero();
+        assertThat(rejectedMessages(metrics)).isEqualTo(2L);
+        assertThat(requeuedMessages(metrics)).isEqualTo(1L);
+
+        metrics.basicNack(channel, 4, false);
+        assertThat(acknowledgedMessages(metrics)).isZero();
+        assertThat(rejectedMessages(metrics)).isEqualTo(2L + 3L);
+        assertThat(requeuedMessages(metrics)).isEqualTo(1L);
+
+        metrics.basicNack(channel, 7, true);
+        assertThat(acknowledgedMessages(metrics)).isZero();
+        assertThat(rejectedMessages(metrics)).isEqualTo(2L + 3L + 3L);
+        assertThat(requeuedMessages(metrics)).isEqualTo(1L + 3L);
+
+        metrics.basicAck(channel, 9, true);
+        assertThat(acknowledgedMessages(metrics)).isEqualTo(2);
+        assertThat(rejectedMessages(metrics)).isEqualTo(2L + 3L + 3L);
+        assertThat(requeuedMessages(metrics)).isEqualTo(1L + 3L);
     }
 
     @ParameterizedTest
@@ -350,6 +399,30 @@ public class MetricsCollectorTest {
         }
         else {
             return getOpenTelemetryCounterMeterValue("rabbitmq.acknowledged");
+        }
+    }
+
+    long rejectedMessages(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getRejectedMessages().getCount();
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
+            return (long)((MicrometerMetricsCollector) metrics).getRejectedMessages().count();
+        }
+        else {
+            return getOpenTelemetryCounterMeterValue("rabbitmq.rejected");
+        }
+    }
+
+    long requeuedMessages(MetricsCollector metrics) {
+        if (metrics instanceof StandardMetricsCollector) {
+            return ((StandardMetricsCollector) metrics).getRequeuedMessages().getCount();
+        }
+        else if (metrics instanceof MicrometerMetricsCollector) {
+            return (long)((MicrometerMetricsCollector) metrics).getRequeuedMessages().count();
+        }
+        else {
+            return getOpenTelemetryCounterMeterValue("rabbitmq.requeued");
         }
     }
 

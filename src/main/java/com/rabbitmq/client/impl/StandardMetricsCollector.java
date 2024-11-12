@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2007-2024 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -41,12 +41,11 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
     private final Meter consumedMessages;
     private final Meter acknowledgedMessages;
     private final Meter rejectedMessages;
+    private final Meter requeuedMessages;
     private final Meter failedToPublishMessages;
     private final Meter publishAcknowledgedMessages;
     private final Meter publishNacknowledgedMessages;
     private final Meter publishUnroutedMessages;
-    private final Meter requeuedPublishedMessages;
-
 
     public StandardMetricsCollector(MetricRegistry registry, String metricsPrefix) {
         this.registry = registry;
@@ -60,7 +59,7 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
         this.consumedMessages = registry.meter(metricsPrefix+".consumed");
         this.acknowledgedMessages = registry.meter(metricsPrefix+".acknowledged");
         this.rejectedMessages = registry.meter(metricsPrefix+".rejected");
-        this.requeuedPublishedMessages = registry.meter(metricsPrefix+".requeued_published");
+        this.requeuedMessages = registry.meter(metricsPrefix+".requeued");
     }
 
     public StandardMetricsCollector() {
@@ -112,7 +111,16 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
+    protected void markRejectedMessage() {
+
+    }
+
+    @Override
     protected void markRejectedMessage(boolean requeue) {
+        if (requeue) {
+            requeuedMessages.mark();
+        }
         rejectedMessages.mark();
     }
 
@@ -157,6 +165,10 @@ public class StandardMetricsCollector extends AbstractMetricsCollector {
 
     public Meter getRejectedMessages() {
         return rejectedMessages;
+    }
+
+    public Meter getRequeuedMessages() {
+        return this.requeuedMessages;
     }
 
     public Meter getFailedToPublishMessages() {
