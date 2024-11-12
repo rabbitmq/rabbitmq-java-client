@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2023-2024 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -46,7 +46,7 @@ public class OpenTelemetryMetricsCollector extends AbstractMetricsCollector {
     private final LongCounter ackedPublishedMessagesCounter;
     private final LongCounter nackedPublishedMessagesCounter;
     private final LongCounter unroutedPublishedMessagesCounter;
-    private final LongCounter requeuedPublishedMessagesCounter;
+    private final LongCounter requeuedMessagesCounter;
 
     public OpenTelemetryMetricsCollector(OpenTelemetry openTelemetry) {
         this(openTelemetry, "rabbitmq");
@@ -101,6 +101,12 @@ public class OpenTelemetryMetricsCollector extends AbstractMetricsCollector {
             .setDescription("The number of messages rejected from the RabbitMQ server")
             .build();
 
+        // requeuedPublishedMessages
+        this.requeuedMessagesCounter = meter.counterBuilder(prefix + ".requeued")
+            .setUnit("{messages}")
+            .setDescription("The number of re-queued messages to the RabbitMQ server")
+            .build();
+
         // failedToPublishMessages
         this.failedToPublishMessagesCounter = meter.counterBuilder(prefix + ".failed_to_publish")
             .setUnit("{messages}")
@@ -124,12 +130,6 @@ public class OpenTelemetryMetricsCollector extends AbstractMetricsCollector {
             .setUnit("{messages}")
             .setDescription("The number of un-routed published messages to the RabbitMQ server")
             .build();
-
-        // requeuedPublishedMessages
-        this.requeuedPublishedMessagesCounter = meter.counterBuilder(prefix + ".requeued_published")
-                .setUnit("{messages}")
-                .setDescription("The number of re-queued published messages to the RabbitMQ server")
-                .build();
     }
 
     @Override
@@ -173,9 +173,15 @@ public class OpenTelemetryMetricsCollector extends AbstractMetricsCollector {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
+    protected void markRejectedMessage() {
+
+    }
+
+    @Override
     protected void markRejectedMessage(boolean requeue) {
         if (requeue) {
-            requeuedPublishedMessagesCounter.add(1L, attributes);
+            requeuedMessagesCounter.add(1L, attributes);
         }
         rejectedMessagesCounter.add(1L, attributes);
     }
