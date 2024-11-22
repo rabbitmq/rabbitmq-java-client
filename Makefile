@@ -22,15 +22,12 @@ deps: $(DEPS_DIR)/rabbitmq_codegen
 dist: clean
 	$(MVN) $(MVN_FLAGS) -DskipTests=true -Dmaven.javadoc.failOnError=false package javadoc:javadoc
 
-$(DEPS_DIR)/rabbit:
-	git clone https://github.com/rabbitmq/rabbitmq-server.git $@
-	$(MAKE) -C $@ fetch-deps DEPS_DIR="$(abspath $(DEPS_DIR))"
-
-$(DEPS_DIR)/rabbitmq_ct_helpers:
-	git clone https://github.com/rabbitmq/rabbitmq-ct-helpers.git "$@"
-
 $(DEPS_DIR)/rabbitmq_codegen:
-	git clone https://github.com/rabbitmq/rabbitmq-codegen.git "$@"
+	git clone -n --depth=1 --filter=tree:0 https://github.com/rabbitmq/rabbitmq-server.git $(DEPS_DIR)/rabbitmq-server
+	git -C $(DEPS_DIR)/rabbitmq-server sparse-checkout set --no-cone deps/rabbitmq_codegen
+	git -C $(DEPS_DIR)/rabbitmq-server checkout
+	cp -r $(DEPS_DIR)/rabbitmq-server/deps/rabbitmq_codegen "$@"
+	rm -rf $(DEPS_DIR)/rabbitmq-server
 
 tests: deps
 	$(MVN) $(MVN_FLAGS) verify
