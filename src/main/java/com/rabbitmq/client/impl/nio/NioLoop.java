@@ -73,7 +73,7 @@ public class NioLoop implements Runnable {
 
                 for (SelectionKey selectionKey : selector.keys()) {
                     SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) selectionKey.attachment();
-                    if (state.getConnection() != null && state.getConnection().getHeartbeat() > 0) {
+                    if (state.getConnection() != null && state.getHeartbeatNanoSeconds() > 0) {
                         long now = System.nanoTime();
                         if ((now - state.getLastActivity()) > state.getHeartbeatNanoSeconds() * 2) {
                             try {
