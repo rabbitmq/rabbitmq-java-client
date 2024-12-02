@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2007-2024 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -74,8 +74,8 @@ public class NioLoop implements Runnable {
                 for (SelectionKey selectionKey : selector.keys()) {
                     SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) selectionKey.attachment();
                     if (state.getConnection() != null && state.getConnection().getHeartbeat() > 0) {
-                        long now = System.currentTimeMillis();
-                        if ((now - state.getLastActivity()) > state.getConnection().getHeartbeat() * 1000 * 2) {
+                        long now = System.nanoTime();
+                        if ((now - state.getLastActivity()) > state.getHeartbeatNanoSeconds() * 2) {
                             try {
                                 handleHeartbeatFailure(state);
                             } catch (Exception e) {
@@ -91,7 +91,7 @@ public class NioLoop implements Runnable {
                 if (!writeRegistered && registrations.isEmpty() && writeRegistrations.isEmpty()) {
                     // we can block, registrations will call Selector.wakeup()
                     select = selector.select(1000);
-                    if (selector.keys().size() == 0) {
+                    if (selector.keys().isEmpty()) {
                         // we haven't been doing anything for a while, shutdown state
                         boolean clean = context.cleanUp();
                         if (clean) {
@@ -135,11 +135,9 @@ public class NioLoop implements Runnable {
                         if (!key.isValid()) {
                             continue;
                         }
-
-                        if (key.isReadable()) {
-                            final SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
-
-                            try {
+                        final SocketChannelFrameHandlerState state = (SocketChannelFrameHandlerState) key.attachment();
+                        try {
+                            if (key.isReadable()) {
                                 if (!state.getChannel().isOpen()) {
                                     key.cancel();
                                     continue;
@@ -175,14 +173,14 @@ public class NioLoop implements Runnable {
                                     }
                                 }
 
-                                state.setLastActivity(System.currentTimeMillis());
-                            } catch (final Exception e) {
-                                LOGGER.warn("Error during reading frames", e);
-                                handleIoError(state, e);
-                                key.cancel();
-                            } finally {
-                                buffer.clear();
+                                state.setLastActivity(System.nanoTime());
                             }
+                        } catch (final Exception e) {
+                            LOGGER.warn("Error during reading frames", e);
+                            handleIoError(state, e);
+                            key.cancel();
+                        } finally {
+                            buffer.clear();
                         }
                     }
                 }
@@ -222,9 +220,8 @@ public class NioLoop implements Runnable {
                             continue;
                         }
 
-                        if (key.isWritable()) {
-                            boolean cancelKey = true;
-                            try {
+                        try {
+                            if (key.isWritable()) {
                                 if (!state.getChannel().isOpen()) {
                                     key.cancel();
                                     continue;
@@ -243,17 +240,12 @@ public class NioLoop implements Runnable {
                                     written++;
                                 }
                                 outputStream.flush();
-                                if (!state.getWriteQueue().isEmpty()) {
-                                    cancelKey = true;
-                                }
-                            } catch (Exception e) {
-                                handleIoError(state, e);
-                            } finally {
-                                state.endWriteSequence();
-                                if (cancelKey) {
-                                    key.cancel();
-                                }
                             }
+                        } catch (Exception e) {
+                            handleIoError(state, e);
+                        } finally {
+                            state.endWriteSequence();
+                            key.cancel();
                         }
                     }
                 }
@@ -269,7 +261,7 @@ public class NioLoop implements Runnable {
         } else {
             try {
                 state.close();
-            } catch (IOException e) {
+            } catch (IOException ignored) {
 
             }
         }
@@ -284,7 +276,7 @@ public class NioLoop implements Runnable {
         } else {
             try {
                 state.close();
-            } catch (IOException e) {
+            } catch (IOException ignored) {
 
             }
         }
