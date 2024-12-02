@@ -1,4 +1,4 @@
-// Copyright (c) 2007-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2007-2024 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-
+import java.time.Duration;
 
 /**
  *
@@ -43,6 +43,7 @@ public class SocketChannelFrameHandlerState {
     private final NioQueue writeQueue;
 
     private volatile AMQConnection connection;
+    private volatile long heartbeatNanoSeconds = -1;
 
     /** should be used only in the NIO read thread */
     private long lastActivity;
@@ -157,12 +158,20 @@ public class SocketChannelFrameHandlerState {
         this.connection = connection;
     }
 
+    void setHeartbeat(Duration ht) {
+        this.heartbeatNanoSeconds = ht.toNanos();
+    }
+
     public void setLastActivity(long lastActivity) {
         this.lastActivity = lastActivity;
     }
 
     public long getLastActivity() {
         return lastActivity;
+    }
+
+    long getHeartbeatNanoSeconds() {
+        return this.heartbeatNanoSeconds;
     }
 
     void prepareForWriteSequence() {
