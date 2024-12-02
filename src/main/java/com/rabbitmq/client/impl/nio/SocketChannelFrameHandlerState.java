@@ -43,7 +43,7 @@ public class SocketChannelFrameHandlerState {
     private final NioQueue writeQueue;
 
     private volatile AMQConnection connection;
-    private volatile long heartbeat;
+    private volatile long heartbeatNanoSeconds = -1;
 
     /** should be used only in the NIO read thread */
     private long lastActivity;
@@ -156,7 +156,10 @@ public class SocketChannelFrameHandlerState {
 
     public void setConnection(AMQConnection connection) {
         this.connection = connection;
-        this.heartbeat = Duration.ofSeconds(connection.getHeartbeat()).toNanos();
+    }
+
+    void setHeartbeat(Duration ht) {
+        this.heartbeatNanoSeconds = ht.toNanos();
     }
 
     public void setLastActivity(long lastActivity) {
@@ -168,7 +171,7 @@ public class SocketChannelFrameHandlerState {
     }
 
     long getHeartbeatNanoSeconds() {
-        return this.heartbeat;
+        return this.heartbeatNanoSeconds;
     }
 
     void prepareForWriteSequence() {

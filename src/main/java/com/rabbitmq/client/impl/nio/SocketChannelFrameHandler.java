@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.time.Duration;
 
 /**
  *
@@ -61,6 +62,9 @@ public class SocketChannelFrameHandler implements FrameHandler {
     @Override
     public void setTimeout(int timeoutMs) throws SocketException {
         state.getChannel().socket().setSoTimeout(timeoutMs);
+        if (state.getConnection() != null) {
+            state.setHeartbeat(Duration.ofSeconds(state.getConnection().getHeartbeat()));
+        }
     }
 
     @Override
