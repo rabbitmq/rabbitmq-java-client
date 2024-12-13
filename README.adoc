@@ -249,7 +249,7 @@ for the support timeline of this library.
 
 == License
 
-This package, the RabbitMQ Java client library, is https://www.rabbitmq.com/api-guide.html#license[triple-licensed] under
+This package, the RabbitMQ Java client library, is https://www.rabbitmq.com/client-libraries/java-api-guide#license[triple-licensed] under
 the Mozilla Public License 2.0 ("MPL"), the GNU General Public License
 version 2 ("GPL") and the Apache License version 2 ("AL").
 
