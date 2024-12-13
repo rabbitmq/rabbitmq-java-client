@@ -48,7 +48,7 @@ public abstract class RefreshProtectedCredentialsProvider<T> implements Credenti
 
     private final Lock refreshLock = new ReentrantLock();
     private final AtomicReference<CountDownLatch> latch = new AtomicReference<>();
-    private AtomicBoolean refreshInProcess = new AtomicBoolean(false);
+    private final AtomicBoolean refreshInProcess = new AtomicBoolean(false);
 
     @Override
     public String getUsername() {
