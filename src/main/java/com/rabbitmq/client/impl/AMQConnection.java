@@ -433,8 +433,8 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             setHeartbeat(negotiatedHeartbeat);
 
             this.connectionInfo = new DefaultConnectionInfo(
-                this._frameHandler.getAddress().getHostAddress(),
-                this._frameHandler.getPort()
+                getAddress(),
+                getPort()
             );
 
             _channel0.transmit(new AMQP.Connection.TuneOk.Builder()
@@ -1225,13 +1225,13 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         private final String peerAddress;
         private final int peerPort;
 
-        private DefaultConnectionInfo(String peerAddress, int peerPort) {
-            this.peerAddress = peerAddress;
+        private DefaultConnectionInfo(InetAddress address, int peerPort) {
+            this.peerAddress = address == null ? "" : (address.getHostAddress() == null ? "" : address.getHostAddress());
             this.peerPort = peerPort;
         }
 
         @Override
-        public String   getPeerAddress() {
+        public String getPeerAddress() {
             return peerAddress;
         }
 
