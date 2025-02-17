@@ -19,6 +19,7 @@ mv tls-gen/basic/result/server_$(hostname -s)_key.pem tls-gen/basic/result/serve
 mv tls-gen/basic/server_$(hostname -s) tls-gen/basic/server
 mv tls-gen/basic/client_$(hostname -s) tls-gen/basic/client
 
+rm -rf rabbitmq-configuration
 mkdir -p rabbitmq-configuration/tls
 
 cp -R "${PWD}"/tls-gen/basic/* rabbitmq-configuration/tls

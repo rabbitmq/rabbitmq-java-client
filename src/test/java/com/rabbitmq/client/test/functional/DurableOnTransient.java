@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.GetResponse;
@@ -67,6 +68,7 @@ public class DurableOnTransient extends ClusteredTestBase
         assertNotNull(basicGet());
     }
 
+    @Disabled("Does not apply with Khepri (update datastore while second node is down)")
     @Test public void semiDurableBindingRemoval() throws IOException {
         if (clusteredConnection != null) {
             deleteExchange("x");
