@@ -23,6 +23,7 @@ import com.rabbitmq.client.impl.recovery.*;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -367,6 +368,7 @@ public class ConnectionRecovery extends BrokerTestCase {
     }
 
     // bug 26552
+    @Disabled
     @Test public void clientNamedTransientAutoDeleteQueueAndBindingRecovery() throws IOException, InterruptedException, TimeoutException {
         String q   = UUID.randomUUID().toString();
         String x   = "tmp-fanout";

@@ -74,6 +74,9 @@ sleep 10
 
 docker exec hare rabbitmqctl --node hare@$(hostname) await_startup
 
+docker exec hare rabbitmqctl --node hare@$(hostname) enable_feature_flag --opt-in khepri_db
+docker exec rabbitmq rabbitmqctl --node rabbit@$(hostname) enable_feature_flag --opt-in khepri_db
+
 docker exec rabbitmq rabbitmq-diagnostics --node rabbit@$(hostname) erlang_version
 docker exec rabbitmq rabbitmqctl --node rabbit@$(hostname) version
 docker exec rabbitmq rabbitmqctl --node rabbit@$(hostname) status
