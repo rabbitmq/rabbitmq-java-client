@@ -37,5 +37,6 @@ docker run -d --name rabbitmq \
 
 wait_for_message rabbitmq "completed with"
 
+docker exec rabbitmq rabbitmqctl enable_feature_flag --opt-in khepri_db
 docker exec rabbitmq rabbitmq-diagnostics erlang_version
 docker exec rabbitmq rabbitmqctl version
