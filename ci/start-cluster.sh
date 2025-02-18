@@ -1,84 +1,39 @@
 #!/usr/bin/env bash
 
-LOCAL_SCRIPT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-RABBITMQ_IMAGE=${RABBITMQ_IMAGE:-rabbitmq:4.0}
+export RABBITMQ_IMAGE=${RABBITMQ_IMAGE:-rabbitmq:4.0}
 
 wait_for_message() {
   while ! docker logs "$1" | grep -q "$2";
   do
-      sleep 5
-      echo "Waiting 5 seconds for $1 to start..."
+      sleep 2
+      echo "Waiting 2 seconds for $1 to start..."
   done
 }
-
-make -C "${PWD}"/tls-gen/basic
-
-mv tls-gen/basic/result/server_$(hostname -s)_certificate.pem tls-gen/basic/result/server_certificate.pem
-mv tls-gen/basic/result/server_$(hostname -s)_key.pem tls-gen/basic/result/server_key.pem
-mv tls-gen/basic/server_$(hostname -s) tls-gen/basic/server
-mv tls-gen/basic/client_$(hostname -s) tls-gen/basic/client
 
 rm -rf rabbitmq-configuration
 mkdir -p rabbitmq-configuration/tls
 
-cp -R "${PWD}"/tls-gen/basic/* rabbitmq-configuration/tls
-chmod -R o+r rabbitmq-configuration/tls/*
-chmod -R g+r rabbitmq-configuration/tls/*
-./mvnw -q clean resources:testResources -Dtest-tls-certs.dir=/etc/rabbitmq/tls
-cp target/test-classes/rabbit@localhost.config rabbitmq-configuration/rabbit@localhost.config
-cp target/test-classes/hare@localhost.config rabbitmq-configuration/hare@localhost.config
+make -C "${PWD}"/tls-gen/basic
 
-echo "Running RabbitMQ ${RABBITMQ_IMAGE}"
+rm -rf rabbitmq-configuration
+mkdir -p rabbitmq-configuration/tls
+cp -R "${PWD}"/tls-gen/basic/result/* rabbitmq-configuration/tls
+mv rabbitmq-configuration/tls/server_$(hostname)_certificate.pem rabbitmq-configuration/tls/server_certificate.pem
+mv rabbitmq-configuration/tls/server_$(hostname)_key.pem rabbitmq-configuration/tls/server_key.pem
+chmod o+r rabbitmq-configuration/tls/*
+chmod g+r rabbitmq-configuration/tls/*
 
-docker rm -f rabbitmq 2>/dev/null || echo "rabbitmq was not running"
-docker run -d --name rabbitmq \
-    --network host \
-    -v "${PWD}"/rabbitmq-configuration:/etc/rabbitmq \
-    --env RABBITMQ_CONFIG_FILE=/etc/rabbitmq/rabbit@localhost.config \
-    --env RABBITMQ_NODENAME=rabbit@$(hostname) \
-    --env RABBITMQ_NODE_PORT=5672 \
-    --env RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS="-setcookie do-not-do-this-in-production" \
-    "${RABBITMQ_IMAGE}"
+docker compose --file ci/cluster/docker-compose.yml down
+docker compose --file ci/cluster/docker-compose.yml up --detach
 
-# for CLI commands to share the same cookie
-docker exec rabbitmq bash -c "echo 'do-not-do-this-in-production' > /var/lib/rabbitmq/.erlang.cookie"
-docker exec rabbitmq chmod 0600 /var/lib/rabbitmq/.erlang.cookie
+wait_for_message rabbitmq0 "completed with"
 
-wait_for_message rabbitmq "completed with"
+docker exec rabbitmq0 rabbitmqctl await_online_nodes 3
 
-docker run -d --name hare \
-    --network host \
-    -v "${PWD}"/rabbitmq-configuration:/etc/rabbitmq \
-    --env RABBITMQ_CONFIG_FILE=/etc/rabbitmq/hare@localhost.config \
-    --env RABBITMQ_NODENAME=hare@$(hostname) \
-    --env RABBITMQ_NODE_PORT=5673 \
-    --env RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS="-setcookie do-not-do-this-in-production" \
-    "${RABBITMQ_IMAGE}"
+docker exec rabbitmq0 rabbitmqctl enable_feature_flag --opt-in khepri_db
+docker exec rabbitmq1 rabbitmqctl enable_feature_flag --opt-in khepri_db
+docker exec rabbitmq2 rabbitmqctl enable_feature_flag --opt-in khepri_db
 
-# for CLI commands to share the same cookie
-docker exec hare bash -c "echo 'do-not-do-this-in-production' > /var/lib/rabbitmq/.erlang.cookie"
-docker exec hare chmod 0600 /var/lib/rabbitmq/.erlang.cookie
+docker exec rabbitmq0 rabbitmqctl cluster_status
 
-wait_for_message hare "completed with"
-
-docker exec hare rabbitmqctl --node hare@$(hostname) status
-
-docker exec rabbitmq rabbitmq-diagnostics --node rabbit@$(hostname) is_running
-docker exec hare rabbitmq-diagnostics --node hare@$(hostname) is_running
-
-docker exec hare rabbitmqctl --node hare@$(hostname) stop_app
-docker exec hare rabbitmqctl --node hare@$(hostname) join_cluster rabbit@$(hostname)
-docker exec hare rabbitmqctl --node hare@$(hostname) start_app
-
-sleep 10
-
-docker exec hare rabbitmqctl --node hare@$(hostname) await_startup
-
-docker exec hare rabbitmqctl --node hare@$(hostname) enable_feature_flag --opt-in khepri_db
-docker exec rabbitmq rabbitmqctl --node rabbit@$(hostname) enable_feature_flag --opt-in khepri_db
-
-docker exec rabbitmq rabbitmq-diagnostics --node rabbit@$(hostname) erlang_version
-docker exec rabbitmq rabbitmqctl --node rabbit@$(hostname) version
-docker exec rabbitmq rabbitmqctl --node rabbit@$(hostname) status
-docker exec rabbitmq rabbitmqctl --node rabbit@$(hostname) cluster_status
+docker compose --file ci/cluster/docker-compose.yml ps
