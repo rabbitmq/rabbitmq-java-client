@@ -41,22 +41,23 @@ jobs:
         run: make deps
       - name: Test with NIO
         run: |
-          ./mvnw verify -P use-nio -Drabbitmqctl.bin=DOCKER:rabbitmq \
-            -Dtest-broker.A.nodename=rabbit@$(hostname) -Dtest-broker.B.nodename=hare@$(hostname) \
+          ./mvnw verify -P use-nio -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
+            -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
+            -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
+            -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
             -Dmaven.javadoc.skip=true \
-            -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
             --no-transfer-progress
       - name: Test with blocking IO
         run: |
-          ./mvnw verify -Drabbitmqctl.bin=DOCKER:rabbitmq \
-          -Dtest-broker.A.nodename=rabbit@$(hostname) -Dtest-broker.B.nodename=hare@$(hostname) \
-          -Dmaven.javadoc.skip=true \
-          -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
-          --no-transfer-progress
-      - name: Stop broker A
-        run: docker stop rabbitmq && docker rm rabbitmq
-      - name: Stop broker B
-        run: docker stop hare && docker rm hare
+          ./mvnw verify -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
+            -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
+            -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
+            -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
+            -Dmaven.javadoc.skip=true \
+            -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
+            --no-transfer-progress
+      - name: Stop cluster
+        run: docker compose --file ci/cluster/docker-compose.yml down
       - name: Publish snapshot
         if: ${{ github.event_name != 'pull_request' }}
         run: ./mvnw clean deploy -Psnapshots -DskipITs -DskipTests --no-transfer-progress
