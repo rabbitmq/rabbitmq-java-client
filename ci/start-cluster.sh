@@ -19,6 +19,7 @@ mv tls-gen/basic/result/server_$(hostname -s)_key.pem tls-gen/basic/result/serve
 mv tls-gen/basic/server_$(hostname -s) tls-gen/basic/server
 mv tls-gen/basic/client_$(hostname -s) tls-gen/basic/client
 
+rm -rf rabbitmq-configuration
 mkdir -p rabbitmq-configuration/tls
 
 cp -R "${PWD}"/tls-gen/basic/* rabbitmq-configuration/tls
@@ -73,6 +74,9 @@ docker exec hare rabbitmqctl --node hare@$(hostname) start_app
 sleep 10
 
 docker exec hare rabbitmqctl --node hare@$(hostname) await_startup
+
+docker exec hare rabbitmqctl --node hare@$(hostname) enable_feature_flag --opt-in khepri_db
+docker exec rabbitmq rabbitmqctl --node rabbit@$(hostname) enable_feature_flag --opt-in khepri_db
 
 docker exec rabbitmq rabbitmq-diagnostics --node rabbit@$(hostname) erlang_version
 docker exec rabbitmq rabbitmqctl --node rabbit@$(hostname) version
