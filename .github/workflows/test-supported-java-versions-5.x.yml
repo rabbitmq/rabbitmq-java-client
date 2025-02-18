@@ -45,15 +45,18 @@ jobs:
         run: |
           ./mvnw verify -P use-nio -Drabbitmqctl.bin=DOCKER:rabbitmq \
             -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
-            -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
+            -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
+            -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
             -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
             --no-transfer-progress
       - name: Test with blocking IO
         run: |
           ./mvnw verify -Drabbitmqctl.bin=DOCKER:rabbitmq \
-          -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
-          -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
-          -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
-          --no-transfer-progress
+            -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
+            -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
+            -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
+            -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
+            --no-transfer-progress \
+            -Dnet.bytebuddy.experimental=true
       - name: Stop broker
         run: docker stop rabbitmq && docker rm rabbitmq

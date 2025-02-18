@@ -12,21 +12,33 @@ wait_for_message() {
   done
 }
 
-make -C "${PWD}"/tls-gen/basic
-
-mv tls-gen/basic/result/server_$(hostname -s)_certificate.pem tls-gen/basic/result/server_certificate.pem
-mv tls-gen/basic/result/server_$(hostname -s)_key.pem tls-gen/basic/result/server_key.pem
-mv tls-gen/basic/server_$(hostname -s) tls-gen/basic/server
-mv tls-gen/basic/client_$(hostname -s) tls-gen/basic/client
-
 rm -rf rabbitmq-configuration
 mkdir -p rabbitmq-configuration/tls
 
-cp -R "${PWD}"/tls-gen/basic/* rabbitmq-configuration/tls
-chmod -R o+r rabbitmq-configuration/tls/*
-chmod -R g+r rabbitmq-configuration/tls/*
-./mvnw -q clean resources:testResources -Dtest-tls-certs.dir=/etc/rabbitmq/tls
-cp target/test-classes/rabbit@localhost.config rabbitmq-configuration/rabbitmq.config
+make -C "${PWD}"/tls-gen/basic
+
+rm -rf rabbitmq-configuration
+mkdir -p rabbitmq-configuration/tls
+cp -R "${PWD}"/tls-gen/basic/result/* rabbitmq-configuration/tls
+chmod o+r rabbitmq-configuration/tls/*
+chmod g+r rabbitmq-configuration/tls/*
+
+echo "loopback_users = none
+
+listeners.ssl.default = 5671
+
+ssl_options.cacertfile = /etc/rabbitmq/tls/ca_certificate.pem
+ssl_options.certfile   = /etc/rabbitmq/tls/server_$(hostname)_certificate.pem
+ssl_options.keyfile    = /etc/rabbitmq/tls/server_$(hostname)_key.pem
+ssl_options.verify     = verify_peer
+ssl_options.fail_if_no_peer_cert = false
+ssl_options.honor_cipher_order   = true
+
+auth_mechanisms.1 = PLAIN
+auth_mechanisms.2 = ANONYMOUS
+auth_mechanisms.3 = AMQPLAIN
+auth_mechanisms.4 = EXTERNAL
+auth_mechanisms.5 = RABBIT-CR-DEMO" >> rabbitmq-configuration/rabbitmq.conf
 
 echo "Running RabbitMQ ${RABBITMQ_IMAGE}"
 
