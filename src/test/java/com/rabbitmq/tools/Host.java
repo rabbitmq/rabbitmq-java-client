@@ -42,6 +42,14 @@ public class Host {
     private static final String DOCKER_PREFIX = "DOCKER:";
     private static final Pattern CONNECTION_NAME_PATTERN = Pattern.compile("\"connection_name\",\"(?<name>[a-zA-Z0-9\\-]+)?\"");
 
+    public static String hostname() {
+      try {
+        return executeCommand("hostname").output();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
     public static String capture(InputStream is)
         throws IOException
     {
@@ -189,17 +197,6 @@ public class Host {
         rabbitmqctl("eval 'rabbit_alarm:clear_alarm({resource_limit, " + source + ", node()}).'");
     }
 
-    public static ProcessState invokeMakeTarget(String command) throws IOException {
-        File rabbitmqctl = new File(rabbitmqctlCommand());
-        return executeCommand(makeCommand() +
-                              " -C \'" + rabbitmqDir() + "\'" +
-                              " RABBITMQCTL=\'" + rabbitmqctl.getAbsolutePath() + "\'" +
-                              " RABBITMQ_NODENAME=\'" + nodenameA() + "\'" +
-                              " RABBITMQ_NODE_PORT=" + node_portA() +
-                              " RABBITMQ_CONFIG_FILE=\'" + config_fileA() + "\'" +
-                              " " + command);
-    }
-
     public static void startRabbitOnNode() throws IOException {
         rabbitmqctl("start_app");
         tryConnectFor(10_000);
@@ -210,7 +207,7 @@ public class Host {
     }
 
     public static void tryConnectFor(int timeoutInMs) throws IOException {
-        tryConnectFor(timeoutInMs, node_portA() == null ? 5672 : Integer.valueOf(node_portA()));
+        tryConnectFor(timeoutInMs, 5672);
     }
 
     public static void tryConnectFor(int timeoutInMs, int port) throws IOException {
@@ -245,15 +242,6 @@ public class Host {
         return System.getProperty("test-broker.A.nodename");
     }
 
-    public static String node_portA()
-    {
-        return System.getProperty("test-broker.A.node_port");
-    }
-
-    public static String config_fileA()
-    {
-        return System.getProperty("test-broker.A.config_file");
-    }
 
     public static String nodenameB()
     {
@@ -263,11 +251,6 @@ public class Host {
     public static String node_portB()
     {
         return System.getProperty("test-broker.B.node_port");
-    }
-
-    public static String config_fileB()
-    {
-        return System.getProperty("test-broker.B.config_file");
     }
 
     public static String rabbitmqctlCommand() {
@@ -289,11 +272,6 @@ public class Host {
             throw new IllegalStateException("Please define the rabbitmqctl.bin system property");
         }
         return rabbitmqCtl.startsWith(DOCKER_PREFIX);
-    }
-
-    public static String rabbitmqDir()
-    {
-        return System.getProperty("rabbitmq.dir");
     }
 
     public static void closeConnection(String pid) throws IOException {
