@@ -80,7 +80,7 @@ public class Host {
         return new ProcessState(pr, inputState, errorState);
     }
 
-    static class ProcessState {
+    public static class ProcessState {
 
         private final Process process;
         private final InputStreamPumpState inputState;
@@ -93,7 +93,7 @@ public class Host {
             this.errorState = errorState;
         }
 
-        private String output() {
+        public String output() {
             return inputState.buffer.toString();
         }
 
