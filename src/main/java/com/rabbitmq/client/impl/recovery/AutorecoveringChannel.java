@@ -540,9 +540,9 @@ public class AutorecoveringChannel implements RecoverableChannel {
 
     @Override
     public String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String, Object> arguments, Consumer callback) throws IOException {
-        final String result = delegate.basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, callback);
-        recordConsumer(result, queue, autoAck, exclusive, arguments, callback);
-        return result;
+        final String tag = delegate.basicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, callback);
+        recordConsumer(tag, queue, autoAck, exclusive, arguments, callback);
+        return tag;
     }
 
     @Override
@@ -886,7 +886,7 @@ public class AutorecoveringChannel implements RecoverableChannel {
         this.connection.deleteRecordedExchange(exchange);
     }
 
-    private void recordConsumer(String result,
+    private void recordConsumer(String consumerTag,
                                 String queue,
                                 boolean autoAck,
                                 boolean exclusive,
@@ -894,12 +894,12 @@ public class AutorecoveringChannel implements RecoverableChannel {
                                 Consumer callback) {
         RecordedConsumer consumer = new RecordedConsumer(this, queue).
                                             autoAck(autoAck).
-                                            consumerTag(result).
+                                            consumerTag(consumerTag).
                                             exclusive(exclusive).
                                             arguments(arguments).
                                             consumer(callback);
-        this.consumerTags.add(result);
-        this.connection.recordConsumer(result, consumer);
+        this.consumerTags.add(consumerTag);
+        this.connection.recordConsumer(consumerTag, consumer);
     }
 
     /**
