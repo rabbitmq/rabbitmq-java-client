@@ -10,10 +10,15 @@ image:https://github.com/rabbitmq/rabbitmq-java-client/actions/workflows/test.ym
 This repository contains source code of the https://www.rabbitmq.com/client-libraries/java-api-guide[RabbitMQ Java client].
 The client is maintained by the https://github.com/rabbitmq/[RabbitMQ team at Broadcom].
 
-== Dependency (Maven Artifact)
+== RabbitMQ Server Compatibility
 
-This client releases are independent of RabbitMQ server releases and can be used with RabbitMQ server `3.x`.
+This client releases are independent of RabbitMQ server releases and can be used with RabbitMQ server `4.x` and `3.x` (note that the `3.x` series is https://www.rabbitmq.com/release-information[out of community support]).
+
+== Minimum Supported JDK Version
+
 They require Java 8 or higher.
+
+== Dependency (Maven Artifact)
 
 === Stable
 
