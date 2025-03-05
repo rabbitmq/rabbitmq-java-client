@@ -41,9 +41,8 @@ public class WorkPoolTests {
 
     /**
      * Test add work and remove work
-     * @throws Exception untested
      */
-    @Test public void basicInOut() throws Exception {
+    @Test public void basicInOut() {
         Object one = new Object();
         Object two = new Object();
 
@@ -70,9 +69,8 @@ public class WorkPoolTests {
 
     /**
      * Test add work when work in progress.
-     * @throws Exception untested
      */
-    @Test public void workInWhileInProgress() throws Exception {
+    @Test public void workInWhileInProgress() {
         Object one = new Object();
         Object two = new Object();
 
@@ -98,9 +96,8 @@ public class WorkPoolTests {
 
     /**
      * Test multiple work keys.
-     * @throws Exception untested
      */
-    @Test public void interleavingKeys() throws Exception {
+    @Test public void interleavingKeys() {
         Object one = new Object();
         Object two = new Object();
         Object three = new Object();
@@ -129,9 +126,8 @@ public class WorkPoolTests {
 
     /**
      * Test removal of key (with work)
-     * @throws Exception untested
      */
-    @Test public void unregisterKey() throws Exception {
+    @Test public void unregisterKey() {
         Object one = new Object();
         Object two = new Object();
         Object three = new Object();
@@ -154,9 +150,8 @@ public class WorkPoolTests {
 
     /**
      * Test removal of all keys (with work).
-     * @throws Exception untested
      */
-    @Test public void unregisterAllKeys() throws Exception {
+    @Test public void unregisterAllKeys() {
         Object one = new Object();
         Object two = new Object();
         Object three = new Object();
