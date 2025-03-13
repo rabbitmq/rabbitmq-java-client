@@ -16,7 +16,10 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        rabbitmq-image: [ 'pivotalrabbitmq/rabbitmq:v4.0.x', 'pivotalrabbitmq/rabbitmq:main' ]
+        rabbitmq-image:
+          - pivotalrabbitmq/rabbitmq:v4.0.x-otp27
+          - pivotalrabbitmq/rabbitmq:v4.1.x-otp27
+          - pivotalrabbitmq/rabbitmq:main-otp27
     name:  Test against ${{ matrix.rabbitmq-image }}
     steps:
       - uses: actions/checkout@v4
