@@ -26,7 +26,7 @@ $(DEPS_DIR)/rabbitmq_codegen:
 	git clone -n --depth=1 --filter=tree:0 https://github.com/rabbitmq/rabbitmq-server.git $(DEPS_DIR)/rabbitmq-server
 	git -C $(DEPS_DIR)/rabbitmq-server sparse-checkout set --no-cone deps/rabbitmq_codegen
 	git -C $(DEPS_DIR)/rabbitmq-server checkout
-	cp -r $(DEPS_DIR)/rabbitmq-server/deps/rabbitmq_codegen "$@"
+	cp -R $(DEPS_DIR)/rabbitmq-server/deps/rabbitmq_codegen "$@"
 	rm -rf $(DEPS_DIR)/rabbitmq-server
 
 tests: deps
