@@ -27,6 +27,8 @@
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.utility.SafeObjectInputStream;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.*;
@@ -767,7 +769,7 @@ public class VariableLinkedBlockingQueue<E> extends AbstractQueue<E>
      * deserialize it).
      * @param s the stream
      */
-    private void readObject(java.io.ObjectInputStream s)
+    private void readObject(SafeObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         // Read in capacity, and any hidden stuff
         s.defaultReadObject();
