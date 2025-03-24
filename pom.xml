@@ -887,7 +887,7 @@
           </java>
           <!--          <ratchetFrom>origin/main</ratchetFrom>-->
           <licenseHeader> <!-- specify either content or file, but not both -->
-              <content>// Copyright (c) $YEAR Broadcom. All Rights Reserved.
+            <content>// Copyright (c) $YEAR Broadcom. All Rights Reserved.
               // The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
               //
               // This software, the RabbitMQ Java client library, is triple-licensed under the
@@ -906,14 +906,6 @@
           </licenseHeader>
         </configuration>
       </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <source>9</source>
-                <target>9</target>
-            </configuration>
-        </plugin>
 
     </plugins>
     <extensions>
