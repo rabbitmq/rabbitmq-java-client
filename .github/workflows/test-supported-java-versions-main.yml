@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         distribution: [ 'temurin' ]
-        version: [ '8', '11', '17', '21', '23', '24-ea', '25-ea' ]
+        version: [ '8', '11', '17', '21', '24', '25-ea' ]
         include:
           - distribution: 'semeru'
             version: '17'
