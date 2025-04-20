@@ -1068,7 +1068,8 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     
     /**
      * Exclude the queue from the list of queues to recover after connection failure.
-     * Intended to be used in usecases where you want to remove the queue from this connection's recovery list but don't want to delete the queue from the server.
+     * Intended to be used in scenarios where you want to remove the queue from this connection's recovery list but don't want to delete the queue from the server.
+     * For example, in tests.
      * 
      * @param queue queue name to exclude from recorded recovery queues
      * @param ifUnused if true, the RecordedQueue will only be excluded if no local consumers are using it.
