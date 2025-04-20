@@ -1118,8 +1118,8 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             synchronized (this.recordedQueues) {
                 if(!hasMoreConsumersOnQueue(this.consumers.values(), queue)) {
                     RecordedQueue q = this.recordedQueues.get(queue);
-                    // last consumer on this connection is gone, remove recorded queue
-                    // if it is auto-deleted. See bug 26364.
+                    // the last consumer on this connection is gone, remove the recorded queue
+                    // if it is auto-deleted
                     if(q != null && q.isAutoDelete()) {
                         deleteRecordedQueue(queue);
                     }
@@ -1132,8 +1132,8 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         synchronized (this.recordedExchanges) {
             if(!hasMoreDestinationsBoundToExchange(Utility.copy(this.recordedBindings), exchange)) {
                 RecordedExchange x = this.recordedExchanges.get(exchange);
-                // last binding where this exchange is the source is gone, remove recorded exchange
-                // if it is auto-deleted. See bug 26364.
+                // the last binding where this exchange is the source is gone, remove the recorded exchange
+                // if it is auto-deleted
                 if(x != null && x.isAutoDelete()) {
                     deleteRecordedExchange(exchange);
                 }
