@@ -1094,8 +1094,12 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
 
     void deleteRecordedExchange(String exchange) {
         this.recordedExchanges.remove(exchange);
-        Set<RecordedBinding> xs = this.removeBindingsWithDestination(exchange);
-        for (RecordedBinding b : xs) {
+        Set<RecordedBinding> xs1 = this.removeBindingsWithDestination(exchange);
+        for (RecordedBinding b : xs1) {
+            this.maybeDeleteRecordedAutoDeleteExchange(b.getSource());
+        }
+        Set<RecordedBinding> xs2 = this.removeBindingsWithSource(exchange);
+        for (RecordedBinding b : xs2) {
             this.maybeDeleteRecordedAutoDeleteExchange(b.getSource());
         }
     }
@@ -1164,6 +1168,20 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
             for (Iterator<RecordedBinding> it = this.recordedBindings.iterator(); it.hasNext(); ) {
                 RecordedBinding b = it.next();
                 if(b.getDestination().equals(s)) {
+                    it.remove();
+                    result.add(b);
+                }
+            }
+        }
+        return result;
+    }
+
+    Set<RecordedBinding> removeBindingsWithSource(String s) {
+        final Set<RecordedBinding> result = new LinkedHashSet<>();
+        synchronized (this.recordedBindings) {
+            for (Iterator<RecordedBinding> it = this.recordedBindings.iterator(); it.hasNext(); ) {
+                RecordedBinding b = it.next();
+                if (b.getSource().equals(s)) {
                     it.remove();
                     result.add(b);
                 }
