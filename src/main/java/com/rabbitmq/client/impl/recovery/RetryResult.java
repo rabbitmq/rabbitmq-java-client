@@ -16,7 +16,7 @@
 package com.rabbitmq.client.impl.recovery;
 
 /**
- * The retry of a retried topology recovery operation.
+ * The retry of a retriable topology recovery operation.
  *
  * @since 5.4.0
  */
