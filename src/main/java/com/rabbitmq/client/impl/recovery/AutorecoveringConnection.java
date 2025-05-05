@@ -1164,25 +1164,19 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     Set<RecordedBinding> removeBindingsWithDestination(String s) {
-        final Set<RecordedBinding> result = new LinkedHashSet<>();
-        synchronized (this.recordedBindings) {
-            for (Iterator<RecordedBinding> it = this.recordedBindings.iterator(); it.hasNext(); ) {
-                RecordedBinding b = it.next();
-                if(b.getDestination().equals(s)) {
-                    it.remove();
-                    result.add(b);
-                }
-            }
-        }
-        return result;
+        return this.removeBindingsWithCondition(b -> b.getSource().equals(s));
     }
 
     Set<RecordedBinding> removeBindingsWithSource(String s) {
+        return this.removeBindingsWithCondition(b -> b.getSource().equals(s));
+    }
+
+    private Set<RecordedBinding> removeBindingsWithCondition(Predicate<RecordedBinding> condition) {
         final Set<RecordedBinding> result = new LinkedHashSet<>();
         synchronized (this.recordedBindings) {
             for (Iterator<RecordedBinding> it = this.recordedBindings.iterator(); it.hasNext(); ) {
                 RecordedBinding b = it.next();
-                if (b.getSource().equals(s)) {
+                if (condition.test(b)) {
                     it.remove();
                     result.add(b);
                 }
