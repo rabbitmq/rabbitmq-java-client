@@ -1163,7 +1163,7 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     }
 
     Set<RecordedBinding> removeBindingsWithDestination(String s) {
-        return this.removeBindingsWithCondition(b -> b.getSource().equals(s));
+        return this.removeBindingsWithCondition(b -> b.getDestination().equals(s));
     }
 
     Set<RecordedBinding> removeBindingsWithSource(String s) {
