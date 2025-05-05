@@ -865,6 +865,21 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
+    @Test public void thatBindingFromDeletedExchangeIsDeleted() throws IOException, InterruptedException {
+        String q = generateQueueName();
+        channel.queueDeclare(q, false, false, false, null);
+        try {
+            String x = generateExchangeName();
+            channel.exchangeDeclare(x, "fanout");
+            channel.queueBind(q, x, "");
+            assertRecordedBinding(connection, 1);
+            channel.exchangeDelete(x);
+            assertRecordedBinding(connection, 0);
+        } finally {
+            channel.queueDelete(q);
+        }
+    }
+
     private void assertConsumerCount(int exp, String q) throws IOException {
         assertThat(channel.queueDeclarePassive(q).getConsumerCount()).isEqualTo(exp);
     }
@@ -1016,5 +1031,9 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     private static void assertRecordedExchanges(Connection conn, int size) {
         assertThat(((AutorecoveringConnection)conn).getRecordedExchanges()).hasSize(size);
+    }
+
+    private static void assertRecordedBinding(Connection conn, int size) {
+        assertThat(((AutorecoveringConnection)conn).getRecordedBindings()).hasSize(size);
     }
 }
