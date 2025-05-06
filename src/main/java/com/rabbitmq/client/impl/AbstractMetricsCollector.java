@@ -115,9 +115,12 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
         try {
             if (deliveryTag != 0) {
                 ChannelState channelState = channelState(channel);
+                if (channelState == null) {
+                    return;
+                }
                 channelState.lock.lock();
                 try {
-                    channelState(channel).unconfirmedMessageDeliveryTags.add(deliveryTag);
+                    channelState.unconfirmedMessageDeliveryTags.add(deliveryTag);
                 } finally {
                     channelState.lock.unlock();
                 }
@@ -169,9 +172,12 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
         try {
             if(!autoAck) {
                 ChannelState channelState = channelState(channel);
+                if (channelState == null) {
+                    return;
+                }
                 channelState.lock.lock();
                 try {
-                    channelState(channel).consumersWithManualAck.add(consumerTag);
+                    channelState.consumersWithManualAck.add(consumerTag);
                 } finally {
                     channelState.lock.unlock();
                 }
@@ -185,9 +191,12 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
     public void basicCancel(Channel channel, String consumerTag) {
         try {
             ChannelState channelState = channelState(channel);
+            if (channelState == null) {
+                return;
+            }
             channelState.lock.lock();
             try {
-                channelState(channel).consumersWithManualAck.remove(consumerTag);
+                channelState.consumersWithManualAck.remove(consumerTag);
             } finally {
                 channelState.lock.unlock();
             }
@@ -202,9 +211,12 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
             markConsumedMessage();
             if(!autoAck) {
                 ChannelState channelState = channelState(channel);
+                if (channelState == null) {
+                    return;
+                }
                 channelState.lock.lock();
                 try {
-                    channelState(channel).unackedMessageDeliveryTags.add(deliveryTag);
+                    channelState.unackedMessageDeliveryTags.add(deliveryTag);
                 } finally {
                     channelState.lock.unlock();
                 }
@@ -219,6 +231,9 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
         try {
             markConsumedMessage();
             ChannelState channelState = channelState(channel);
+            if (channelState == null) {
+                return;
+            }
             channelState.lock.lock();
             try {
                 if(channelState.consumersWithManualAck.contains(consumerTag)) {
