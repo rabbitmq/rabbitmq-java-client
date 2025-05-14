@@ -64,7 +64,7 @@
     <junit.jupiter.version>5.12.2</junit.jupiter.version>
     <mockito.version>5.17.0</mockito.version>
     <assertj.version>3.27.3</assertj.version>
-    <micrometer-tracing-test.version>1.4.6</micrometer-tracing-test.version>
+    <micrometer-tracing-test.version>1.5.0</micrometer-tracing-test.version>
     <micrometer-docs-generator.version>1.0.4</micrometer-docs-generator.version>
     <jetty.version>9.4.57.v20241219</jetty.version>
     <bouncycastle.version>1.80</bouncycastle.version>
