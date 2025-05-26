@@ -56,7 +56,7 @@
 
     <spotless.check.skip>true</spotless.check.skip>
     <slf4j.version>1.7.36</slf4j.version>
-    <metrics.version>4.2.30</metrics.version>
+    <metrics.version>4.2.32</metrics.version>
     <micrometer.version>1.15.0</micrometer.version>
     <opentelemetry.version>1.50.0</opentelemetry.version>
     <jackson.version>2.19.0</jackson.version>
