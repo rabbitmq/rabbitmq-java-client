@@ -9,8 +9,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Evaluate release type
-        run:  ci/evaluate-release.sh
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -21,30 +19,19 @@ jobs:
           distribution: 'temurin'
           java-version: '8'
           cache: 'maven'
-          server-id: ${{ env.maven_server_id }}
+          server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
       - name: Get dependencies
         run: make deps
-      - name: Release AMQP Java Client (GA)
-        if: ${{ env.ga_release == 'true' }}
+      - name: Release AMQP Java Client
         run:  |
           git config user.name "rabbitmq-ci"
           git config user.email "rabbitmq-ci@users.noreply.github.com"
           ci/release-java-client.sh
         env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
-      - name: Release AMQP Java Client (Milestone/RC)
-        if: ${{ env.ga_release != 'true' }}
-        run:  |
-          git config user.name "rabbitmq-ci"
-          git config user.email "rabbitmq-ci@users.noreply.github.com"
-          ci/release-java-client.sh
-        env:
-          MAVEN_USERNAME: ''
-          MAVEN_PASSWORD: ${{ secrets.PACKAGECLOUD_TOKEN }}
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
