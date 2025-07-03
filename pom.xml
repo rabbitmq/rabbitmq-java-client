@@ -83,7 +83,7 @@
     <maven.surefire.plugin.version>3.5.3</maven.surefire.plugin.version>
     <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
     <maven.failsafe.plugin.version>3.5.3</maven.failsafe.plugin.version>
-    <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
+    <maven.gpg.plugin.version>3.2.8</maven.gpg.plugin.version>
     <maven.jar.plugin.version>3.4.2</maven.jar.plugin.version>
     <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
     <checksum.maven.plugin.version>1.11</checksum.maven.plugin.version>
