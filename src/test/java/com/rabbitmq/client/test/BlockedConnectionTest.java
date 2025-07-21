@@ -77,6 +77,9 @@ public class BlockedConnectionTest extends BrokerTestCase {
       CountDownLatch blockedLatch = new CountDownLatch(1);
       c.addBlockedListener(reason -> blockedLatch.countDown(), () -> {});
       Channel ch = c.createChannel();
+      String q = ch.queueDeclare().getQueue();
+      CountDownLatch consShutdownLatch = new CountDownLatch(1);
+      ch.basicConsume(q, (ctag, msg) -> { }, (ctag, r) -> consShutdownLatch.countDown());
       CountDownLatch chShutdownLatch = new CountDownLatch(1);
       ch.addShutdownListener(cause -> chShutdownLatch.countDown());
       ch.confirmSelect();
@@ -89,6 +92,7 @@ public class BlockedConnectionTest extends BrokerTestCase {
       ch.basicPublish("", "", MessageProperties.BASIC, "".getBytes());
       assertThatThrownBy(() -> ch.waitForConfirmsOrDie(confirmTimeout))
           .isInstanceOf(TimeoutException.class);
+      assertThat(consShutdownLatch).is(completed());
       assertThat(chShutdownLatch).is(completed());
     } finally {
       if (blocked) {
