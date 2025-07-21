@@ -28,10 +28,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class ConsumerCancelNotification extends BrokerTestCase {
+public class ConsumerNotifications extends BrokerTestCase {
 
     private final String queue = "cancel_notification_queue";
 
@@ -42,7 +43,7 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         channel.queueDeclare(queue, false, true, false, null);
         Consumer consumer = new DefaultConsumer(channel) {
             @Override
-            public void handleCancel(String consumerTag) throws IOException {
+            public void handleCancel(String consumerTag) {
                 try {
                     result.put(true);
                 } catch (InterruptedException e) {
@@ -55,7 +56,31 @@ public class ConsumerCancelNotification extends BrokerTestCase {
         assertTrue(result.take());
     }
 
-    class AlteringConsumer extends DefaultConsumer {
+    @Test public void consumerCancellationHandlerUsesBlockingOperations()
+            throws IOException, InterruptedException {
+        final String altQueue = "basic.cancel.fallback";
+        channel.queueDeclare(queue, false, true, false, null);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        final AlteringConsumer consumer = new AlteringConsumer(channel, altQueue, latch);
+
+        channel.basicConsume(queue, consumer);
+        channel.queueDelete(queue);
+
+        latch.await(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void handleShutdownShouldBeCalledWhenChannelIsClosed() throws Exception {
+        Channel ch = connection.createChannel();
+        String q = ch.queueDeclare().getQueue();
+        CountDownLatch latch = new CountDownLatch(1);
+        ch.basicConsume(q, (ctag, msg) -> {}, (ctag, r) -> latch.countDown());
+        ch.close();
+        assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+    }
+
+    private static class AlteringConsumer extends DefaultConsumer {
         private final String altQueue;
         private final CountDownLatch latch;
 
@@ -80,19 +105,5 @@ public class ConsumerCancelNotification extends BrokerTestCase {
                 // e.printStackTrace();
             }
         }
-    }
-
-    @Test public void consumerCancellationHandlerUsesBlockingOperations()
-            throws IOException, InterruptedException {
-        final String altQueue = "basic.cancel.fallback";
-        channel.queueDeclare(queue, false, true, false, null);
-
-        CountDownLatch latch = new CountDownLatch(1);
-        final AlteringConsumer consumer = new AlteringConsumer(channel, altQueue, latch);
-
-        channel.basicConsume(queue, consumer);
-        channel.queueDelete(queue);
-
-        latch.await(2, TimeUnit.SECONDS);
     }
 }

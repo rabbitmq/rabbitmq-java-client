@@ -53,7 +53,7 @@ import org.junit.platform.suite.api.Suite;
     DefaultExchange.class,
     UnbindAutoDeleteExchange.class,
     Confirm.class,
-    ConsumerCancelNotification.class,
+    ConsumerNotifications.class,
     UnexpectedFrames.class,
     PerQueueTTL.class,
     PerMessageTTL.class,

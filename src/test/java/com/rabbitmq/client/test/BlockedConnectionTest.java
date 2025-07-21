@@ -20,25 +20,16 @@ import static com.rabbitmq.client.test.TestUtils.LatchConditions.completed;
 import static com.rabbitmq.client.test.TestUtils.waitAtMost;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.fail;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.rabbitmq.client.ConsumerShutdownSignalCallback;
-import com.rabbitmq.client.DeliverCallback;
-import com.rabbitmq.client.Delivery;
 import com.rabbitmq.client.MessageProperties;
-import com.rabbitmq.client.ShutdownListener;
-import com.rabbitmq.client.ShutdownSignalException;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -86,6 +77,9 @@ public class BlockedConnectionTest extends BrokerTestCase {
       CountDownLatch blockedLatch = new CountDownLatch(1);
       c.addBlockedListener(reason -> blockedLatch.countDown(), () -> {});
       Channel ch = c.createChannel();
+      String q = ch.queueDeclare().getQueue();
+      CountDownLatch consShutdownLatch = new CountDownLatch(1);
+      ch.basicConsume(q, (ctag, msg) -> { }, (ctag, r) -> consShutdownLatch.countDown());
       CountDownLatch chShutdownLatch = new CountDownLatch(1);
       ch.addShutdownListener(cause -> chShutdownLatch.countDown());
       ch.confirmSelect();
@@ -98,6 +92,7 @@ public class BlockedConnectionTest extends BrokerTestCase {
       ch.basicPublish("", "", MessageProperties.BASIC, "".getBytes());
       assertThatThrownBy(() -> ch.waitForConfirmsOrDie(confirmTimeout))
           .isInstanceOf(TimeoutException.class);
+      assertThat(consShutdownLatch).is(completed());
       assertThat(chShutdownLatch).is(completed());
     } finally {
       if (blocked) {
