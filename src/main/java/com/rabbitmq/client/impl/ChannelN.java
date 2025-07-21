@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Main interface to AMQP protocol functionality. Public API -
@@ -605,10 +606,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             signal.initCause(cause);
         }
 
+        AtomicBoolean finishProcessShutdownSignalCalled = new AtomicBoolean(false);
         BlockingRpcContinuation<AMQCommand> k = new BlockingRpcContinuation<AMQCommand>(){
             @Override
             public AMQCommand transformReply(AMQCommand command) {
-                ChannelN.this.finishProcessShutdownSignal();
+                if (finishProcessShutdownSignalCalled.compareAndSet(false, true)) {
+                    ChannelN.this.finishProcessShutdownSignal();
+                }
                 return command;
             }};
         boolean notify = false;
@@ -639,6 +643,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             if (!abort)
                 throw ioe;
         } finally {
+            if (finishProcessShutdownSignalCalled.compareAndSet(false, true)) {
+                try {
+                    ChannelN.this.finishProcessShutdownSignal();
+                } catch (Exception e) {
+                    LOGGER.info("Error while processing shutdown signal: {}", e.getMessage());
+                }
+            }
             if (abort || notify) {
                 // Now we know everything's been cleaned up and there should
                 // be no more surprises arriving on the wire. Release the
