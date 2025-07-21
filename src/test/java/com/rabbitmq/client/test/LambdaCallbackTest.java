@@ -39,11 +39,7 @@ public class LambdaCallbackTest extends BrokerTestCase {
     @Override
     protected void releaseResources() throws IOException {
         channel.queueDelete(queue);
-        try {
-            unblock();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        unblock();
     }
 
     @Test public void shutdownListener() throws Exception {
@@ -78,13 +74,7 @@ public class LambdaCallbackTest extends BrokerTestCase {
         final CountDownLatch latch = new CountDownLatch(1);
         try(Connection connection = TestUtils.connectionFactory().newConnection()) {
             connection.addBlockedListener(
-                reason -> {
-                    try {
-                        unblock();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-            },
+                reason -> unblock(),
                 () -> latch.countDown()
             );
             block();
