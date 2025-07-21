@@ -1,4 +1,5 @@
-// Copyright (c) 2007-2025 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2007-2025 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom
+// Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -18,11 +19,27 @@ package com.rabbitmq.client.test;
 import static com.rabbitmq.client.test.TestUtils.LatchConditions.completed;
 import static com.rabbitmq.client.test.TestUtils.waitAtMost;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+
+import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import com.rabbitmq.client.ConsumerShutdownSignalCallback;
+import com.rabbitmq.client.DeliverCallback;
+import com.rabbitmq.client.Delivery;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.ShutdownListener;
+import com.rabbitmq.client.ShutdownSignalException;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -59,4 +76,34 @@ public class BlockedConnectionTest extends BrokerTestCase {
     waitAtMost(() -> !c.isOpen());
   }
 
+  @Test
+  void shutdownListenerShouldBeCalledWhenChannelDies() throws Exception {
+    long confirmTimeout = Duration.ofSeconds(2).toMillis();
+    ConnectionFactory cf = TestUtils.connectionFactory();
+    Connection c = cf.newConnection();
+    boolean blocked = false;
+    try {
+      CountDownLatch blockedLatch = new CountDownLatch(1);
+      c.addBlockedListener(reason -> blockedLatch.countDown(), () -> {});
+      Channel ch = c.createChannel();
+      CountDownLatch chShutdownLatch = new CountDownLatch(1);
+      ch.addShutdownListener(cause -> chShutdownLatch.countDown());
+      ch.confirmSelect();
+      ch.basicPublish("", "", MessageProperties.BASIC, "".getBytes());
+      ch.waitForConfirmsOrDie(confirmTimeout);
+      block();
+      blocked = true;
+      ch.basicPublish("", "", MessageProperties.BASIC, "".getBytes());
+      assertThat(blockedLatch).is(completed());
+      ch.basicPublish("", "", MessageProperties.BASIC, "".getBytes());
+      assertThatThrownBy(() -> ch.waitForConfirmsOrDie(confirmTimeout))
+          .isInstanceOf(TimeoutException.class);
+      assertThat(chShutdownLatch).is(completed());
+    } finally {
+      if (blocked) {
+        unblock();
+      }
+      c.close();
+    }
+  }
 }

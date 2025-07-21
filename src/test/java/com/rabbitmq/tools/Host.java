@@ -254,10 +254,7 @@ public class Host {
     }
 
     public static String rabbitmqctlCommand() {
-        String rabbitmqCtl = System.getProperty("rabbitmqctl.bin");
-        if (rabbitmqCtl == null) {
-            throw new IllegalStateException("Please define the rabbitmqctl.bin system property");
-        }
+        String rabbitmqCtl = rabbitmqctl();
         if (rabbitmqCtl.startsWith(DOCKER_PREFIX)) {
             String containerId = rabbitmqCtl.split(":")[1];
             return "docker exec " + containerId + " rabbitmqctl";
@@ -266,11 +263,12 @@ public class Host {
         }
     }
 
+    private static String rabbitmqctl() {
+        return System.getProperty("rabbitmqctl.bin", "DOCKER:rabbitmq");
+    }
+
     public static boolean isOnDocker() {
-        String rabbitmqCtl = System.getProperty("rabbitmqctl.bin");
-        if (rabbitmqCtl == null) {
-            throw new IllegalStateException("Please define the rabbitmqctl.bin system property");
-        }
+        String rabbitmqCtl = rabbitmqctl();
         return rabbitmqCtl.startsWith(DOCKER_PREFIX);
     }
 

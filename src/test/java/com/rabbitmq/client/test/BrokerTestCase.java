@@ -315,12 +315,12 @@ public class BrokerTestCase {
         Host.clearResourceAlarm(source);
     }
 
-    protected void block() throws IOException, InterruptedException {
+    protected void block() throws IOException {
         Host.rabbitmqctl("set_vm_memory_high_watermark 0.000000001");
         setResourceAlarm("disk");
     }
 
-    protected void unblock() throws IOException, InterruptedException {
+    protected void unblock() throws IOException {
         Host.rabbitmqctl("set_vm_memory_high_watermark 0.4");
         clearResourceAlarm("disk");
     }

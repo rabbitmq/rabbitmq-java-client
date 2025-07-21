@@ -35,11 +35,7 @@ import com.rabbitmq.client.test.BrokerTestCase;
 
 public class BlockedConnection extends BrokerTestCase {
     protected void releaseResources() throws IOException {
-        try {
-            unblock();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        unblock();
     }
     // this test first opens a connection, then triggers
     // and alarm and blocks
@@ -79,14 +75,10 @@ public class BlockedConnection extends BrokerTestCase {
         Connection connection = factory.newConnection();
         connection.addBlockedListener(new BlockedListener() {
             public void handleBlocked(String reason) throws IOException {
-                try {
-                    unblock();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                unblock();
             }
 
-            public void handleUnblocked() throws IOException {
+            public void handleUnblocked() {
                 latch.countDown();
             }
         });
