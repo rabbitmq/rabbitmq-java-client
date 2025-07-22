@@ -144,7 +144,7 @@ Snapshots are available on the Sonatype OSS snapshot repository:
 [source,groovy,subs="attributes,specialcharacters"]
 ----
 repositories {
-  maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+  maven { url 'https://central.sonatype.com/repository/maven-snapshots/' }
   mavenCentral()
 }
 ----
