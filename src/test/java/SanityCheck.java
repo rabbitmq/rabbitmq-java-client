@@ -1,5 +1,5 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
-//DEPS com.rabbitmq:amqp-client:${version}
+//DEPS com.rabbitmq:amqp-client:${env.RABBITMQ_LIBRARY_VERSION}
 //DEPS org.slf4j:slf4j-simple:1.7.36
 
 import com.rabbitmq.client.AMQP;
