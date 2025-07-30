@@ -39,9 +39,9 @@ jobs:
         run: make deps
       - name: Show version
         run: ./mvnw --version
-      - name: Test with NIO
+      - name: Test with Netty
         run: |
-          ./mvnw verify -P use-nio -Drabbitmqctl.bin=DOCKER:rabbitmq \
+          ./mvnw verify -Dio.layer=netty -Drabbitmqctl.bin=DOCKER:rabbitmq \
             -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
@@ -50,7 +50,7 @@ jobs:
             -Dnet.bytebuddy.experimental=true
       - name: Test with blocking IO
         run: |
-          ./mvnw verify -Drabbitmqctl.bin=DOCKER:rabbitmq \
+          ./mvnw verify -Dio.layer=socket -Drabbitmqctl.bin=DOCKER:rabbitmq \
             -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \

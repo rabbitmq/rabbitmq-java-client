@@ -24,7 +24,9 @@ import javax.net.ssl.SSLParameters;
  * {@link SslEngineConfigurator#andThen(SslEngineConfigurator)}.
  *
  * @since 5.4.0
+ * @deprecated use {@link com.rabbitmq.client.ConnectionFactory.NettyConfiguration#sslContext(io.netty.handler.ssl.SslContext)} instead
  */
+@Deprecated
 public abstract class SslEngineConfigurators {
 
     /**

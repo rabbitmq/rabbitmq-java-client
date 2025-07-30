@@ -42,7 +42,7 @@ public class BrokerTestCase {
 
     protected ConnectionFactory newConnectionFactory() {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
-        if(TestUtils.USE_NIO) {
+        if(TestUtils.isNio()) {
             connectionFactory.setNioParams(nioParams());
         }
         connectionFactory.setAutomaticRecoveryEnabled(isAutomaticRecoveryEnabled());
