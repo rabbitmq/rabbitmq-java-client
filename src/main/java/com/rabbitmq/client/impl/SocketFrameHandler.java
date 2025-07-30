@@ -141,7 +141,7 @@ public class SocketFrameHandler implements FrameHandler {
             try {
                 _outputStream.flush();
             } catch (SSLHandshakeException e) {
-                LOGGER.error("TLS connection failed: {}", e.getMessage());
+                LOGGER.error("TLS connection failed dsfsdfdf: {}", e.getMessage());
                 throw e;
             }
         } finally {
@@ -171,7 +171,7 @@ public class SocketFrameHandler implements FrameHandler {
             try {
                 _outputStream.flush();
             } catch (SSLHandshakeException e) {
-                LOGGER.error("TLS connection failed: {}", e.getMessage());
+                LOGGER.error("TLS connection failed fdfdf: {}", e.getMessage());
                 throw e;
             }
         } finally {

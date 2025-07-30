@@ -188,11 +188,7 @@ public class FrameMax extends BrokerTestCase {
 
         public MyConnectionFactory() {
             super();
-            if(TestUtils.USE_NIO) {
-                useNio();
-            } else {
-                useBlockingIo();
-            }
+            TestUtils.setIoLayer(this);
         }
 
         protected FrameHandler createFrameHandler(Socket sock)
@@ -245,11 +241,7 @@ public class FrameMax extends BrokerTestCase {
 
         public GenerousConnectionFactory() {
             super();
-            if(TestUtils.USE_NIO) {
-                useNio();
-            } else {
-                useBlockingIo();
-            }
+            TestUtils.setIoLayer(this);
         }
 
         @Override public Connection newConnection(ExecutorService executor, List<Address> addrs)

@@ -16,7 +16,14 @@
 
 package com.rabbitmq.client.test.ssl;
 
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.IdentityCipherSuiteFilter;
+import io.netty.handler.ssl.JdkSslContext;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import java.io.FileInputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -29,11 +36,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 class TlsTestUtils {
 
   static final String[] PROTOCOLS = new String[] {"TLSv1.3", "TLSv1.2"};
+  static TrustManager ALWAYS_TRUST_MANAGER = new AlwaysTrustManager();
 
   private TlsTestUtils() {}
 
@@ -43,6 +53,23 @@ class TlsTestUtils {
 
   static SSLContext verifiedSslContext() throws Exception {
     return sslContext(trustManagerFactory(caCertificate()));
+  }
+
+  static void maybeConfigureNetty(ConnectionFactory cf, SSLContext sslContext) {
+    if (TestUtils.isNetty()) {
+      cf.netty().sslContext(toSslContext(sslContext));
+    }
+  }
+
+  static SslContext toSslContext(SSLContext jdkSslContext) {
+    return new JdkSslContext(jdkSslContext, true, null, IdentityCipherSuiteFilter.INSTANCE,
+        null, ClientAuth.NONE, null, false);
+  }
+
+  static void maybeConfigureNetty(ConnectionFactory cf, TrustManager trustManager) throws Exception {
+    if (TestUtils.isNetty()) {
+      cf.netty().sslContext(SslContextBuilder.forClient().trustManager(trustManager).build());
+    }
   }
 
   static SSLContext verifiedSslContext(CallableSupplier<SSLContext> sslContextSupplier)
@@ -143,5 +170,23 @@ class TlsTestUtils {
   interface CallableSupplier<T> {
 
     T get() throws Exception;
+  }
+
+  private static class AlwaysTrustManager implements X509TrustManager {
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+
+    }
+
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+      return new X509Certificate[0];
+    }
   }
 }

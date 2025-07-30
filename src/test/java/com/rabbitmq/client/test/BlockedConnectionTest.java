@@ -32,22 +32,19 @@ import java.util.concurrent.TimeoutException;
 import com.rabbitmq.client.MessageProperties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class BlockedConnectionTest extends BrokerTestCase {
 
   @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void errorInBlockListenerShouldCloseConnection(boolean nio) throws Exception {
+  @MethodSource("com.rabbitmq.client.test.TestUtils#ioLayers")
+  void errorInBlockListenerShouldCloseConnection(String ioLayer) throws Exception {
     ConnectionFactory cf = TestUtils.connectionFactory();
-    if (nio) {
-      cf.useNio();
-    } else {
-      cf.useBlockingIo();
-    }
+    TestUtils.setIoLayer(cf, ioLayer);
     Connection c = cf.newConnection();
     CountDownLatch shutdownLatch = new CountDownLatch(1);
-    c.addShutdownListener(cause -> shutdownLatch.countDown());
+    c.addShutdownListener(sse -> shutdownLatch.countDown());
     CountDownLatch blockedLatch = new CountDownLatch(1);
     c.addBlockedListener(
         reason -> {

@@ -23,8 +23,9 @@ import com.rabbitmq.client.impl.recovery.RecoveredQueueNameSupplier;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import com.rabbitmq.client.observation.ObservationCollector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.netty.channel.EventLoopGroup;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
@@ -40,6 +41,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -141,6 +144,7 @@ public class ConnectionFactory implements Cloneable {
     private ObservationCollector observationCollector = ObservationCollector.NO_OP;
 
     private boolean nio = false;
+    private boolean netty = true;
     private FrameHandlerFactory frameHandlerFactory;
     private NioParams nioParams = new NioParams();
 
@@ -1022,6 +1026,15 @@ public class ConnectionFactory implements Cloneable {
                     this.maxInboundMessageBodySize);
             }
             return this.frameHandlerFactory;
+        } else if (netty) {
+            if (this.frameHandlerFactory == null) {
+                this.frameHandlerFactory = new NettyFrameHandlerFactory(
+                    this.nettyConf.eventLoopGroup,
+                    this.nettyConf.channelCustomizer,
+                    this.nettyConf.sslContextFactory,
+                    connectionTimeout, socketConf, maxInboundMessageBodySize);
+            }
+            return this.frameHandlerFactory;
         } else {
             return new SocketFrameHandlerFactory(connectionTimeout, socketFactory,
                 socketConf, isSSL(), this.shutdownExecutor, sslContextFactory,
@@ -1584,6 +1597,7 @@ public class ConnectionFactory implements Cloneable {
      */
     public ConnectionFactory useNio() {
         this.nio = true;
+        this.netty = false;
         return this;
     }
 
@@ -1594,6 +1608,7 @@ public class ConnectionFactory implements Cloneable {
      */
     public ConnectionFactory useBlockingIo() {
         this.nio = false;
+        this.netty = false;
         return this;
     }
 
@@ -1761,5 +1776,57 @@ public class ConnectionFactory implements Cloneable {
     public ConnectionFactory setTrafficListener(TrafficListener trafficListener) {
         this.trafficListener = trafficListener;
         return this;
+    }
+
+    public ConnectionFactory useNetty() {
+        this.netty = true;
+        this.nio = false;
+        return this;
+    }
+
+    private final NettyConfiguration nettyConf = new NettyConfiguration(this);
+
+    public NettyConfiguration netty() {
+        useNetty();
+        return this.nettyConf;
+    }
+
+    public static final class NettyConfiguration {
+
+        private final ConnectionFactory cf;
+        private EventLoopGroup eventLoopGroup;
+        private Consumer<io.netty.channel.Channel> channelCustomizer = ch -> { };
+        private SslContext sslContext;
+        private Function<String, SslContext> sslContextFactory;
+
+        public NettyConfiguration(ConnectionFactory cf) {
+            this.cf = cf;
+        }
+
+        public NettyConfiguration eventLoopGroup(EventLoopGroup eventLoopGroup) {
+           this.eventLoopGroup = eventLoopGroup;
+           return this;
+        }
+
+        public NettyConfiguration channelCustomizer(Consumer<io.netty.channel.Channel> channelCustomizer) {
+            this.channelCustomizer = channelCustomizer;
+            return this;
+        }
+
+        public NettyConfiguration sslContext(SslContext sslContext) {
+            this.sslContext = sslContext;
+            this.sslContextFactory = name -> sslContext;
+            return this;
+        }
+
+        public NettyConfiguration sslContextFactory(Function<String, SslContext> sslContextFactory) {
+            this.sslContextFactory = sslContextFactory;
+            return this;
+        }
+
+        public ConnectionFactory connectionFactory() {
+            return this.cf;
+        }
+
     }
 }

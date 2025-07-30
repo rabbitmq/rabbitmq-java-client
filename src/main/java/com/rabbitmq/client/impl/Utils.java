@@ -1,4 +1,5 @@
-// Copyright (c) 2007-2025 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2007-2025 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom
+// Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -15,7 +16,15 @@
 
 package com.rabbitmq.client.impl;
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
+
 final class Utils {
+
+  static final boolean IS_NETTY_4_2;
 
   private static final int AVAILABLE_PROCESSORS =
       Integer.parseInt(
@@ -23,9 +32,32 @@ final class Utils {
               "rabbitmq.amqp.client.availableProcessors",
               String.valueOf(Runtime.getRuntime().availableProcessors())));
 
+  static {
+    boolean netty4_2 = true;
+    try {
+      Class.forName("io.netty.channel.MultiThreadIoEventLoopGroup");
+    } catch (ClassNotFoundException e) {
+      netty4_2 = false;
+    }
+    IS_NETTY_4_2 = netty4_2;
+  }
+
+  private Utils() {}
+
   static int availableProcessors() {
     return AVAILABLE_PROCESSORS;
   }
 
-  private Utils() {}
+  @SuppressWarnings("deprecation")
+  static EventLoopGroup eventLoopGroup() {
+    if (IS_NETTY_4_2) {
+      return new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+    } else {
+      return new NioEventLoopGroup();
+    }
+  }
+
+  static ByteBufAllocator byteBufAllocator() {
+    return ByteBufAllocator.DEFAULT;
+  }
 }

@@ -27,6 +27,10 @@ import java.net.SocketTimeoutException;
 
 public interface FrameHandler extends NetworkConnection {
 
+    default boolean internalHearbeat() {
+        return false;
+    }
+
     /**
      * Set the underlying socket's read timeout in milliseconds, if applicable.
      * @param timeoutMs The timeout in milliseconds

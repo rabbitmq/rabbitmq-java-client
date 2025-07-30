@@ -24,7 +24,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
+
+import io.netty.channel.EventLoopGroup;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
@@ -47,16 +51,73 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestUtils {
 
-    public static final boolean USE_NIO = System.getProperty("use.nio") != null;
+    public static final String IO_LAYER = System.getProperty("io.layer", "netty");
+    private static final String IO_SOCKET = "socket";
+    private static final String IO_NIO = "nio";
+    private static final String IO_NETTY = "netty";
+    public static final List<String> IO_LAYERS = Collections.unmodifiableList(Arrays.asList(IO_SOCKET, IO_NIO, IO_NETTY));
+
+    private static final ThreadLocal<EventLoopGroup> EVENT_LOOP_GROUP = new ThreadLocal<>();
 
     public static ConnectionFactory connectionFactory() {
         ConnectionFactory connectionFactory = new ConnectionFactory();
-        if (USE_NIO) {
-            connectionFactory.useNio();
-        } else {
-            connectionFactory.useBlockingIo();
+        setIoLayer(connectionFactory);
+        if (isNetty()) {
+            connectionFactory.netty().eventLoopGroup(EVENT_LOOP_GROUP.get());
         }
         return connectionFactory;
+    }
+
+    public static List<String> ioLayers() {
+        return IO_LAYERS;
+    }
+
+    public static boolean isSocket() {
+       return isSocket(IO_LAYER);
+    }
+
+    public static boolean isNio() {
+        return isNio(IO_LAYER);
+    }
+
+    public static boolean isNetty() {
+        return isNetty(IO_LAYER);
+    }
+
+    private static boolean isSocket(String layer) {
+        return IO_SOCKET.equals(layer);
+    }
+
+    private static boolean isNio(String layer) {
+        return IO_NIO.equals(layer);
+    }
+
+    private static boolean isNetty(String layer) {
+        return IO_NETTY.equals(layer);
+    }
+
+    public static void setIoLayer(ConnectionFactory cf) {
+        setIoLayer(cf, IO_LAYER);
+    }
+
+    public static void setIoLayer(ConnectionFactory cf, String layer) {
+        if (isNio(layer)) {
+            cf.useNio();
+        } else if (isNetty(layer)) {
+            cf.useNetty();
+        } else if (isSocket(layer)){
+            cf.useBlockingIo();
+        } else {
+            throw new IllegalArgumentException("Unknown IO layer: " + layer);
+        }
+    }
+
+    public static void eventLoopGroup(EventLoopGroup elp) {
+        EVENT_LOOP_GROUP.set(elp);
+    }
+
+    public static void resetEventLoopGroup() {
+        EVENT_LOOP_GROUP.remove();
     }
 
     @FunctionalInterface
