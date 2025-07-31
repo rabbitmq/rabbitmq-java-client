@@ -49,10 +49,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.net.ssl.SSLHandshakeException;
@@ -167,12 +169,11 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
           new ChannelInitializer<SocketChannel>() {
             @Override
             public void initChannel(SocketChannel ch) {
-              //              ch.pipeline()
-              //                  .addFirst(
-              //                      HANDLER_FLUSH_CONSOLIDATION,
-              //                      new FlushConsolidationHandler(
-              //
-              // FlushConsolidationHandler.DEFAULT_EXPLICIT_FLUSH_AFTER_FLUSHES, true));
+              ch.pipeline()
+                  .addFirst(
+                      HANDLER_FLUSH_CONSOLIDATION,
+                      new FlushConsolidationHandler(
+                          FlushConsolidationHandler.DEFAULT_EXPLICIT_FLUSH_AFTER_FLUSHES, true));
               ch.pipeline()
                   .addLast(
                       HANDLER_FRAME_DECODER,
@@ -271,7 +272,28 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     @Override
     public void writeFrame(Frame frame) throws IOException {
-      // TODO check if the frame is not too big?
+      if (this.handler.isWritable()) {
+        this.doWriteFrame(frame);
+      } else {
+        if (this.channel.eventLoop().inEventLoop()) {
+          // we do not wait in the event loop
+          this.doWriteFrame(frame);
+        } else {
+          try {
+            boolean canWriteNow = this.handler.writableLatch().await(10, SECONDS);
+            if (canWriteNow) {
+              this.doWriteFrame(frame);
+            } else {
+              throw new IOException("Frame enqueuing failed");
+            }
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }
+      }
+    }
+
+    private void doWriteFrame(Frame frame) throws IOException {
       ByteBuf bb = this.channel.alloc().buffer(frame.size());
       frame.writeToByteBuf(bb);
       this.channel.write(bb);
@@ -332,6 +354,9 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     private final int maxPayloadSize;
     private final Runnable closeSequence;
     private volatile AMQConnection connection;
+    private final AtomicBoolean writable = new AtomicBoolean(true);
+    private final AtomicReference<CountDownLatch> writableLatch =
+        new AtomicReference<>(new CountDownLatch(1));
 
     private AmqpHandler(int maxPayloadSize, Runnable closeSequence) {
       this.maxPayloadSize = maxPayloadSize;
@@ -381,6 +406,13 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+      boolean canWrite = ctx.channel().isWritable();
+      if (this.writable.compareAndSet(!canWrite, canWrite)) {
+        if (canWrite) {
+          CountDownLatch latch = writableLatch.getAndSet(new CountDownLatch(1));
+          latch.countDown();
+        }
+      }
       super.channelWritabilityChanged(ctx);
     }
 
@@ -440,6 +472,14 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     private boolean needToDispatchIoError() {
       AMQConnection c = this.connection;
       return c != null && c.isOpen();
+    }
+
+    private boolean isWritable() {
+      return this.writable.get();
+    }
+
+    private CountDownLatch writableLatch() {
+      return this.writableLatch.get();
     }
   }
 }
