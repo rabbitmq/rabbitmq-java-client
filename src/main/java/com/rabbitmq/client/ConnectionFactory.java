@@ -23,6 +23,7 @@ import com.rabbitmq.client.impl.recovery.RecoveredQueueNameSupplier;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
 import com.rabbitmq.client.observation.ObservationCollector;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
@@ -1031,6 +1032,7 @@ public class ConnectionFactory implements Cloneable {
                 this.frameHandlerFactory = new NettyFrameHandlerFactory(
                     this.nettyConf.eventLoopGroup,
                     this.nettyConf.channelCustomizer,
+                    this.nettyConf.bootstrapCustomizer,
                     this.nettyConf.sslContextFactory,
                     connectionTimeout, socketConf, maxInboundMessageBodySize);
             }
@@ -1796,7 +1798,7 @@ public class ConnectionFactory implements Cloneable {
         private final ConnectionFactory cf;
         private EventLoopGroup eventLoopGroup;
         private Consumer<io.netty.channel.Channel> channelCustomizer = ch -> { };
-        private SslContext sslContext;
+        private Consumer<Bootstrap> bootstrapCustomizer = b -> { };
         private Function<String, SslContext> sslContextFactory;
 
         public NettyConfiguration(ConnectionFactory cf) {
@@ -1813,8 +1815,12 @@ public class ConnectionFactory implements Cloneable {
             return this;
         }
 
+        public NettyConfiguration bootstrapCustomizer(Consumer<Bootstrap> bootstrapCustomizer) {
+            this.bootstrapCustomizer = bootstrapCustomizer;
+            return this;
+        }
+
         public NettyConfiguration sslContext(SslContext sslContext) {
-            this.sslContext = sslContext;
             this.sslContextFactory = name -> sslContext;
             return this;
         }

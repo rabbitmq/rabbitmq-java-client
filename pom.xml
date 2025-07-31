@@ -525,6 +525,20 @@
       <scope>test</scope>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-kqueue</artifactId>
+      <version>${netty.version}</version>
+      <classifier>osx-aarch_64</classifier>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-epoll</artifactId>
+      <version>${netty.version}</version>
+      <classifier>linux-x86_64</classifier>
+      <scope>test</scope>
+    </dependency>
 
   </dependencies>
 
@@ -787,6 +801,7 @@
               <include>src/main/java/com/rabbitmq/client/impl/NettyFrameHandlerFactory.java</include>
               <include>src/main/java/com/rabbitmq/client/observation/**/*.java</include>
               <include>src/test/java/com/rabbitmq/client/test/functional/MicrometerObservationCollectorMetrics.java</include>
+              <include>src/test/java/com/rabbitmq/client/test/NettyTest.java</include>
             </includes>
             <googleJavaFormat>
               <version>${google-java-format.version}</version>

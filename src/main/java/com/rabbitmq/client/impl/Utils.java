@@ -22,7 +22,12 @@ import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 
+import java.util.function.Consumer;
+
 final class Utils {
+
+  @SuppressWarnings("rawtypes")
+  private static final Consumer NO_OP_CONSUMER = o -> {};
 
   static final boolean IS_NETTY_4_2;
 
@@ -59,5 +64,10 @@ final class Utils {
 
   static ByteBufAllocator byteBufAllocator() {
     return ByteBufAllocator.DEFAULT;
+  }
+
+  @SuppressWarnings("unchecked")
+  static <T> Consumer<T> noOpConsumer() {
+    return (Consumer<T>) NO_OP_CONSUMER;
   }
 }

@@ -67,10 +67,12 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
   private final EventLoopGroup eventLoopGroup;
   private final Function<String, SslContext> sslContextFactory;
   private final Consumer<Channel> channelCustomizer;
+  private final Consumer<Bootstrap> bootstrapCustomizer;
 
   public NettyFrameHandlerFactory(
       EventLoopGroup eventLoopGroup,
       Consumer<Channel> channelCustomizer,
+      Consumer<Bootstrap> bootstrapCustomizer,
       Function<String, SslContext> sslContextFactory,
       int connectionTimeout,
       SocketConfigurator configurator,
@@ -78,7 +80,9 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     super(connectionTimeout, configurator, sslContextFactory != null, maxInboundMessageBodySize);
     this.eventLoopGroup = eventLoopGroup;
     this.sslContextFactory = sslContextFactory == null ? ignored -> null : sslContextFactory;
-    this.channelCustomizer = channelCustomizer;
+    this.channelCustomizer = channelCustomizer == null ? Utils.noOpConsumer() : channelCustomizer;
+    this.bootstrapCustomizer =
+        bootstrapCustomizer == null ? Utils.noOpConsumer() : bootstrapCustomizer;
   }
 
   private static void closeNettyState(Channel channel, EventLoopGroup eventLoopGroup) {
@@ -121,7 +125,8 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         addr,
         sslContext,
         this.eventLoopGroup,
-        this.channelCustomizer);
+        this.channelCustomizer,
+        this.bootstrapCustomizer);
   }
 
   private static final class NettyFrameHandler implements FrameHandler {
@@ -146,18 +151,33 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         Address addr,
         SslContext sslContext,
         EventLoopGroup elg,
-        Consumer<Channel> channelCustomizer)
+        Consumer<Channel> channelCustomizer,
+        Consumer<Bootstrap> bootstrapCustomizer)
         throws IOException {
       Bootstrap b = new Bootstrap();
-      if (elg == null) {
-        elg = Utils.eventLoopGroup();
-        this.eventLoopGroup = elg;
+      bootstrapCustomizer.accept(b);
+      if (b.config().group() == null) {
+        EventLoopGroup eventLoopGroup;
+        if (elg == null) {
+          elg = Utils.eventLoopGroup();
+          this.eventLoopGroup = elg;
+        } else {
+          this.eventLoopGroup = null;
+        }
+        b.group(elg);
       } else {
         this.eventLoopGroup = null;
       }
-      b.group(elg);
-      b.channel(NioSocketChannel.class);
-      b.option(ChannelOption.ALLOCATOR, Utils.byteBufAllocator());
+      if (b.config().channelFactory() == null) {
+        b.channel(NioSocketChannel.class);
+      }
+      if (!b.config().options().containsKey(ChannelOption.SO_KEEPALIVE)) {
+        b.option(ChannelOption.SO_KEEPALIVE, true);
+      }
+      if (!b.config().options().containsKey(ChannelOption.ALLOCATOR)) {
+        b.option(ChannelOption.ALLOCATOR, Utils.byteBufAllocator());
+      }
+
       // type + channel + payload size + payload + frame end marker
       int maxFrameLength = 1 + 2 + 4 + maxInboundMessageBodySize + 1;
       int lengthFieldOffset = 3;
@@ -296,7 +316,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     private void doWriteFrame(Frame frame) throws IOException {
       ByteBuf bb = this.channel.alloc().buffer(frame.size());
       frame.writeToByteBuf(bb);
-      this.channel.write(bb);
+      this.channel.writeAndFlush(bb);
     }
 
     @Override
@@ -411,6 +431,8 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         if (canWrite) {
           CountDownLatch latch = writableLatch.getAndSet(new CountDownLatch(1));
           latch.countDown();
+        } else {
+          ctx.channel().flush();
         }
       }
       super.channelWritabilityChanged(ctx);
