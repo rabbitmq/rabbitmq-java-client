@@ -19,7 +19,6 @@ package com.rabbitmq.client.impl;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 
 import java.util.function.Consumer;
@@ -58,7 +57,7 @@ final class Utils {
     if (IS_NETTY_4_2) {
       return new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
     } else {
-      return new NioEventLoopGroup();
+      return new io.netty.channel.nio.NioEventLoopGroup();
     }
   }
 

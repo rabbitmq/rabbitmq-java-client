@@ -41,11 +41,11 @@ jobs:
         run: ./mvnw --version
       - name: Test with Netty
         run: |
-          ./mvnw verify -Dio.layer=netty -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
-            -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
+          ./mvnw verify -Dio.layer=netty -Drabbitmqctl.bin=DOCKER:rabbitmq \
+            -Dtest-broker.A.nodename=rabbit@$(hostname) -Dmaven.javadoc.skip=true \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
-            -Dmaven.javadoc.skip=true \
+            -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
             --no-transfer-progress \
             -Dnet.bytebuddy.experimental=true
       - name: Stop broker
