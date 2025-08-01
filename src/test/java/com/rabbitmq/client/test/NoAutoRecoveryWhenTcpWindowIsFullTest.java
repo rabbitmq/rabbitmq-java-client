@@ -107,7 +107,7 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
         factory.setShutdownExecutor(executorService);
         factory.setNetworkRecoveryInterval(2000);
 
-        if (TestUtils.USE_NIO) {
+        if (TestUtils.isNio()) {
             factory.setWorkPoolTimeout(10 * 1000);
             factory.setNioParams(new NioParams().setWriteQueueCapacity(10 * 1000 * 1000).setNbIoThreads(4));
         }

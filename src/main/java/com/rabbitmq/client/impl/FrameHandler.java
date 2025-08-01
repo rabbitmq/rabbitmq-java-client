@@ -27,6 +27,10 @@ import java.net.SocketTimeoutException;
 
 public interface FrameHandler extends NetworkConnection {
 
+    default boolean internalHearbeat() {
+        return false;
+    }
+
     /**
      * Set the underlying socket's read timeout in milliseconds, if applicable.
      * @param timeoutMs The timeout in milliseconds
@@ -49,6 +53,10 @@ public interface FrameHandler extends NetworkConnection {
     void sendHeader() throws IOException;
 
     void initialize(AMQConnection connection);
+
+    default void finishConnectionNegotiation() {
+
+    }
 
     /**
      * Read a {@link Frame} from the underlying data connection.
@@ -73,4 +81,5 @@ public interface FrameHandler extends NetworkConnection {
 
     /** Close the underlying data connection (complaint not permitted). */
     void close();
+
 }

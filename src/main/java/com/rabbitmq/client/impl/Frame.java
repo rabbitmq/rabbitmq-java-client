@@ -18,6 +18,7 @@ package com.rabbitmq.client.impl;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.MalformedFrameException;
+import io.netty.buffer.ByteBuf;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -89,7 +90,6 @@ public class Frame {
         try {
             type = is.readUnsignedByte();
         } catch (SocketTimeoutException ste) {
-            // System.err.println("Timed out waiting for a frame.");
             return null; // failed
         }
 
@@ -199,6 +199,34 @@ public class Frame {
             os.write(payload);
         }
         os.write(AMQP.FRAME_END);
+    }
+
+    void writeToByteBuf(ByteBuf buf) throws IOException {
+        buf.writeByte(type);
+        buf.writeShort(channel);
+        if (accumulator != null) {
+            buf.writeInt(accumulator.size());
+            accumulator.writeTo(new OutputStream() {
+                @Override
+                public void write(int b) {
+                    buf.writeInt(b);
+                }
+
+                @Override
+                public void write(byte[] b) {
+                    buf.writeBytes(buf);
+                }
+
+                @Override
+                public void write(byte[] b, int off, int len) {
+                    buf.writeBytes(b, off, len);
+                }
+            });
+        } else {
+            buf.writeInt(payload.length);
+            buf.writeBytes(payload);
+        }
+        buf.writeByte(AMQP.FRAME_END);
     }
 
     public int size() {

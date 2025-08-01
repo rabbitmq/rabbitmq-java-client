@@ -19,6 +19,7 @@ import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.test.TestUtils;
+import io.netty.handler.ssl.SslContextBuilder;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.condition.EnabledForJreRange;
@@ -38,10 +39,22 @@ public class HostnameVerification {
 
     static SSLContext sslContext;
 
-    public static Object[] data() {
-        return new Object[] {
+    @SuppressWarnings("unchecked")
+    public static Consumer<ConnectionFactory>[] data() {
+        return new Consumer[] {
             blockingIo(enableHostnameVerification()),
             nio(enableHostnameVerification()),
+            (Consumer<ConnectionFactory>) cf -> {
+                try {
+                    cf.netty().sslContext(SslContextBuilder.forClient()
+                        .trustManager(TlsTestUtils.caCertificate())
+                        // hostname verification enabled by default in Netty 4.2
+                        //.endpointIdentificationAlgorithm("HTTPS")
+                        .build());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
         };
     }
 
@@ -60,7 +73,7 @@ public class HostnameVerification {
     }
 
     private static Consumer<ConnectionFactory> enableHostnameVerification() {
-        return connectionFactory -> connectionFactory.enableHostnameVerification();
+        return ConnectionFactory::enableHostnameVerification;
     }
 
     @BeforeAll

@@ -30,8 +30,12 @@ import static com.rabbitmq.client.SslEngineConfigurators.ENABLE_HOSTNAME_VERIFIC
 /**
  * Parameters used to configure the NIO mode of a {@link com.rabbitmq.client.ConnectionFactory}.
  *
+ *
+ *
  * @since 4.0.0
+ * @deprecated use {@link com.rabbitmq.client.ConnectionFactory#netty()} instead
  */
+@Deprecated
 public class NioParams {
 
     static Function<NioContext, NioQueue> DEFAULT_WRITE_QUEUE_FACTORY =
