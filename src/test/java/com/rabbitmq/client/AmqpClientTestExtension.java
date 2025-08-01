@@ -49,6 +49,9 @@ public class AmqpClientTestExtension
         AfterAllCallback {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AmqpClientTestExtension.class);
+  static {
+    LOGGER.debug("Available processor(s): {}", Runtime.getRuntime().availableProcessors());
+  }
 
   private static final ExtensionContext.Namespace NAMESPACE =
       ExtensionContext.Namespace.create(AmqpClientTestExtension.class);
