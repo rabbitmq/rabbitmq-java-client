@@ -16,6 +16,8 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static com.rabbitmq.client.test.TestUtils.LatchConditions.completed;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -24,6 +26,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
@@ -72,7 +75,6 @@ public class FrameMax extends BrokerTestCase {
                 GetResponse response = channel.basicGet(queueName, false);
                 howMuch -= response.getBody().length;
             } catch (Exception e) {
-                e.printStackTrace();
                 fail("Exception in basicGet loop: " + e);
             }
         }
@@ -80,8 +82,7 @@ public class FrameMax extends BrokerTestCase {
 
     /* server should reject frames larger than AMQP.FRAME_MIN_SIZE
      * during connection negotiation */
-    @Test public void rejectLargeFramesDuringConnectionNegotiation()
-            throws IOException, TimeoutException {
+    @Test public void rejectLargeFramesDuringConnectionNegotiation() throws TimeoutException {
         ConnectionFactory cf = TestUtils.connectionFactory();
         cf.getClientProperties().put("too_long", LongStringHelper.asLongString(new byte[AMQP.FRAME_MIN_SIZE]));
         try {
@@ -93,8 +94,7 @@ public class FrameMax extends BrokerTestCase {
 
     /* server should reject frames larger than the negotiated frame
      * size */
-    @Test public void rejectExceedingFrameMax()
-            throws IOException, TimeoutException {
+    @Test public void rejectExceedingFrameMax() throws IOException, TimeoutException {
         closeChannel();
         closeConnection();
         ConnectionFactory cf = new GenerousConnectionFactory();
@@ -156,6 +156,9 @@ public class FrameMax extends BrokerTestCase {
         cf.setRequestedFrameMax(0);
         connection = cf.newConnection();
         openChannel();
+        channel.confirmSelect();
+        CountDownLatch confirmLatch = new CountDownLatch(1);
+        channel.addConfirmListener((deliveryTag, multiple) -> confirmLatch.countDown(), (dtag, m) -> { });
 
         Map<String, Object> headers = new HashMap<>();
         headers.put("h1", LongStringHelper.asLongString(new byte[50000]));
@@ -163,6 +166,7 @@ public class FrameMax extends BrokerTestCase {
                                                   .headers(headers)
                                                   .build();
         basicPublishVolatile(new byte[500000], "", "", properties);
+        assertThat(confirmLatch).is(completed());
     }
 
     @Override

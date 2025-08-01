@@ -79,7 +79,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       int maxInboundMessageBodySize) {
     super(connectionTimeout, configurator, sslContextFactory != null, maxInboundMessageBodySize);
     this.eventLoopGroup = eventLoopGroup;
-    this.sslContextFactory = sslContextFactory == null ? ignored -> null : sslContextFactory;
+    this.sslContextFactory = sslContextFactory == null ? connName -> null : sslContextFactory;
     this.channelCustomizer = channelCustomizer == null ? Utils.noOpConsumer() : channelCustomizer;
     this.bootstrapCustomizer =
         bootstrapCustomizer == null ? Utils.noOpConsumer() : bootstrapCustomizer;
@@ -157,7 +157,6 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       Bootstrap b = new Bootstrap();
       bootstrapCustomizer.accept(b);
       if (b.config().group() == null) {
-        EventLoopGroup eventLoopGroup;
         if (elg == null) {
           elg = Utils.eventLoopGroup();
           this.eventLoopGroup = elg;

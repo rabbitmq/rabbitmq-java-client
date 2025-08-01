@@ -9,7 +9,9 @@ package com.rabbitmq.client.impl.nio;
  *
  * @see NioParams
  * @since 5.5.0
+ * @deprecated use {@link com.rabbitmq.client.ConnectionFactory#netty()} instead
  */
+@Deprecated
 public interface NioQueue {
 
     /**

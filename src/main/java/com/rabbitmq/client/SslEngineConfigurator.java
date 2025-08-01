@@ -19,7 +19,12 @@ import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.util.Objects;
 
+/**
+ *
+ * @deprecated use {@link com.rabbitmq.client.ConnectionFactory.NettyConfiguration#sslContext(io.netty.handler.ssl.SslContext)} instead
+ */
 @FunctionalInterface
+@Deprecated
 public interface SslEngineConfigurator {
 
     /**

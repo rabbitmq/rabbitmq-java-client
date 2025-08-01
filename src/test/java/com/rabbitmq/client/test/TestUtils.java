@@ -377,7 +377,7 @@ public class TestUtils {
 
     public static class LatchConditions {
 
-        static Condition<CountDownLatch> completed() {
+        public static Condition<CountDownLatch> completed() {
             return new Condition<>(
                 countDownLatch-> {
                     try {
