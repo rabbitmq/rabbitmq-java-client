@@ -41,7 +41,7 @@ public class ProtocolVersionMismatch {
   @MethodSource("com.rabbitmq.client.test.TestUtils#ioLayers")
   void connectionShouldFailWithProtocolVersionMismatch(String ioLayer) throws Exception {
     int port = TestUtils.randomNetworkPort();
-    try (SimpleServer ignored = new SimpleServer(port)) {
+    try (ProtocolVersionMismatchServer ignored = new ProtocolVersionMismatchServer(port)) {
       ConnectionFactory cf = TestUtils.connectionFactory();
       TestUtils.setIoLayer(cf, ioLayer);
       cf.setPort(port);
@@ -49,14 +49,14 @@ public class ProtocolVersionMismatch {
     }
   }
 
-  private static class SimpleServer implements AutoCloseable {
+  private static class ProtocolVersionMismatchServer implements AutoCloseable {
 
     private final EventLoopGroup elp =
         new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
 
     private static final byte[] AMQP_HEADER = new byte[] {'A', 'M', 'Q', 'P', 0, 1, 0, 0};
 
-    private SimpleServer(int port) throws InterruptedException {
+    private ProtocolVersionMismatchServer(int port) throws InterruptedException {
       ServerBootstrap b = new ServerBootstrap();
       b.group(elp);
       b.channel(NioServerSocketChannel.class);
