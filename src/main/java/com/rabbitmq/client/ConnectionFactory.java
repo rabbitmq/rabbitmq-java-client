@@ -813,7 +813,7 @@ public class ConnectionFactory implements Cloneable {
   public boolean isSSL() {
     return getSocketFactory() instanceof SSLSocketFactory
         || sslContextFactory != null
-        || this.netty().isTls();
+        || this.nettyConf.isTls();
   }
 
   /**

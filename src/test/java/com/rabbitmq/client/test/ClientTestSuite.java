@@ -75,7 +75,8 @@ import org.junit.platform.suite.api.Suite;
     AMQConnectionRefreshCredentialsTest.class,
     ValueWriterTest.class,
     BlockedConnectionTest.class,
-    NettyTest.class
+    NettyTest.class,
+    ProtocolVersionMismatch.class
 })
 public class ClientTestSuite {
 

@@ -62,9 +62,6 @@ public class TestUtils {
     public static ConnectionFactory connectionFactory() {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         setIoLayer(connectionFactory);
-        if (isNetty()) {
-            connectionFactory.netty().eventLoopGroup(EVENT_LOOP_GROUP.get());
-        }
         return connectionFactory;
     }
 
@@ -98,6 +95,9 @@ public class TestUtils {
 
     public static void setIoLayer(ConnectionFactory cf) {
         setIoLayer(cf, IO_LAYER);
+        if (isNetty()) {
+            cf.netty().eventLoopGroup(EVENT_LOOP_GROUP.get());
+        }
     }
 
     public static void setIoLayer(ConnectionFactory cf, String layer) {

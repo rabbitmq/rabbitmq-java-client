@@ -493,6 +493,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         // We can now respond to errors having finished tailoring the connection
         this._inConnectionNegotiation = false;
+        this._frameHandler.finishConnectionNegotiation();
     }
 
     protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {

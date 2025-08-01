@@ -44,6 +44,8 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -137,6 +139,8 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         LengthFieldBasedFrameDecoder.class.getSimpleName();
     private static final String HANDLER_READ_TIMEOUT = ReadTimeoutHandler.class.getSimpleName();
     private static final String HANDLER_IDLE_STATE = IdleStateHandler.class.getSimpleName();
+    private static final String HANDLER_PROTOCOL_VERSION_MISMATCH =
+        ProtocolVersionMismatchHandler.class.getSimpleName();
     private static final byte[] HEADER =
         new byte[] {
           'A', 'M', 'Q', 'P', 0, AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR, AMQP.PROTOCOL.REVISION
@@ -193,6 +197,8 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
                       HANDLER_FLUSH_CONSOLIDATION,
                       new FlushConsolidationHandler(
                           FlushConsolidationHandler.DEFAULT_EXPLICIT_FLUSH_AFTER_FLUSHES, true));
+              ch.pipeline()
+                  .addLast(HANDLER_PROTOCOL_VERSION_MISMATCH, new ProtocolVersionMismatchHandler());
               ch.pipeline()
                   .addLast(
                       HANDLER_FRAME_DECODER,
@@ -282,6 +288,11 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     @Override
     public void initialize(AMQConnection connection) {
       this.handler.connection = connection;
+    }
+
+    @Override
+    public void finishConnectionNegotiation() {
+      maybeRemoveHandler(HANDLER_PROTOCOL_VERSION_MISMATCH);
     }
 
     @Override
@@ -412,11 +423,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         if (noProblem
             && (!this.connection.isRunning() || this.connection.hasBrokerInitiatedShutdown())) {
           // looks like the frame was Close-Ok or Close
-          ctx.executor()
-              .submit(
-                  () -> {
-                    this.connection.doFinalShutdown();
-                  });
+          ctx.executor().submit(() -> this.connection.doFinalShutdown());
         }
       } finally {
         m.release();
@@ -501,6 +508,25 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     private CountDownLatch writableLatch() {
       return this.writableLatch.get();
+    }
+  }
+
+  private static final class ProtocolVersionMismatchHandler extends ChannelInboundHandlerAdapter {
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+      ByteBuf b = (ByteBuf) msg;
+      if (b.readByte() == 'A') {
+        // likely an AMQP header that indicates a protocol version mismatch
+        // the header is small, we read everything in memory and use the Frame class
+        int toRead = Math.min(b.readableBytes(), NettyFrameHandler.HEADER.length - 1);
+        byte[] header = new byte[toRead];
+        b.readBytes(header);
+        Frame.protocolVersionMismatch(new DataInputStream(new ByteArrayInputStream(header)));
+      } else {
+        b.readerIndex(0);
+        ctx.fireChannelRead(msg);
+      }
     }
   }
 }

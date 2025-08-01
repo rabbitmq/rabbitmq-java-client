@@ -90,7 +90,6 @@ public class Frame {
         try {
             type = is.readUnsignedByte();
         } catch (SocketTimeoutException ste) {
-            // System.err.println("Timed out waiting for a frame.");
             return null; // failed
         }
 

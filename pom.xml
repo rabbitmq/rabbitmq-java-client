@@ -779,6 +779,7 @@
               <include>src/main/java/com/rabbitmq/client/observation/**/*.java</include>
               <include>src/test/java/com/rabbitmq/client/test/functional/MicrometerObservationCollectorMetrics.java</include>
               <include>src/test/java/com/rabbitmq/client/test/NettyTest.java</include>
+              <include>src/test/java/com/rabbitmq/client/test/ProtocolVersionMismatch.java</include>
             </includes>
             <googleJavaFormat>
               <version>${google-java-format.version}</version>

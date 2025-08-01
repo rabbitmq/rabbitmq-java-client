@@ -54,6 +54,10 @@ public interface FrameHandler extends NetworkConnection {
 
     void initialize(AMQConnection connection);
 
+    default void finishConnectionNegotiation() {
+
+    }
+
     /**
      * Read a {@link Frame} from the underlying data connection.
      * @return an incoming Frame, or null if there is none
@@ -77,4 +81,5 @@ public interface FrameHandler extends NetworkConnection {
 
     /** Close the underlying data connection (complaint not permitted). */
     void close();
+
 }
