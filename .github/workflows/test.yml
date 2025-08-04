@@ -39,9 +39,9 @@ jobs:
         run: ci/start-cluster.sh
       - name: Get dependencies
         run: make deps
-      - name: Test with NIO
+      - name: Test with Netty
         run: |
-          ./mvnw verify -P use-nio -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
+          ./mvnw verify -Dio.layer=netty -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
             -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
@@ -49,12 +49,11 @@ jobs:
             --no-transfer-progress
       - name: Test with blocking IO
         run: |
-          ./mvnw verify -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
+          ./mvnw verify -Dio.layer=socket -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
             -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
             -Dmaven.javadoc.skip=true \
-            -Dtest-client-cert.password= -Dtest-tls-certs.dir=rabbitmq-configuration/tls \
             --no-transfer-progress
       - name: Stop cluster
         run: docker compose --file ci/cluster/docker-compose.yml down

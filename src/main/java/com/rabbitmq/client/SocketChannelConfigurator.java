@@ -19,7 +19,12 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Objects;
 
+/**
+ *
+ * @deprecated Use {@link ConnectionFactory#netty()} with a channel customizer instead.
+ */
 @FunctionalInterface
+@Deprecated
 public interface SocketChannelConfigurator {
 
     /**

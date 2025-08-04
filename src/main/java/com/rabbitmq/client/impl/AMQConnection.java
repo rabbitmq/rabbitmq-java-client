@@ -25,6 +25,7 @@ import com.rabbitmq.utility.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -278,11 +279,15 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     }
 
     private void initializeConsumerWorkService() {
-        this._workService  = new ConsumerWorkService(consumerWorkServiceExecutor, threadFactory, workPoolTimeout, shutdownTimeout);
+        this._workService = new ConsumerWorkService(consumerWorkServiceExecutor, threadFactory, workPoolTimeout, shutdownTimeout);
     }
 
     private void initializeHeartbeatSender() {
-        this._heartbeatSender = new HeartbeatSender(_frameHandler, heartbeatExecutor, threadFactory);
+        if (_frameHandler.internalHearbeat()) {
+            this._heartbeatSender = HeartbeatSender.NO_OP;
+        } else {
+            this._heartbeatSender = new DefaultHeartbeatSender(_frameHandler, heartbeatExecutor, threadFactory);
+        }
     }
 
     /**
@@ -403,10 +408,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             throw te;
         } catch (ShutdownSignalException sse) {
             _frameHandler.close();
-            throw AMQChannel.wrap(sse);
-        } catch(IOException ioe) {
-            _frameHandler.close();
-            throw ioe;
+            if (sse.getCause() instanceof SSLHandshakeException) {
+                throw (SSLHandshakeException) sse.getCause();
+            } else {
+                throw AMQChannel.wrap(sse);
+            }
         }
 
         try {
@@ -493,6 +499,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         // We can now respond to errors having finished tailoring the connection
         this._inConnectionNegotiation = false;
+        this._frameHandler.finishConnectionNegotiation();
     }
 
     protected ChannelManager instantiateChannelManager(int channelMax, ThreadFactory threadFactory) {

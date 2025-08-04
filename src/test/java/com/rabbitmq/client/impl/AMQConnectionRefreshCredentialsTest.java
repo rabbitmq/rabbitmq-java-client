@@ -97,9 +97,7 @@ public class AMQConnectionRefreshCredentialsTest {
             }
         };
         cf.setAutomaticRecoveryEnabled(false);
-        if (TestUtils.USE_NIO) {
-            cf.useNio();
-        }
+        TestUtils.setIoLayer(cf);
         return cf;
     }
 
@@ -174,7 +172,6 @@ public class AMQConnectionRefreshCredentialsTest {
         TestUtils.sendAndConsumeMessage("", queue, queue, c);
         verify(refreshService, never()).unregister(any(CredentialsProvider.class), anyString());
 
-        verify(refreshService, never()).unregister(any(CredentialsProvider.class), anyString());
         // calling refresh, this sends garbage and should make the broker close the connection
         assertThat(refreshTokenCallable.get().call()).isFalse();
         assertThat(unregisteredLatch.await(5, TimeUnit.SECONDS)).isTrue();
