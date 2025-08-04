@@ -16,6 +16,7 @@
 
 package com.rabbitmq.client;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.extension.ConditionEvaluationResult.disabled;
 import static org.junit.jupiter.api.extension.ConditionEvaluationResult.enabled;
 
@@ -24,8 +25,13 @@ import com.rabbitmq.client.test.functional.FunctionalTestSuite;
 import com.rabbitmq.client.test.server.HaTestSuite;
 import com.rabbitmq.client.test.server.ServerTestSuite;
 import com.rabbitmq.client.test.ssl.SslTestSuite;
-import com.rabbitmq.tools.Host;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -36,40 +42,34 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AmqpClientTestExtension
-    implements ExecutionCondition, BeforeAllCallback, BeforeEachCallback, AfterEachCallback {
+    implements ExecutionCondition,
+        BeforeAllCallback,
+        BeforeEachCallback,
+        AfterEachCallback,
+        AfterAllCallback {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AmqpClientTestExtension.class);
+  static {
+    LOGGER.debug("Available processor(s): {}", Runtime.getRuntime().availableProcessors());
+  }
 
-  private static boolean isFunctionalSuite(ExtensionContext context) {
-    return isTestSuite(context, FunctionalTestSuite.class);
+  private static final ExtensionContext.Namespace NAMESPACE =
+      ExtensionContext.Namespace.create(AmqpClientTestExtension.class);
+
+  private static ExtensionContext.Store store(ExtensionContext extensionContext) {
+    return extensionContext.getRoot().getStore(NAMESPACE);
+  }
+
+  static EventLoopGroup eventLoopGroup(ExtensionContext context) {
+    return (EventLoopGroup) store(context).get("nettyEventLoopGroup");
   }
 
   private static boolean isSslSuite(ExtensionContext context) {
     return isTestSuite(context, SslTestSuite.class);
   }
 
-  private static boolean isServerSuite(ExtensionContext context) {
-    return isTestSuite(context, ServerTestSuite.class);
-  }
-
-  private static boolean isHaSuite(ExtensionContext context) {
-    return isTestSuite(context, HaTestSuite.class);
-  }
-
   private static boolean isTestSuite(ExtensionContext context, Class<?> clazz) {
     return context.getUniqueId().contains(clazz.getName());
-  }
-
-  public static boolean requiredProperties() {
-    /* Path to rabbitmqctl. */
-    String rabbitmqctl = Host.rabbitmqctlCommand();
-    if (rabbitmqctl == null) {
-      System.err.println(
-          "rabbitmqctl required; please set \"rabbitmqctl.bin\" system" + " property");
-      return false;
-    }
-
-    return true;
   }
 
   public static boolean isSSLAvailable() {
@@ -95,37 +95,30 @@ public class AmqpClientTestExtension
 
   @Override
   public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
-    // HA test suite must be checked first because it contains other test suites
-    if (isHaSuite(context)) {
-      return requiredProperties()
-          ? enabled("Required properties available")
-          : disabled("Required properties not available");
-    } else if (isServerSuite(context)) {
-      return requiredProperties()
-          ? enabled("Required properties available")
-          : disabled("Required properties not available");
-    } else if (isFunctionalSuite(context)) {
-      return requiredProperties()
-          ? enabled("Required properties available")
-          : disabled("Required properties not available");
-    } else if (isSslSuite(context)) {
-      return requiredProperties() && isSSLAvailable()
-          ? enabled("Required properties and TLS available")
-          : disabled("Required properties or TLS not available");
+    if (isSslSuite(context) && !isSSLAvailable()) {
+      return disabled("Required properties or TLS not available");
+    } else {
+      return enabled("ok");
     }
-    return enabled("ok");
   }
 
   @Override
-  public void beforeAll(ExtensionContext context) {}
+  public void beforeAll(ExtensionContext context) {
+    if (TestUtils.isNetty()) {
+      EventLoopGroup eventLoopGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+      store(context)
+          .put("nettyEventLoopGroup", eventLoopGroup);
+      TestUtils.eventLoopGroup(eventLoopGroup);
+    }
+  }
 
   @Override
   public void beforeEach(ExtensionContext context) {
     LOGGER.info(
-        "Starting test: {}.{} (nio? {})",
+        "Starting test: {}.{} (IO layer: {})",
         context.getTestClass().get().getSimpleName(),
         context.getTestMethod().get().getName(),
-        TestUtils.USE_NIO);
+        TestUtils.IO_LAYER);
   }
 
   @Override
@@ -134,5 +127,43 @@ public class AmqpClientTestExtension
         "Test finished: {}.{}",
         context.getTestClass().get().getSimpleName(),
         context.getTestMethod().get().getName());
+  }
+
+  @Override
+  public void afterAll(ExtensionContext context) {
+    if (TestUtils.isNetty()) {
+      TestUtils.resetEventLoopGroup();
+      EventLoopGroup eventLoopGroup = eventLoopGroup(context);
+      ExecutorServiceCloseableResourceWrapper wrapper =
+          context
+              .getRoot()
+              .getStore(ExtensionContext.Namespace.GLOBAL)
+              .getOrComputeIfAbsent(ExecutorServiceCloseableResourceWrapper.class);
+      wrapper.executorService.submit(
+          () -> {
+            try {
+              eventLoopGroup.shutdownGracefully(0, 0, SECONDS).get(10, SECONDS);
+            } catch (InterruptedException e) {
+              LOGGER.debug("Error while asynchronously closing Netty event loop group", e);
+              Thread.currentThread().interrupt();
+            } catch (Exception e) {
+              LOGGER.warn("Error while asynchronously closing Netty event loop group", e);
+            }
+          });
+    }
+  }
+
+  private static class ExecutorServiceCloseableResourceWrapper implements AutoCloseable {
+
+    private final ExecutorService executorService;
+
+    private ExecutorServiceCloseableResourceWrapper() {
+      this.executorService = Executors.newCachedThreadPool();
+    }
+
+    @Override
+    public void close() {
+      this.executorService.shutdownNow();
+    }
   }
 }

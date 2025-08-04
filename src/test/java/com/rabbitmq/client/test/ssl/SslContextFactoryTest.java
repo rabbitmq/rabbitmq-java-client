@@ -13,12 +13,12 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-package com.rabbitmq.client.test;
+package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.SslContextFactory;
-import com.rabbitmq.client.TrustEverythingTrustManager;
+import com.rabbitmq.client.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
@@ -56,6 +56,18 @@ public class SslContextFactoryTest {
                 .useNio()
                 .setAutomaticRecoveryEnabled(false)
         );
+        doTestSetSslContextFactory(() -> {
+            SslContextFactory sslContextFactory = sslContextFactory();
+            return new ConnectionFactory()
+                .setAutomaticRecoveryEnabled(true)
+                .netty().sslContextFactory(n -> TlsTestUtils.toSslContext(sslContextFactory.create(n))).connectionFactory();
+        });
+        doTestSetSslContextFactory(() -> {
+            SslContextFactory sslContextFactory = sslContextFactory();
+            return new ConnectionFactory()
+                .setAutomaticRecoveryEnabled(false)
+                .netty().sslContextFactory(n -> TlsTestUtils.toSslContext(sslContextFactory.create(n))).connectionFactory();
+        });
     }
 
     private void doTestSetSslContextFactory(Supplier<ConnectionFactory> supplier) throws Exception {
@@ -101,29 +113,33 @@ public class SslContextFactoryTest {
         TestUtils.close(connection);
     }
 
-    private SslContextFactory sslContextFactory() throws Exception {
-        SSLContext contextAcceptAll = SSLContext.getInstance(tlsProtocol());
-        contextAcceptAll.init(null, new TrustManager[] { new TrustEverythingTrustManager() }, null);
+    private static SslContextFactory sslContextFactory() {
+        try {
+            SSLContext contextAcceptAll = SSLContext.getInstance(tlsProtocol());
+            contextAcceptAll.init(null, new TrustManager[] { TlsTestUtils.ALWAYS_TRUST_MANAGER }, null);
 
-        SSLContext contextRejectAll = SSLContext.getInstance(tlsProtocol());
-        contextRejectAll.init(null, new TrustManager[] { new TrustNothingTrustManager() }, null);
+            SSLContext contextRejectAll = SSLContext.getInstance(tlsProtocol());
+            contextRejectAll.init(null, new TrustManager[] { new TrustNothingTrustManager() }, null);
 
-        Map<String, SSLContext> sslContexts = new HashMap<>();
-        sslContexts.put("connection01", contextAcceptAll);
-        sslContexts.put("connection02", contextRejectAll);
+            Map<String, SSLContext> sslContexts = new HashMap<>();
+            sslContexts.put("connection01", contextAcceptAll);
+            sslContexts.put("connection02", contextRejectAll);
 
-        SslContextFactory sslContextFactory = name -> sslContexts.get(name);
-        return sslContextFactory;
+            return sslContexts::get;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
-    private String tlsProtocol() throws NoSuchAlgorithmException {
+    private static String tlsProtocol() throws NoSuchAlgorithmException {
         return ConnectionFactory.computeDefaultTlsProtocol(SSLContext.getDefault().getSupportedSSLParameters().getProtocols());
     }
 
     private static class TrustNothingTrustManager implements X509TrustManager {
 
         @Override
-        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {
 
         }
 

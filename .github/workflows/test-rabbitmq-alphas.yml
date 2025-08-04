@@ -43,9 +43,9 @@ jobs:
           RABBITMQ_IMAGE: ${{ matrix.rabbitmq-image }}
       - name: Get dependencies
         run: make deps
-      - name: Test with NIO
+      - name: Test with Netty
         run: |
-          ./mvnw verify -P use-nio -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
+          ./mvnw verify -Dio.layer=netty -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
             -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
@@ -53,7 +53,7 @@ jobs:
             --no-transfer-progress
       - name: Test with blocking IO
         run: |
-          ./mvnw verify -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
+          ./mvnw verify -Dio.layer=socket -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
             -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \

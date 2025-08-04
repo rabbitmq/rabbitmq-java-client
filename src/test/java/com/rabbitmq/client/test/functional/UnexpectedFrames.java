@@ -71,11 +71,7 @@ public class UnexpectedFrames extends BrokerTestCase {
 
         public ConfusedConnectionFactory() {
             super();
-            if(TestUtils.USE_NIO) {
-                useNio();
-            } else {
-                useBlockingIo();
-            }
+            TestUtils.setIoLayer(this);
         }
 
         @Override protected FrameHandlerFactory createFrameHandlerFactory() {

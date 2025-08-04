@@ -16,8 +16,6 @@
 
 package com.rabbitmq.client.test.ssl;
 
-import com.rabbitmq.client.test.SslContextFactoryTest;
-
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
