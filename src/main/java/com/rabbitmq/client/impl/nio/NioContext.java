@@ -7,7 +7,9 @@ import javax.net.ssl.SSLEngine;
  *
  * @see ByteBufferFactory
  * @since 5.5.0
+ * @deprecated use {@link com.rabbitmq.client.ConnectionFactory#netty()} instead
  */
+@Deprecated
 public class NioContext {
 
     private final NioParams nioParams;

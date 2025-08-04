@@ -5,8 +5,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.rabbitmq.client.test.TestUtils" level="info" />
-    <logger name="com.rabbitmq.client.AmqpClientTestExtension" level="info" />
+    <logger name="com.rabbitmq.client.AmqpClientTestExtension" level="debug" />
     <logger name="com.rabbitmq.client.test.server.TopicPermissions" level="debug" />
 
     <root level="warn">

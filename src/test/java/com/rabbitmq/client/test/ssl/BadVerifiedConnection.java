@@ -38,6 +38,8 @@ public class BadVerifiedConnection extends UnverifiedConnection {
         try {
             SSLContext c = TlsTestUtils.badVerifiedSslContext();
             connectionFactory.useSslProtocol(c);
+            TlsTestUtils.maybeConfigureNetty(connectionFactory, c);
+
         } catch (Exception ex) {
             throw new IOException(ex);
         }

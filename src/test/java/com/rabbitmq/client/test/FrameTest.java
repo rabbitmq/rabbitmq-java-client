@@ -72,12 +72,12 @@ public class FrameTest {
 
     private static class AccumulatorWritableByteChannel implements WritableByteChannel {
 
-        List<byte[]> chunks = new ArrayList<byte[]>();
+        List<byte[]> chunks = new ArrayList<>();
 
         Random random = new Random();
 
         @Override
-        public int write(ByteBuffer src) throws IOException {
+        public int write(ByteBuffer src) {
             int remaining = src.remaining();
             if(remaining > 0) {
                 int toRead = random.nextInt(remaining) + 1;
@@ -88,7 +88,6 @@ public class FrameTest {
             } else {
                 return remaining;
             }
-
         }
 
         @Override
@@ -97,9 +96,7 @@ public class FrameTest {
         }
 
         @Override
-        public void close() throws IOException {
-
-        }
+        public void close() { }
     }
 
     public static void drain(WritableByteChannel channel, ByteBuffer buffer) throws IOException {

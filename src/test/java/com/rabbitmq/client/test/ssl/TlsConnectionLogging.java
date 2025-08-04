@@ -20,9 +20,12 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.TlsUtils;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.test.TestUtils;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslHandler;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import wiremock.org.apache.hc.core5.ssl.SSLContextBuilder;
 
 import javax.net.ssl.*;
 import java.security.cert.X509Certificate;
@@ -35,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class TlsConnectionLogging {
 
     public static Object[] certificateInfoAreProperlyExtracted() {
-        return new Object[]{blockingIo(), nio()};
+        return new Object[]{blockingIo(), nio(), netty()};
     }
 
     public static Function<ConnectionFactory, Supplier<SSLSession>> blockingIo() {
@@ -58,11 +61,30 @@ public class TlsConnectionLogging {
         };
     }
 
+    public static Function<ConnectionFactory, Supplier<SSLSession>> netty() {
+        return connectionFactory -> {
+            AtomicReference<SSLEngine> sslEngineCaptor = new AtomicReference<>();
+            try {
+                connectionFactory.netty()
+                    .channelCustomizer(ch -> {
+                        SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
+                        sslEngineCaptor.set(sslHandler.engine());
+                    })
+                    .sslContext(SslContextBuilder.forClient()
+                        .trustManager(TlsTestUtils.ALWAYS_TRUST_MANAGER)
+                        .build());
+            } catch (SSLException e) {
+                throw new RuntimeException(e);
+            }
+            return () -> sslEngineCaptor.get().getSession();
+        };
+    }
+
     @ParameterizedTest
     @MethodSource
     public void certificateInfoAreProperlyExtracted(Function<ConnectionFactory, Supplier<SSLSession>> configurer) throws Exception {
         SSLContext sslContext = TlsTestUtils.getSSLContext();
-        sslContext.init(null, new TrustManager[]{new AlwaysTrustTrustManager()}, null);
+        sslContext.init(null, new TrustManager[]{TlsTestUtils.ALWAYS_TRUST_MANAGER}, null);
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         connectionFactory.useSslProtocol(sslContext);
         Supplier<SSLSession> sslSessionSupplier = configurer.apply(connectionFactory);
@@ -75,23 +97,6 @@ public class TlsConnectionLogging {
                     .contains("X.509 usage extensions")
                     .contains("KeyUsage");
 
-        }
-    }
-
-    private static class AlwaysTrustTrustManager implements X509TrustManager {
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType) {
-
-        }
-
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType) {
-
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
         }
     }
 

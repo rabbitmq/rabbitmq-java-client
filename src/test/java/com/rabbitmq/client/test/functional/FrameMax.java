@@ -16,21 +16,20 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static com.rabbitmq.client.test.TestUtils.LatchConditions.completed;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
-import com.rabbitmq.client.impl.AMQBasicProperties;
 import com.rabbitmq.client.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -41,22 +40,21 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.impl.AMQCommand;
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.ContentHeaderPropertyWriter;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
 import com.rabbitmq.client.impl.LongStringHelper;
-import com.rabbitmq.client.impl.SocketFrameHandler;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 public class FrameMax extends BrokerTestCase {
     /* This value for FrameMax is larger than the minimum and less
      * than what Rabbit suggests. */
     final static int FRAME_MAX = 70000;
-    final static int REAL_FRAME_MAX = FRAME_MAX - 8;
 
-    public FrameMax() {
-        connectionFactory = new MyConnectionFactory();
-        connectionFactory.setRequestedFrameMax(FRAME_MAX);
+    @Override
+    protected ConnectionFactory newConnectionFactory() {
+        ConnectionFactory cf = super.newConnectionFactory();
+        cf.setRequestedFrameMax(FRAME_MAX);
+        return cf;
     }
 
     @Test public void negotiationOk() {
@@ -66,9 +64,7 @@ public class FrameMax extends BrokerTestCase {
     /* Publish a message of size FRAME_MAX.  The broker should split
      * this into two frames before sending back.  Frame content should
      * be less or equal to frame-max - 8. */
-    @Test public void frameSizes()
-        throws IOException, InterruptedException
-    {
+    @Test public void frameSizes() throws IOException {
         String queueName = channel.queueDeclare().getQueue();
         /* This should result in at least 3 frames. */
         int howMuch = 2*FRAME_MAX;
@@ -79,7 +75,6 @@ public class FrameMax extends BrokerTestCase {
                 GetResponse response = channel.basicGet(queueName, false);
                 howMuch -= response.getBody().length;
             } catch (Exception e) {
-                e.printStackTrace();
                 fail("Exception in basicGet loop: " + e);
             }
         }
@@ -87,8 +82,7 @@ public class FrameMax extends BrokerTestCase {
 
     /* server should reject frames larger than AMQP.FRAME_MIN_SIZE
      * during connection negotiation */
-    @Test public void rejectLargeFramesDuringConnectionNegotiation()
-            throws IOException, TimeoutException {
+    @Test public void rejectLargeFramesDuringConnectionNegotiation() throws TimeoutException {
         ConnectionFactory cf = TestUtils.connectionFactory();
         cf.getClientProperties().put("too_long", LongStringHelper.asLongString(new byte[AMQP.FRAME_MIN_SIZE]));
         try {
@@ -100,8 +94,7 @@ public class FrameMax extends BrokerTestCase {
 
     /* server should reject frames larger than the negotiated frame
      * size */
-    @Test public void rejectExceedingFrameMax()
-            throws IOException, TimeoutException {
+    @Test public void rejectExceedingFrameMax() throws IOException, TimeoutException {
         closeChannel();
         closeConnection();
         ConnectionFactory cf = new GenerousConnectionFactory();
@@ -114,8 +107,7 @@ public class FrameMax extends BrokerTestCase {
 
     /* client should throw exception if headers exceed negotiated
      * frame size */
-    @Test public void rejectHeadersExceedingFrameMax()
-            throws IOException, TimeoutException {
+    @Test public void rejectHeadersExceedingFrameMax() throws IOException {
         declareTransientTopicExchange("x");
         String queueName = channel.queueDeclare().getQueue();
         channel.queueBind(queueName, "x", "foobar");
@@ -164,17 +156,17 @@ public class FrameMax extends BrokerTestCase {
         cf.setRequestedFrameMax(0);
         connection = cf.newConnection();
         openChannel();
+        channel.confirmSelect();
+        CountDownLatch confirmLatch = new CountDownLatch(1);
+        channel.addConfirmListener((deliveryTag, multiple) -> confirmLatch.countDown(), (dtag, m) -> { });
 
-        Map<String, Object> headers = new HashMap<String, Object>();
-        headers.put("h1", LongStringHelper.asLongString(new byte[250]));
-        headers.put("h1", LongStringHelper.asLongString(new byte[500]));
-        headers.put("h1", LongStringHelper.asLongString(new byte[750]));
-        headers.put("h1", LongStringHelper.asLongString(new byte[5000]));
+        Map<String, Object> headers = new HashMap<>();
         headers.put("h1", LongStringHelper.asLongString(new byte[50000]));
         AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
                                                   .headers(headers)
                                                   .build();
         basicPublishVolatile(new byte[500000], "", "", properties);
+        assertThat(confirmLatch).is(completed());
     }
 
     @Override
@@ -182,44 +174,6 @@ public class FrameMax extends BrokerTestCase {
         return false;
     }
 
-    /* ConnectionFactory that uses MyFrameHandler rather than
-     * SocketFrameHandler. */
-    private static class MyConnectionFactory extends ConnectionFactory {
-
-        public MyConnectionFactory() {
-            super();
-            if(TestUtils.USE_NIO) {
-                useNio();
-            } else {
-                useBlockingIo();
-            }
-        }
-
-        protected FrameHandler createFrameHandler(Socket sock)
-            throws IOException
-        {
-            return new MyFrameHandler(sock);
-        }
-    }
-
-    /* FrameHandler with added frame-max error checking. */
-    private static class MyFrameHandler extends SocketFrameHandler {
-        public MyFrameHandler(Socket socket)
-            throws IOException
-        {
-            super(socket);
-        }
-
-        public Frame readFrame() throws IOException {
-            Frame f = super.readFrame();
-            int size = f.getPayload().length;
-            if (size > REAL_FRAME_MAX)
-                fail("Received frame of size " + size
-                     + ", which exceeds " + REAL_FRAME_MAX + ".");
-            //System.out.printf("Received a frame of size %d.\n", f.getPayload().length);
-            return f;
-        }
-    }
 
     /*
       AMQConnection with a frame_max that is one higher than what it
@@ -245,11 +199,7 @@ public class FrameMax extends BrokerTestCase {
 
         public GenerousConnectionFactory() {
             super();
-            if(TestUtils.USE_NIO) {
-                useNio();
-            } else {
-                useBlockingIo();
-            }
+            TestUtils.setIoLayer(this);
         }
 
         @Override public Connection newConnection(ExecutorService executor, List<Address> addrs)

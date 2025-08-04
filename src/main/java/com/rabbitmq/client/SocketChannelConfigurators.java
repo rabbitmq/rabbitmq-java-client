@@ -22,7 +22,9 @@ package com.rabbitmq.client;
  * {@link SocketChannelConfigurator#andThen(SocketChannelConfigurator)}.
  *
  * @since 5.4.0
+ * @deprecated Use {@link ConnectionFactory#netty()} with a channel customizer instead.
  */
+@Deprecated
 public abstract class SocketChannelConfigurators {
 
     /**
