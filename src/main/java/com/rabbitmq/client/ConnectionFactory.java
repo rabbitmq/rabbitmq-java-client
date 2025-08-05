@@ -158,8 +158,8 @@ public class ConnectionFactory implements Cloneable {
   private ObservationCollector observationCollector = ObservationCollector.NO_OP;
 
   private boolean nio = false;
-
-  private boolean netty = true;
+  private boolean netty = false;
+  
   private FrameHandlerFactory frameHandlerFactory;
   private final NettyConfiguration nettyConf = new NettyConfiguration(this);
   private NioParams nioParams = new NioParams();
