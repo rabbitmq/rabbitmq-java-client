@@ -103,7 +103,7 @@ public class TestUtils {
     if (isNio(layer)) {
       cf.useNio();
     } else if (isNetty(layer)) {
-      cf.netty();
+      cf.netty().enqueuingTimeout(Duration.ofSeconds(30));
     } else if (isSocket(layer)) {
       cf.useBlockingIo();
     } else {
