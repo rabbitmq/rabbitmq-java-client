@@ -70,12 +70,14 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
   private final Function<String, SslContext> sslContextFactory;
   private final Consumer<Channel> channelCustomizer;
   private final Consumer<Bootstrap> bootstrapCustomizer;
+  private final Duration enqueuingTimeout;
 
   public NettyFrameHandlerFactory(
       EventLoopGroup eventLoopGroup,
       Consumer<Channel> channelCustomizer,
       Consumer<Bootstrap> bootstrapCustomizer,
       Function<String, SslContext> sslContextFactory,
+      Duration enqueuingTimeout,
       int connectionTimeout,
       SocketConfigurator configurator,
       int maxInboundMessageBodySize) {
@@ -85,6 +87,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     this.channelCustomizer = channelCustomizer == null ? Utils.noOpConsumer() : channelCustomizer;
     this.bootstrapCustomizer =
         bootstrapCustomizer == null ? Utils.noOpConsumer() : bootstrapCustomizer;
+    this.enqueuingTimeout = enqueuingTimeout;
   }
 
   private static void closeNettyState(Channel channel, EventLoopGroup eventLoopGroup) {
@@ -127,6 +130,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         addr,
         sslContext,
         this.eventLoopGroup,
+        this.enqueuingTimeout,
         this.channelCustomizer,
         this.bootstrapCustomizer);
   }
@@ -146,6 +150,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
           'A', 'M', 'Q', 'P', 0, AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR, AMQP.PROTOCOL.REVISION
         };
     private final EventLoopGroup eventLoopGroup;
+    private final Duration enqueuingTimeout;
     private final Channel channel;
     private final AmqpHandler handler;
     private final AtomicBoolean closed = new AtomicBoolean(false);
@@ -155,9 +160,11 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         Address addr,
         SslContext sslContext,
         EventLoopGroup elg,
+        Duration enqueuingTimeout,
         Consumer<Channel> channelCustomizer,
         Consumer<Bootstrap> bootstrapCustomizer)
         throws IOException {
+      this.enqueuingTimeout = enqueuingTimeout;
       Bootstrap b = new Bootstrap();
       bootstrapCustomizer.accept(b);
       if (b.config().group() == null) {
@@ -310,7 +317,8 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
           this.doWriteFrame(frame);
         } else {
           try {
-            boolean canWriteNow = this.handler.writableLatch().await(10, SECONDS);
+            boolean canWriteNow =
+                this.handler.writableLatch().await(enqueuingTimeout.toMillis(), MILLISECONDS);
             if (canWriteNow) {
               this.doWriteFrame(frame);
             } else {

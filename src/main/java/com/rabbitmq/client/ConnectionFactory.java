@@ -35,6 +35,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
@@ -1097,6 +1098,7 @@ public class ConnectionFactory implements Cloneable {
                 this.nettyConf.channelCustomizer,
                 this.nettyConf.bootstrapCustomizer,
                 this.nettyConf.sslContextFactory,
+                this.nettyConf.enqueuingTimeout,
                 connectionTimeout,
                 socketConf,
                 maxInboundMessageBodySize);
@@ -1917,6 +1919,7 @@ public class ConnectionFactory implements Cloneable {
     private Consumer<io.netty.channel.Channel> channelCustomizer = ch -> {};
     private Consumer<Bootstrap> bootstrapCustomizer = b -> {};
     private Function<String, SslContext> sslContextFactory;
+    private Duration enqueuingTimeout = Duration.ofSeconds(10);
 
     private NettyConfiguration(ConnectionFactory cf) {
       this.cf = cf;
@@ -1987,6 +1990,19 @@ public class ConnectionFactory implements Cloneable {
      */
     public NettyConfiguration sslContextFactory(Function<String, SslContext> sslContextFactory) {
       this.sslContextFactory = sslContextFactory;
+      return this;
+    }
+
+    /**
+     * Set the timeout to enqueue outbound frames.
+     *
+     * <p>Default is 10 seconds.
+     *
+     * @param enqueuingTimeout the enqueuing timeout
+     * @return this configuration instance
+     */
+    public NettyConfiguration enqueuingTimeout(Duration enqueuingTimeout) {
+      this.enqueuingTimeout = enqueuingTimeout;
       return this;
     }
 
