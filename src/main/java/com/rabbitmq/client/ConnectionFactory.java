@@ -350,7 +350,7 @@ public class ConnectionFactory implements Cloneable {
   public void setUri(URI uri)
       throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
     if ("amqp".equals(uri.getScheme().toLowerCase())) {
-      // nothing special to do
+      setPort(DEFAULT_AMQP_PORT);
     } else if ("amqps".equals(uri.getScheme().toLowerCase())) {
       setPort(DEFAULT_AMQP_OVER_SSL_PORT);
       // SSL context factory not set yet, we use the default one
@@ -1442,6 +1442,7 @@ public class ConnectionFactory implements Cloneable {
    *
    * @return the connection factory
    * @see #netty()
+   * @since 5.27.0
    */
   public ConnectionFactory useNetty() {
     this.netty = true;
