@@ -159,7 +159,7 @@ public class ConnectionFactory implements Cloneable {
 
   private boolean nio = false;
   private boolean netty = false;
-  
+
   private FrameHandlerFactory frameHandlerFactory;
   private final NettyConfiguration nettyConf = new NettyConfiguration(this);
   private NioParams nioParams = new NioParams();
@@ -817,7 +817,8 @@ public class ConnectionFactory implements Cloneable {
    * instead.
    */
   public void useSslProtocol() throws NoSuchAlgorithmException, KeyManagementException {
-    useSslProtocol(computeDefaultTlsProtocol(
+    useSslProtocol(
+        computeDefaultTlsProtocol(
             SSLContext.getDefault().getSupportedSSLParameters().getProtocols()));
   }
 
@@ -835,7 +836,7 @@ public class ConnectionFactory implements Cloneable {
    *
    * <p>Note this method has NO effect when using Netty, use {@link
    * com.rabbitmq.client.ConnectionFactory.NettyConfiguration#sslContext(io.netty.handler.ssl.SslContext)}
-   *  instead.
+   * instead.
    *
    * @see #setSslContextFactory(SslContextFactory)
    */
@@ -1498,185 +1499,185 @@ public class ConnectionFactory implements Cloneable {
       return this;
     }
 
-      /**
-       * An extension point to customize Netty's {@link io.netty.channel.Channel}s used for
-       * connections.
-       *
-       * @param channelCustomizer the customization callback
-       * @return this configuration instance
-       */
-      public NettyConfiguration channelCustomizer(
-          Consumer<io.netty.channel.Channel> channelCustomizer) {
-          this.channelCustomizer = channelCustomizer;
-          return this;
+    /**
+     * An extension point to customize Netty's {@link io.netty.channel.Channel}s used for
+     * connections.
+     *
+     * @param channelCustomizer the customization callback
+     * @return this configuration instance
+     */
+    public NettyConfiguration channelCustomizer(
+        Consumer<io.netty.channel.Channel> channelCustomizer) {
+      this.channelCustomizer = channelCustomizer;
+      return this;
+    }
+
+    /**
+     * An extension point to customize Netty's {@link Bootstrap}s used to configure connections.
+     *
+     * @param bootstrapCustomizer the bootstrap customization callback
+     * @return this configuration instance
+     */
+    public NettyConfiguration bootstrapCustomizer(Consumer<Bootstrap> bootstrapCustomizer) {
+      this.bootstrapCustomizer = bootstrapCustomizer;
+      return this;
+    }
+
+    /**
+     * Netty {@link SslContext} for TLS connections.
+     *
+     * <p>Use {@link SslContextBuilder#forClient()} to configure and create an instance.
+     *
+     * @param sslContext the SSL context
+     * @return this configuration instance
+     */
+    public NettyConfiguration sslContext(SslContext sslContext) {
+      this.sslContextFactory = name -> sslContext;
+      return this;
+    }
+
+    /**
+     * A factory to create {@link io.netty.handler.ssl.SslContext} depending on the connection name.
+     *
+     * @param sslContextFactory the factory
+     * @return this configuration instance
+     */
+    public NettyConfiguration sslContextFactory(Function<String, SslContext> sslContextFactory) {
+      this.sslContextFactory = sslContextFactory;
+      return this;
+    }
+
+    /**
+     * Go back to the connection factory.
+     *
+     * @return the connection factory
+     */
+    public ConnectionFactory connectionFactory() {
+      return this.cf;
+    }
+
+    private boolean isTls() {
+      return this.sslContextFactory != null;
+    }
   }
 
-      /**
-       * An extension point to customize Netty's {@link Bootstrap}s used to configure connections.
-       *
-       * @param bootstrapCustomizer the bootstrap customization callback
-       * @return this configuration instance
-       */
-      public NettyConfiguration bootstrapCustomizer(Consumer<Bootstrap> bootstrapCustomizer) {
-          this.bootstrapCustomizer = bootstrapCustomizer;
-          return this;
-      }
+  public ConnectionParams params(ExecutorService consumerWorkServiceExecutor) {
+    ConnectionParams result = new ConnectionParams();
 
-      /**
-       * Netty {@link SslContext} for TLS connections.
-       *
-       * <p>Use {@link SslContextBuilder#forClient()} to configure and create an instance.
-       *
-       * @param sslContext the SSL context
-       * @return this configuration instance
-       */
-      public NettyConfiguration sslContext(SslContext sslContext) {
-          this.sslContextFactory = name -> sslContext;
-          return this;
-      }
-
-      /**
-       * A factory to create {@link io.netty.handler.ssl.SslContext} depending on the connection name.
-       *
-       * @param sslContextFactory the factory
-       * @return this configuration instance
-       */
-      public NettyConfiguration sslContextFactory(Function<String, SslContext> sslContextFactory) {
-          this.sslContextFactory = sslContextFactory;
-          return this;
-      }
-
-      /**
-       * Go back to the connection factory.
-       *
-       * @return the connection factory
-       */
-      public ConnectionFactory connectionFactory() {
-          return this.cf;
-      }
-
-      private boolean isTls() {
-          return this.sslContextFactory != null;
-          }
+    result.setCredentialsProvider(credentialsProvider);
+    result.setConsumerWorkServiceExecutor(consumerWorkServiceExecutor);
+    result.setVirtualHost(virtualHost);
+    result.setClientProperties(getClientProperties());
+    result.setRequestedFrameMax(requestedFrameMax);
+    result.setRequestedChannelMax(requestedChannelMax);
+    result.setShutdownTimeout(shutdownTimeout);
+    result.setSaslConfig(saslConfig);
+    result.setNetworkRecoveryInterval(networkRecoveryInterval);
+    result.setRecoveryDelayHandler(recoveryDelayHandler);
+    result.setTopologyRecovery(topologyRecovery);
+    result.setTopologyRecoveryExecutor(topologyRecoveryExecutor);
+    result.setExceptionHandler(exceptionHandler);
+    result.setThreadFactory(threadFactory);
+    result.setHandshakeTimeout(handshakeTimeout);
+    result.setRequestedHeartbeat(requestedHeartbeat);
+    result.setShutdownExecutor(shutdownExecutor);
+    result.setHeartbeatExecutor(heartbeatExecutor);
+    result.setChannelRpcTimeout(channelRpcTimeout);
+    result.setChannelShouldCheckRpcResponseType(channelShouldCheckRpcResponseType);
+    result.setWorkPoolTimeout(workPoolTimeout);
+    result.setErrorOnWriteListener(errorOnWriteListener);
+    result.setTopologyRecoveryFilter(topologyRecoveryFilter);
+    result.setConnectionRecoveryTriggeringCondition(connectionRecoveryTriggeringCondition);
+    result.setTopologyRecoveryRetryHandler(topologyRecoveryRetryHandler);
+    result.setRecoveredQueueNameSupplier(recoveredQueueNameSupplier);
+    result.setTrafficListener(trafficListener);
+    result.setCredentialsRefreshService(credentialsRefreshService);
+    result.setMaxInboundMessageBodySize(maxInboundMessageBodySize);
+    return result;
   }
 
-    public ConnectionParams params(ExecutorService consumerWorkServiceExecutor) {
-        ConnectionParams result = new ConnectionParams();
+  protected AMQConnection createConnection(
+      ConnectionParams params, FrameHandler frameHandler, MetricsCollector metricsCollector) {
+    return new AMQConnection(params, frameHandler, metricsCollector, observationCollector);
+  }
 
-        result.setCredentialsProvider(credentialsProvider);
-        result.setConsumerWorkServiceExecutor(consumerWorkServiceExecutor);
-        result.setVirtualHost(virtualHost);
-        result.setClientProperties(getClientProperties());
-        result.setRequestedFrameMax(requestedFrameMax);
-        result.setRequestedChannelMax(requestedChannelMax);
-        result.setShutdownTimeout(shutdownTimeout);
-        result.setSaslConfig(saslConfig);
-        result.setNetworkRecoveryInterval(networkRecoveryInterval);
-        result.setRecoveryDelayHandler(recoveryDelayHandler);
-        result.setTopologyRecovery(topologyRecovery);
-        result.setTopologyRecoveryExecutor(topologyRecoveryExecutor);
-        result.setExceptionHandler(exceptionHandler);
-        result.setThreadFactory(threadFactory);
-        result.setHandshakeTimeout(handshakeTimeout);
-        result.setRequestedHeartbeat(requestedHeartbeat);
-        result.setShutdownExecutor(shutdownExecutor);
-        result.setHeartbeatExecutor(heartbeatExecutor);
-        result.setChannelRpcTimeout(channelRpcTimeout);
-        result.setChannelShouldCheckRpcResponseType(channelShouldCheckRpcResponseType);
-        result.setWorkPoolTimeout(workPoolTimeout);
-        result.setErrorOnWriteListener(errorOnWriteListener);
-        result.setTopologyRecoveryFilter(topologyRecoveryFilter);
-        result.setConnectionRecoveryTriggeringCondition(connectionRecoveryTriggeringCondition);
-        result.setTopologyRecoveryRetryHandler(topologyRecoveryRetryHandler);
-        result.setRecoveredQueueNameSupplier(recoveredQueueNameSupplier);
-        result.setTrafficListener(trafficListener);
-        result.setCredentialsRefreshService(credentialsRefreshService);
-        result.setMaxInboundMessageBodySize(maxInboundMessageBodySize);
-        return result;
-    }
+  /**
+   * Create a new broker connection.
+   *
+   * <p>If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection
+   * recovery</a> is enabled, the connection returned by this method will be {@link Recoverable}.
+   * Reconnection attempts will always use the address configured on {@link ConnectionFactory}.
+   *
+   * @return an interface to the connection
+   * @throws IOException if it encounters a problem
+   */
+  public Connection newConnection() throws IOException, TimeoutException {
+    return newConnection(
+        this.sharedExecutor, Collections.singletonList(new Address(getHost(), getPort())));
+  }
 
-    protected AMQConnection createConnection(
-        ConnectionParams params, FrameHandler frameHandler, MetricsCollector metricsCollector) {
-        return new AMQConnection(params, frameHandler, metricsCollector, observationCollector);
-    }
+  /**
+   * Create a new broker connection.
+   *
+   * <p>If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection
+   * recovery</a> is enabled, the connection returned by this method will be {@link Recoverable}.
+   * Reconnection attempts will always use the address configured on {@link ConnectionFactory}.
+   *
+   * @param connectionName client-provided connection name (an arbitrary string). Will be displayed
+   *     in management UI if the server supports it.
+   * @return an interface to the connection
+   * @throws IOException if it encounters a problem
+   */
+  public Connection newConnection(String connectionName) throws IOException, TimeoutException {
+    return newConnection(
+        this.sharedExecutor,
+        Collections.singletonList(new Address(getHost(), getPort())),
+        connectionName);
+  }
 
-    /**
-     * Create a new broker connection.
-     *
-     * <p>If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection
-     * recovery</a> is enabled, the connection returned by this method will be {@link Recoverable}.
-     * Reconnection attempts will always use the address configured on {@link ConnectionFactory}.
-     *
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection() throws IOException, TimeoutException {
-        return newConnection(
-            this.sharedExecutor, Collections.singletonList(new Address(getHost(), getPort())));
-    }
+  /**
+   * Create a new broker connection.
+   *
+   * <p>If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection
+   * recovery</a> is enabled, the connection returned by this method will be {@link Recoverable}.
+   * Reconnection attempts will always use the address configured on {@link ConnectionFactory}.
+   *
+   * @param executor thread execution service for consumers on the connection
+   * @return an interface to the connection
+   * @throws IOException if it encounters a problem
+   */
+  public Connection newConnection(ExecutorService executor) throws IOException, TimeoutException {
+    return newConnection(executor, Collections.singletonList(new Address(getHost(), getPort())));
+  }
 
-    /**
-     * Create a new broker connection.
-     *
-     * <p>If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection
-     * recovery</a> is enabled, the connection returned by this method will be {@link Recoverable}.
-     * Reconnection attempts will always use the address configured on {@link ConnectionFactory}.
-     *
-     * @param connectionName client-provided connection name (an arbitrary string). Will be displayed
-     *     in management UI if the server supports it.
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(String connectionName) throws IOException, TimeoutException {
-        return newConnection(
-            this.sharedExecutor,
-            Collections.singletonList(new Address(getHost(), getPort())),
-            connectionName);
-    }
+  /**
+   * Create a new broker connection.
+   *
+   * <p>If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection
+   * recovery</a> is enabled, the connection returned by this method will be {@link Recoverable}.
+   * Reconnection attempts will always use the address configured on {@link ConnectionFactory}.
+   *
+   * @param executor thread execution service for consumers on the connection
+   * @param connectionName client-provided connection name (an arbitrary string). Will be displayed
+   *     in management UI if the server supports it.
+   * @return an interface to the connection
+   * @throws IOException if it encounters a problem
+   */
+  public Connection newConnection(ExecutorService executor, String connectionName)
+      throws IOException, TimeoutException {
+    return newConnection(
+        executor, Collections.singletonList(new Address(getHost(), getPort())), connectionName);
+  }
 
-    /**
-     * Create a new broker connection.
-     *
-     * <p>If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection
-     * recovery</a> is enabled, the connection returned by this method will be {@link Recoverable}.
-     * Reconnection attempts will always use the address configured on {@link ConnectionFactory}.
-     *
-     * @param executor thread execution service for consumers on the connection
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(ExecutorService executor) throws IOException, TimeoutException {
-        return newConnection(executor, Collections.singletonList(new Address(getHost(), getPort())));
+  protected AddressResolver createAddressResolver(List<Address> addresses) {
+    if (addresses == null || addresses.isEmpty()) {
+      throw new IllegalArgumentException("Please provide at least one address to connect to");
+    } else if (addresses.size() > 1) {
+      return new ListAddressResolver(addresses);
+    } else {
+      return new DnsRecordIpAddressResolver(addresses.get(0), isSSL());
     }
-
-    /**
-     * Create a new broker connection.
-     *
-     * <p>If <a href="https://www.rabbitmq.com/api-guide.html#recovery">automatic connection
-     * recovery</a> is enabled, the connection returned by this method will be {@link Recoverable}.
-     * Reconnection attempts will always use the address configured on {@link ConnectionFactory}.
-     *
-     * @param executor thread execution service for consumers on the connection
-     * @param connectionName client-provided connection name (an arbitrary string). Will be displayed
-     *     in management UI if the server supports it.
-     * @return an interface to the connection
-     * @throws IOException if it encounters a problem
-     */
-    public Connection newConnection(ExecutorService executor, String connectionName)
-        throws IOException, TimeoutException {
-        return newConnection(
-            executor, Collections.singletonList(new Address(getHost(), getPort())), connectionName);
-    }
-
-    protected AddressResolver createAddressResolver(List<Address> addresses) {
-        if (addresses == null || addresses.isEmpty()) {
-            throw new IllegalArgumentException("Please provide at least one address to connect to");
-        } else if (addresses.size() > 1) {
-            return new ListAddressResolver(addresses);
-        } else {
-            return new DnsRecordIpAddressResolver(addresses.get(0), isSSL());
-        }
-    }
+  }
 
   @Override
   public ConnectionFactory clone() {
