@@ -52,7 +52,7 @@ public class TestUtils {
   public static final String IO_LAYER = System.getProperty("io.layer", "netty");
   private static final String IO_SOCKET = "socket";
   private static final String IO_NIO = "nio";
-  private static final String IO_NETTY = "netty";
+  public static final String IO_NETTY = "netty";
   public static final List<String> IO_LAYERS =
       Collections.unmodifiableList(Arrays.asList(IO_SOCKET, IO_NIO, IO_NETTY));
 
@@ -103,7 +103,7 @@ public class TestUtils {
     if (isNio(layer)) {
       cf.useNio();
     } else if (isNetty(layer)) {
-      cf.useNetty();
+      cf.netty();
     } else if (isSocket(layer)) {
       cf.useBlockingIo();
     } else {

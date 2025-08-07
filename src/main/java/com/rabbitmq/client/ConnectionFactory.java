@@ -1440,14 +1440,7 @@ public class ConnectionFactory implements Cloneable {
     this.maxInboundMessageBodySize = maxInboundMessageBodySize;
   }
 
-  /**
-   * Use Netty with the default configuration.
-   *
-   * @return the connection factory
-   * @see #netty()
-   * @since 5.27.0
-   */
-  public ConnectionFactory useNetty() {
+  private ConnectionFactory useNetty() {
     this.netty = true;
     this.nio = false;
     return this;
