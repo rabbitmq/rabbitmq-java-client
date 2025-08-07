@@ -51,7 +51,7 @@ public class NettyTest {
   @BeforeEach
   void init() {
     cf = TestUtils.connectionFactory();
-    cf.useNetty();
+    TestUtils.setIoLayer(cf, TestUtils.IO_NETTY);
   }
 
   @Test
