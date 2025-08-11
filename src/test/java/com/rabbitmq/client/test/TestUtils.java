@@ -28,12 +28,14 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +43,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -92,7 +95,7 @@ public class TestUtils {
 
   public static void setIoLayer(ConnectionFactory cf, String layer) {
     if (isNetty(layer)) {
-      cf.netty().enqueuingTimeout(Duration.ofSeconds(30));
+      cf.netty().enqueuingTimeout(Duration.ofSeconds(10));
     } else if (isSocket(layer)) {
       cf.useBlockingIo();
     } else {
@@ -526,6 +529,17 @@ public class TestUtils {
         }
       }
     }
+  }
+
+  public static String name(TestInfo info) {
+    return streamName(info.getTestClass().get(), info.getTestMethod().get());
+  }
+
+  private static String streamName(Class<?> testClass, Method testMethod) {
+    String uuid = UUID.randomUUID().toString();
+    return String.format(
+        "%s_%s%s",
+        testClass.getSimpleName(), testMethod.getName(), uuid.substring(uuid.length() / 2));
   }
 
   private static class AnnotationBrokerVersionAtLeastCondition
