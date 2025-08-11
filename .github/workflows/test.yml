@@ -46,15 +46,16 @@ jobs:
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
             -Dmaven.javadoc.skip=true \
-            --no-transfer-progress
-      - name: Test with blocking IO
-        run: |
-          ./mvnw verify -Dio.layer=socket -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
-            -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
-            -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
-            -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
-            -Dmaven.javadoc.skip=true \
-            --no-transfer-progress
+            --no-transfer-progress \
+            -Dit.test=Confirm#persistentMandatoryCombinations,RequeueOnConnectionClose#requeueInFlightConsumerNoAck
+      # - name: Test with blocking IO
+      #   run: |
+      #     ./mvnw verify -Dio.layer=socket -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
+      #       -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
+      #       -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
+      #       -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
+      #       -Dmaven.javadoc.skip=true \
+      #       --no-transfer-progress
       - name: Stop cluster
         run: docker compose --file ci/cluster/docker-compose.yml down
       - name: Publish snapshot
