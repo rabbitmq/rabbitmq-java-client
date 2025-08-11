@@ -45,15 +45,7 @@ public class SslContextFactoryTest {
                 .setAutomaticRecoveryEnabled(true)
         );
         doTestSetSslContextFactory(() -> new ConnectionFactory()
-                .useNio()
-                .setAutomaticRecoveryEnabled(true)
-        );
-        doTestSetSslContextFactory(() -> new ConnectionFactory()
                 .useBlockingIo()
-                .setAutomaticRecoveryEnabled(false)
-        );
-        doTestSetSslContextFactory(() -> new ConnectionFactory()
-                .useNio()
                 .setAutomaticRecoveryEnabled(false)
         );
         doTestSetSslContextFactory(() -> {

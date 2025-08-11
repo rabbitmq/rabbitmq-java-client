@@ -18,8 +18,6 @@ package com.rabbitmq.client;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 import com.rabbitmq.client.impl.*;
-import com.rabbitmq.client.impl.nio.NioParams;
-import com.rabbitmq.client.impl.nio.SocketChannelFrameHandlerFactory;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.impl.recovery.RecoveredQueueNameSupplier;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
@@ -154,11 +152,9 @@ public class ConnectionFactory implements Cloneable {
   private MetricsCollector metricsCollector;
   private ObservationCollector observationCollector = ObservationCollector.NO_OP;
 
-  private boolean nio = false;
   private boolean netty = false;
   private FrameHandlerFactory frameHandlerFactory;
   private final NettyConfiguration nettyConf = new NettyConfiguration(this);
-  private NioParams nioParams = new NioParams();
 
   private SslContextFactory sslContextFactory;
 
@@ -917,9 +913,6 @@ public class ConnectionFactory implements Cloneable {
    * com.rabbitmq.client.ConnectionFactory.NettyConfiguration#sslContext(io.netty.handler.ssl.SslContext)}
    * instead.
    *
-   * @see NioParams#enableHostnameVerification()
-   * @see NioParams#setSslEngineConfigurator(SslEngineConfigurator)
-   * @see SslEngineConfigurators#ENABLE_HOSTNAME_VERIFICATION
    * @see SocketConfigurators#ENABLE_HOSTNAME_VERIFICATION
    * @see ConnectionFactory#useSslProtocol(String)
    * @see ConnectionFactory#useSslProtocol(SSLContext)
@@ -928,16 +921,8 @@ public class ConnectionFactory implements Cloneable {
    * @since 5.4.0
    */
   public ConnectionFactory enableHostnameVerification() {
-    enableHostnameVerificationForNio();
     enableHostnameVerificationForBlockingIo();
     return this;
-  }
-
-  protected void enableHostnameVerificationForNio() {
-    if (this.nioParams == null) {
-      this.nioParams = new NioParams();
-    }
-    this.nioParams = this.nioParams.enableHostnameVerification();
   }
 
   protected void enableHostnameVerificationForBlockingIo() {
@@ -1076,21 +1061,7 @@ public class ConnectionFactory implements Cloneable {
   }
 
   protected synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
-    if (nio) {
-      if (this.frameHandlerFactory == null) {
-        if (this.nioParams.getNioExecutor() == null && this.nioParams.getThreadFactory() == null) {
-          this.nioParams.setThreadFactory(getThreadFactory());
-        }
-        this.frameHandlerFactory =
-            new SocketChannelFrameHandlerFactory(
-                connectionTimeout,
-                nioParams,
-                isSSL(),
-                sslContextFactory,
-                this.maxInboundMessageBodySize);
-      }
-      return this.frameHandlerFactory;
-    } else if (netty) {
+    if (netty) {
       if (this.frameHandlerFactory == null) {
         this.frameHandlerFactory =
             new NettyFrameHandlerFactory(
@@ -1660,58 +1631,10 @@ public class ConnectionFactory implements Cloneable {
   }
 
   /**
-   * Sets the parameters when using NIO.
-   *
-   * @param nioParams
-   * @see NioParams
-   * @deprecated user {@link #netty()} instead
-   */
-  @Deprecated
-  public ConnectionFactory setNioParams(NioParams nioParams) {
-    this.nioParams = nioParams;
-    return this;
-  }
-
-  /**
-   * Retrieve the parameters for NIO mode.
-   *
-   * @return
-   * @deprecated Use {@link #netty()}
-   */
-  @Deprecated
-  public NioParams getNioParams() {
-    return nioParams;
-  }
-
-  /**
-   * Use non-blocking IO (NIO) for communication with the server. With NIO, several connections
-   * created from the same {@link ConnectionFactory} can use the same IO thread.
-   *
-   * <p>A client process using a lot of not-so-active connections can benefit from NIO, as it would
-   * use fewer threads than with the traditional, blocking IO mode.
-   *
-   * <p>Use {@link NioParams} to tune NIO and a {@link SocketChannelConfigurator} to configure the
-   * underlying {@link java.nio.channels.SocketChannel}s for connections.
-   *
-   * @see NioParams
-   * @see SocketChannelConfigurator
-   * @see java.nio.channels.SocketChannel
-   * @see java.nio.channels.Selector
-   * @deprecated Use {@link #netty()} instead
-   */
-  @Deprecated
-  public ConnectionFactory useNio() {
-    this.nio = true;
-    this.netty = false;
-    return this;
-  }
-
-  /**
    * Use blocking IO for communication with the server. With blocking IO, each connection creates
    * its own thread to read data from the server.
    */
   public ConnectionFactory useBlockingIo() {
-    this.nio = false;
     this.netty = false;
     return this;
   }
@@ -1885,7 +1808,6 @@ public class ConnectionFactory implements Cloneable {
 
   private ConnectionFactory useNetty() {
     this.netty = true;
-    this.nio = false;
     return this;
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2018-2025 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -24,7 +24,6 @@ import com.rabbitmq.client.DefaultSocketConfigurator;
 import com.rabbitmq.client.Envelope;
 import com.rabbitmq.client.Recoverable;
 import com.rabbitmq.client.RecoveryListener;
-import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
 import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.TestUtils.DisabledIfBrokerRunningOnDocker;
@@ -106,11 +105,6 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
         // which is full. Channel shutting down will time out with the shutdown executor.
         factory.setShutdownExecutor(executorService);
         factory.setNetworkRecoveryInterval(2000);
-
-        if (TestUtils.isNio()) {
-            factory.setWorkPoolTimeout(10 * 1000);
-            factory.setNioParams(new NioParams().setWriteQueueCapacity(10 * 1000 * 1000).setNbIoThreads(4));
-        }
 
         producingConnection = (AutorecoveringConnection) factory.newConnection("Producer Connection");
         producingChannel = (AutorecoveringChannel) producingConnection.createChannel();

@@ -25,7 +25,6 @@ import org.junit.platform.suite.api.Suite;
 	VerifiedConnection.class,
 	BadVerifiedConnection.class,
 	ConnectionFactoryDefaultTlsVersion.class,
-	NioTlsUnverifiedConnection.class,
 	HostnameVerification.class,
 	TlsConnectionLogging.class,
 	SslContextFactoryTest.class

@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 
-import com.rabbitmq.client.impl.nio.NioParams;
 import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.MessageProperties;
@@ -28,15 +27,6 @@ import com.rabbitmq.client.test.BrokerTestCase;
 public class PersistenceGuarantees extends BrokerTestCase {
     private static final int COUNT = 10000;
     private String queue;
-
-    @Override
-    protected NioParams nioParams() {
-        NioParams nioParams = super.nioParams();
-        // may need a higher enqueuing timeout on slow environments
-        return nioParams
-            .setWriteEnqueuingTimeoutInMs(nioParams.getWriteEnqueuingTimeoutInMs() * 3)
-            .setWriteQueueCapacity(nioParams.getWriteQueueCapacity() * 2);
-    }
 
     protected void declareQueue() throws IOException {
         queue = channel.queueDeclare("", true, false, false, null).getQueue();

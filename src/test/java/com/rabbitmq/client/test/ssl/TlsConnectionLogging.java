@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2019-2025 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -18,17 +18,14 @@ package com.rabbitmq.client.test.ssl;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.impl.TlsUtils;
-import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.test.TestUtils;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import wiremock.org.apache.hc.core5.ssl.SSLContextBuilder;
 
 import javax.net.ssl.*;
-import java.security.cert.X509Certificate;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -38,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class TlsConnectionLogging {
 
     public static Object[] certificateInfoAreProperlyExtracted() {
-        return new Object[]{blockingIo(), nio(), netty()};
+        return new Object[]{blockingIo(), netty()};
     }
 
     public static Function<ConnectionFactory, Supplier<SSLSession>> blockingIo() {
@@ -47,16 +44,6 @@ public class TlsConnectionLogging {
             AtomicReference<SSLSocket> socketCaptor = new AtomicReference<>();
             connectionFactory.setSocketConfigurator(socket -> socketCaptor.set((SSLSocket) socket));
             return () -> socketCaptor.get().getSession();
-        };
-    }
-
-    public static Function<ConnectionFactory, Supplier<SSLSession>> nio() {
-        return connectionFactory -> {
-            connectionFactory.useNio();
-            AtomicReference<SSLEngine> sslEngineCaptor = new AtomicReference<>();
-            connectionFactory.setNioParams(new NioParams()
-                    .setSslEngineConfigurator(sslEngine -> sslEngineCaptor.set(sslEngine)));
-            return () -> sslEngineCaptor.get().getSession();
         };
     }
 

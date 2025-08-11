@@ -120,15 +120,6 @@ public class PropertyFileInitialisationTest {
     }
 
     @Test
-    public void propertyInitialisationDoNotUseNio() throws Exception {
-        cf.load(new HashMap<String, String>() {{
-            put("rabbitmq.use.nio", "false");
-            put("rabbitmq.nio.nb.io.threads", "2");
-        }});
-        assertThat(cf.getNioParams().getNbIoThreads()).isNotEqualTo(2);
-    }
-
-    @Test
     public void lookUp() {
         assertThat(ConnectionFactoryConfigurator.lookUp(
                 ConnectionFactoryConfigurator.SSL_KEY_STORE,
@@ -265,13 +256,6 @@ public class PropertyFileInitialisationTest {
         assertThat(connectionFactory.getNetworkRecoveryInterval()).isEqualTo(10000l);
         assertThat(connectionFactory.getChannelRpcTimeout()).isEqualTo(10000);
         assertThat(connectionFactory.isChannelShouldCheckRpcResponseType()).isTrue();
-
-        assertThat(connectionFactory.getNioParams()).isNotNull();
-        assertThat(connectionFactory.getNioParams().getReadByteBufferSize()).isEqualTo(32000);
-        assertThat(connectionFactory.getNioParams().getWriteByteBufferSize()).isEqualTo(32000);
-        assertThat(connectionFactory.getNioParams().getNbIoThreads()).isEqualTo(2);
-        assertThat(connectionFactory.getNioParams().getWriteEnqueuingTimeoutInMs()).isEqualTo(5000);
-        assertThat(connectionFactory.getNioParams().getWriteQueueCapacity()).isEqualTo(1000);
     }
 
     private Properties getPropertiesWitPrefix(String prefix) throws IOException {

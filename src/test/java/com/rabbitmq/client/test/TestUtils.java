@@ -51,10 +51,9 @@ public class TestUtils {
 
   public static final String IO_LAYER = System.getProperty("io.layer", "netty");
   private static final String IO_SOCKET = "socket";
-  private static final String IO_NIO = "nio";
   public static final String IO_NETTY = "netty";
   public static final List<String> IO_LAYERS =
-      Collections.unmodifiableList(Arrays.asList(IO_SOCKET, IO_NIO, IO_NETTY));
+      Collections.unmodifiableList(Arrays.asList(IO_SOCKET, IO_NETTY));
 
   private static final ThreadLocal<EventLoopGroup> EVENT_LOOP_GROUP = new ThreadLocal<>();
 
@@ -72,20 +71,12 @@ public class TestUtils {
     return isSocket(IO_LAYER);
   }
 
-  public static boolean isNio() {
-    return isNio(IO_LAYER);
-  }
-
   public static boolean isNetty() {
     return isNetty(IO_LAYER);
   }
 
   private static boolean isSocket(String layer) {
     return IO_SOCKET.equals(layer);
-  }
-
-  private static boolean isNio(String layer) {
-    return IO_NIO.equals(layer);
   }
 
   private static boolean isNetty(String layer) {
@@ -100,9 +91,7 @@ public class TestUtils {
   }
 
   public static void setIoLayer(ConnectionFactory cf, String layer) {
-    if (isNio(layer)) {
-      cf.useNio();
-    } else if (isNetty(layer)) {
+    if (isNetty(layer)) {
       cf.netty().enqueuingTimeout(Duration.ofSeconds(30));
     } else if (isSocket(layer)) {
       cf.useBlockingIo();
