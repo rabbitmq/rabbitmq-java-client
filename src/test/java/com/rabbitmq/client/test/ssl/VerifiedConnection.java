@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.impl.nio.NioParams;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -60,13 +59,7 @@ public class VerifiedConnection extends UnverifiedConnection {
             cf.useSslProtocol(sslContext);
             TlsTestUtils.maybeConfigureNetty(cf, sslContext);
             AtomicReference<Supplier<String[]>> protocolsSupplier = new AtomicReference<>();
-            if (TestUtils.isNio()) {
-                cf.useNio();
-                cf.setNioParams(new NioParams()
-                    .setSslEngineConfigurator(sslEngine -> {
-                        protocolsSupplier.set(() -> sslEngine.getEnabledProtocols());
-                    }));
-            } else if (TestUtils.isSocket()) {
+            if (TestUtils.isSocket()) {
                 cf.setSocketConfigurator(socket -> {
                     SSLSocket s = (SSLSocket) socket;
                     protocolsSupplier.set(s::getEnabledProtocols);

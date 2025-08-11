@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2017-2025 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -16,7 +16,6 @@
 package com.rabbitmq.client;
 
 import com.rabbitmq.client.impl.AMQConnection;
-import com.rabbitmq.client.impl.nio.NioParams;
 
 import javax.net.ssl.*;
 import java.io.FileInputStream;
@@ -69,12 +68,6 @@ public class ConnectionFactoryConfigurator {
     public static final String CONNECTION_RECOVERY_INTERVAL = "connection.recovery.interval";
     public static final String CHANNEL_RPC_TIMEOUT = "channel.rpc.timeout";
     public static final String CHANNEL_SHOULD_CHECK_RPC_RESPONSE_TYPE = "channel.should.check.rpc.response.type";
-    public static final String USE_NIO = "use.nio";
-    public static final String NIO_READ_BYTE_BUFFER_SIZE = "nio.read.byte.buffer.size";
-    public static final String NIO_WRITE_BYTE_BUFFER_SIZE = "nio.write.byte.buffer.size";
-    public static final String NIO_NB_IO_THREADS = "nio.nb.io.threads";
-    public static final String NIO_WRITE_ENQUEUING_TIMEOUT_IN_MS = "nio.write.enqueuing.timeout.in.ms";
-    public static final String NIO_WRITE_QUEUE_CAPACITY = "nio.write.queue.capacity";
     public static final String SSL_ALGORITHM = "ssl.algorithm";
     public static final String SSL_ENABLED = "ssl.enabled";
     public static final String SSL_KEY_STORE = "ssl.key.store";
@@ -223,35 +216,6 @@ public class ConnectionFactoryConfigurator {
         String channelShouldCheckRpcResponseType = lookUp(CHANNEL_SHOULD_CHECK_RPC_RESPONSE_TYPE, properties, prefix);
         if (channelShouldCheckRpcResponseType != null) {
             cf.setChannelShouldCheckRpcResponseType(Boolean.valueOf(channelShouldCheckRpcResponseType));
-        }
-
-        String useNio = lookUp(USE_NIO, properties, prefix);
-        if (useNio != null && Boolean.valueOf(useNio)) {
-            cf.useNio();
-
-            NioParams nioParams = new NioParams();
-
-            String readByteBufferSize = lookUp(NIO_READ_BYTE_BUFFER_SIZE, properties, prefix);
-            if (readByteBufferSize != null) {
-                nioParams.setReadByteBufferSize(Integer.valueOf(readByteBufferSize));
-            }
-            String writeByteBufferSize = lookUp(NIO_WRITE_BYTE_BUFFER_SIZE, properties, prefix);
-            if (writeByteBufferSize != null) {
-                nioParams.setWriteByteBufferSize(Integer.valueOf(writeByteBufferSize));
-            }
-            String nbIoThreads = lookUp(NIO_NB_IO_THREADS, properties, prefix);
-            if (nbIoThreads != null) {
-                nioParams.setNbIoThreads(Integer.valueOf(nbIoThreads));
-            }
-            String writeEnqueuingTime = lookUp(NIO_WRITE_ENQUEUING_TIMEOUT_IN_MS, properties, prefix);
-            if (writeEnqueuingTime != null) {
-                nioParams.setWriteEnqueuingTimeoutInMs(Integer.valueOf(writeEnqueuingTime));
-            }
-            String writeQueueCapacity = lookUp(NIO_WRITE_QUEUE_CAPACITY, properties, prefix);
-            if (writeQueueCapacity != null) {
-                nioParams.setWriteQueueCapacity(Integer.valueOf(writeQueueCapacity));
-            }
-            cf.setNioParams(nioParams);
         }
 
         String useSsl = lookUp(SSL_ENABLED, properties, prefix);

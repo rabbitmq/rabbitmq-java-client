@@ -2,11 +2,11 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.impl.Frame;
-import com.rabbitmq.client.impl.nio.ByteBufferOutputStream;
 import org.junit.jupiter.api.Test;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
@@ -103,6 +103,38 @@ public class FrameTest {
         buffer.flip();
         while(buffer.hasRemaining() && channel.write(buffer) != -1);
         buffer.clear();
+    }
+
+    private static class ByteBufferOutputStream extends OutputStream {
+
+        private final WritableByteChannel channel;
+
+        private final ByteBuffer buffer;
+
+        public ByteBufferOutputStream(WritableByteChannel channel, ByteBuffer buffer) {
+            this.buffer = buffer;
+            this.channel = channel;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            if(!buffer.hasRemaining()) {
+                drain(channel, buffer);
+            }
+            buffer.put((byte) b);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            drain(channel, buffer);
+        }
+
+        public static void drain(WritableByteChannel channel, ByteBuffer buffer) throws IOException {
+            buffer.flip();
+            while(buffer.hasRemaining() && channel.write(buffer) != -1);
+            buffer.clear();
+        }
+
     }
 
 }

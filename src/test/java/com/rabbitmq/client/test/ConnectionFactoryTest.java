@@ -17,7 +17,6 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.*;
-import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.impl.recovery.RecoveredQueueNameSupplier;
 import com.rabbitmq.client.impl.recovery.RetryHandler;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryFilter;
@@ -213,7 +212,6 @@ public class ConnectionFactoryTest {
         MetricsCollector metricsCollector = mock(MetricsCollector.class);
         CredentialsRefreshService credentialsRefreshService = mock(CredentialsRefreshService.class);
         RecoveryDelayHandler recoveryDelayHandler = mock(RecoveryDelayHandler.class);
-        NioParams nioParams = mock(NioParams.class);
         SslContextFactory sslContextFactory = mock(SslContextFactory.class);
         TopologyRecoveryFilter topologyRecoveryFilter = mock(TopologyRecoveryFilter.class);
         Predicate<ShutdownSignalException> connectionRecoveryTriggeringCondition = (ShutdownSignalException) -> true;
@@ -249,8 +247,6 @@ public class ConnectionFactoryTest {
                 .setCredentialsRefreshService(credentialsRefreshService)
                 .setNetworkRecoveryInterval(7)
                 .setRecoveryDelayHandler(recoveryDelayHandler)
-                .setNioParams(nioParams)
-                .useNio()
                 .useBlockingIo()
                 .setChannelRpcTimeout(8)
                 .setSslContextFactory(sslContextFactory)
@@ -282,7 +278,6 @@ public class ConnectionFactoryTest {
         assertThat(connectionFactory.getMetricsCollector()).isEqualTo(metricsCollector);
         assertThat(connectionFactory.getNetworkRecoveryInterval()).isEqualTo(7);
         assertThat(connectionFactory.getRecoveryDelayHandler()).isEqualTo(recoveryDelayHandler);
-        assertThat(connectionFactory.getNioParams()).isEqualTo(nioParams);
         assertThat(connectionFactory.getChannelRpcTimeout()).isEqualTo(8);
         assertThat(connectionFactory.isChannelShouldCheckRpcResponseType()).isEqualTo(true);
         assertThat(connectionFactory.getWorkPoolTimeout()).isEqualTo(9);

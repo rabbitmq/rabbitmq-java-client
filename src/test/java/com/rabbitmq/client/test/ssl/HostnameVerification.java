@@ -43,7 +43,6 @@ public class HostnameVerification {
     public static Consumer<ConnectionFactory>[] data() {
         return new Consumer[] {
             blockingIo(enableHostnameVerification()),
-            nio(enableHostnameVerification()),
             (Consumer<ConnectionFactory>) cf -> {
                 try {
                     cf.netty().sslContext(SslContextBuilder.forClient()
@@ -61,13 +60,6 @@ public class HostnameVerification {
     private static Consumer<ConnectionFactory> blockingIo(final Consumer<ConnectionFactory> customizer) {
         return connectionFactory -> {
             connectionFactory.useBlockingIo();
-            customizer.accept(connectionFactory);
-        };
-    }
-
-    private static Consumer<ConnectionFactory> nio(final Consumer<ConnectionFactory> customizer) {
-        return connectionFactory -> {
-            connectionFactory.useNio();
             customizer.accept(connectionFactory);
         };
     }
