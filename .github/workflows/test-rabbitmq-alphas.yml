@@ -21,9 +21,9 @@ jobs:
           - pivotalrabbitmq/rabbitmq:main-otp27
     name:  Test against ${{ matrix.rabbitmq-image }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Checkout tls-gen
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: rabbitmq/tls-gen
           path: './tls-gen'
