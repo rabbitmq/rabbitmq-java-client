@@ -10,14 +10,14 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Checkout tls-gen
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: rabbitmq/tls-gen
           path: './tls-gen'
       - name: Checkout GraalVM test project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: rabbitmq/rabbitmq-graal-vm-test
           path: './rabbitmq-graal-vm-test'
