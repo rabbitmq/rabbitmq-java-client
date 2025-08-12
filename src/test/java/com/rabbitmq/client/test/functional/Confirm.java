@@ -41,7 +41,7 @@ import org.junit.jupiter.api.TestInfo;
 
 public class Confirm extends BrokerTestCase
 {
-    private final static int NUM_MESSAGES = 1000;
+    private final static int NUM_MESSAGES = 10_000;
 
     private static final String TTL_ARG = "x-message-ttl";
 

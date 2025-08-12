@@ -40,7 +40,7 @@ public abstract class RequeueOnClose
     extends BrokerTestCase
 {
     private static final String Q = "RequeueOnClose";
-    private static final int MESSAGE_COUNT = 2000;
+    private static final int MESSAGE_COUNT = 10_000;
 
     protected abstract void open() throws IOException, TimeoutException;
 
