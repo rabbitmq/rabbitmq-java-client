@@ -348,7 +348,6 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     @Override
     public void close() {
       if (this.closed.compareAndSet(false, true)) {
-        this.handler.logEvents();
         Runnable closing = () -> closeNettyState(this.channel, this.eventLoopGroup);
         if (this.channel.eventLoop().inEventLoop()) {
           this.channel.eventLoop().submit(closing);

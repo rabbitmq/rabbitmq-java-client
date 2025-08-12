@@ -47,7 +47,7 @@ jobs:
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
             -Dmaven.javadoc.skip=true \
             --no-transfer-progress \
-            -Dit.test=Confirm#persistentMandatoryCombinations,RequeueOnConnectionClose#requeueInFlightConsumerNoAck
+            -Dit.test=FunctionalTestSuite
       # - name: Test with blocking IO
       #   run: |
       #     ./mvnw verify -Dio.layer=socket -Drabbitmqctl.bin=DOCKER:rabbitmq0 \
