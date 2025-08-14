@@ -316,16 +316,26 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
           // we do not wait in the event loop
           this.doWriteFrame(frame);
         } else {
-          try {
-            boolean canWriteNow =
-                this.handler.writableLatch().await(enqueuingTimeout.toMillis(), MILLISECONDS);
-            if (canWriteNow) {
-              this.doWriteFrame(frame);
-            } else {
-              throw new IOException("Frame enqueuing failed");
+          // we get the current latch
+          CountDownLatch latch = this.handler.writableLatch();
+          if (this.handler.isWritable()) {
+            // the channel became  writable
+            this.doWriteFrame(frame);
+          } else {
+            try {
+              // the channel is still non-writable
+              // in case its writability flipped, we have a reference to a latch that has been
+              // counted down
+              // so, worst case scenario, we'll enqueue only one frame right away
+              boolean canWriteNow = latch.await(enqueuingTimeout.toMillis(), MILLISECONDS);
+              if (canWriteNow) {
+                this.doWriteFrame(frame);
+              } else {
+                throw new IOException("Frame enqueuing failed");
+              }
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
             }
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
           }
         }
       }
