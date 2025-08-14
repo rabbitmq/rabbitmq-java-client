@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
@@ -60,15 +59,13 @@ public class NettyTest {
   }
 
   @Test
-  @EnabledOnOs(OS.MAC)
-  @EnabledIfSystemProperty(named = "os.arch", matches = "aarch64")
+  @EnabledOnOs(value = OS.MAC, architectures = "aarch64")
   void kqueue() throws Exception {
     nativeIoTest(KQueueIoHandler.newFactory(), KQueueSocketChannel.class);
   }
 
   @Test
-  @EnabledOnOs(OS.LINUX)
-  @EnabledIfSystemProperty(named = "os.arch", matches = "amd64")
+  @EnabledOnOs(value = OS.LINUX, architectures = "amd64")
   void epoll() throws Exception {
     nativeIoTest(EpollIoHandler.newFactory(), EpollSocketChannel.class);
   }
