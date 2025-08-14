@@ -324,6 +324,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
             if (canWriteNow) {
               this.doWriteFrame(frame);
             } else {
+              this.handler.logEvents();
               throw new IOException("Frame enqueuing failed");
             }
           } catch (InterruptedException e) {
