@@ -52,8 +52,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.time.Duration;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -355,7 +353,6 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
               if (canWriteNow) {
                 this.doWriteFrame(frame);
               } else {
-                this.handler.logEvents();
                 throw new IOException("Frame enqueuing failed");
               }
             } catch (InterruptedException e) {
@@ -485,42 +482,9 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       }
     }
 
-    private static class Event {
-      private final long time;
-      private final String label;
-
-      public Event(long time, String label) {
-        this.time = time;
-        this.label = label;
-      }
-
-      @Override
-      public String toString() {
-        return this.label + " " + this.time;
-      }
-    }
-
-    private static final int MAX_EVENTS = 100;
-    private final Queue<Event> events = new ConcurrentLinkedQueue<>();
-
-    private void logEvents() {
-      if (this.events.size() > 0) {
-        long start = this.events.peek().time;
-        LOGGER.info("channel writability history:");
-        events.forEach(e -> LOGGER.info("{}: {}", (e.time - start) / 1_000_000, e.label));
-      }
-    }
-
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
       boolean canWrite = ctx.channel().isWritable();
-      Event event = new Event(System.nanoTime(), Boolean.toString(canWrite));
-      if (this.events.size() >= MAX_EVENTS) {
-        this.events.poll();
-        this.events.offer(event);
-      }
-      this.events.add(event);
-
       if (this.writable.compareAndSet(!canWrite, canWrite)) {
         if (canWrite) {
           CountDownLatch latch = writableLatch.getAndSet(new CountDownLatch(1));
