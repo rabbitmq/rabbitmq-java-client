@@ -429,6 +429,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     private final AtomicBoolean writable = new AtomicBoolean(true);
     private final AtomicReference<CountDownLatch> writableLatch =
         new AtomicReference<>(new CountDownLatch(1));
+    private final AtomicBoolean shutdownDispatched = new AtomicBoolean(false);
 
     private AmqpHandler(
         int maxPayloadSize,
@@ -563,27 +564,27 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     }
 
     protected void dispatchShutdownToConnection(Runnable connectionShutdownRunnable) {
-      String name = "rabbitmq-connection-shutdown";
-      AMQConnection c = this.connection;
-      if (c == null || ch == null) {
-        // not enough information, we dispatch in separate thread
-        Environment.newThread(connectionShutdownRunnable, name).start();
-      } else {
-        if (ch.eventLoop().inEventLoop()) {
-          if (this.willRecover.test(c.getCloseReason())) {
-            // the connection will recover, we don't want this to happen in the event loop,
-            // it could cause a deadlock, so using a separate thread
-            name = name + "-" + c;
-            System.out.println("in separate thread");
-            Environment.newThread(connectionShutdownRunnable, name).start();
-          } else {
-            // no recovery, it is safe to dispatch in the event loop
-            System.out.println("in event loop");
-            ch.eventLoop().submit(connectionShutdownRunnable);
-          }
+      if (this.shutdownDispatched.compareAndSet(false, true)) {
+        String name = "rabbitmq-connection-shutdown";
+        AMQConnection c = this.connection;
+        if (c == null || ch == null) {
+          // not enough information, we dispatch in separate thread
+          Environment.newThread(connectionShutdownRunnable, name).start();
         } else {
-          // not in the event loop, we can run it in the same thread
-          connectionShutdownRunnable.run();
+          if (ch.eventLoop().inEventLoop()) {
+            if (this.willRecover.test(c.getCloseReason()) || ch.eventLoop().isShuttingDown()) {
+              // the connection will recover, we don't want this to happen in the event loop,
+              // it could cause a deadlock, so using a separate thread
+              name = name + "-" + c;
+              Environment.newThread(connectionShutdownRunnable, name).start();
+            } else {
+              // no recovery, it is safe to dispatch in the event loop
+              ch.eventLoop().submit(connectionShutdownRunnable);
+            }
+          } else {
+            // not in the event loop, we can run it in the same thread
+            connectionShutdownRunnable.run();
+          }
         }
       }
     }
