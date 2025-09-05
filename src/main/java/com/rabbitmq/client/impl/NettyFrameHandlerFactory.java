@@ -23,6 +23,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MalformedFrameException;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.SocketConfigurator;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -59,6 +60,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import javax.net.ssl.SSLHandshakeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,6 +73,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
   private final Consumer<Channel> channelCustomizer;
   private final Consumer<Bootstrap> bootstrapCustomizer;
   private final Duration enqueuingTimeout;
+  private final Predicate<ShutdownSignalException> willRecover;
 
   public NettyFrameHandlerFactory(
       EventLoopGroup eventLoopGroup,
@@ -80,7 +83,9 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       Duration enqueuingTimeout,
       int connectionTimeout,
       SocketConfigurator configurator,
-      int maxInboundMessageBodySize) {
+      int maxInboundMessageBodySize,
+      boolean automaticRecovery,
+      Predicate<ShutdownSignalException> recoveryCondition) {
     super(connectionTimeout, configurator, sslContextFactory != null, maxInboundMessageBodySize);
     this.eventLoopGroup = eventLoopGroup;
     this.sslContextFactory = sslContextFactory == null ? connName -> null : sslContextFactory;
@@ -88,6 +93,20 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     this.bootstrapCustomizer =
         bootstrapCustomizer == null ? Utils.noOpConsumer() : bootstrapCustomizer;
     this.enqueuingTimeout = enqueuingTimeout;
+    this.willRecover =
+        sse -> {
+          if (!automaticRecovery) {
+            return false;
+          } else {
+            try {
+              return recoveryCondition.test(sse);
+            } catch (Exception e) {
+              // we assume it will recover, so we take the safe path to dispatch the closing
+              // it avoids the risk of deadlock
+              return true;
+            }
+          }
+        };
   }
 
   private static void closeNettyState(Channel channel, EventLoopGroup eventLoopGroup) {
@@ -131,6 +150,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         sslContext,
         this.eventLoopGroup,
         this.enqueuingTimeout,
+        this.willRecover,
         this.channelCustomizer,
         this.bootstrapCustomizer);
   }
@@ -161,6 +181,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         SslContext sslContext,
         EventLoopGroup elg,
         Duration enqueuingTimeout,
+        Predicate<ShutdownSignalException> willRecover,
         Consumer<Channel> channelCustomizer,
         Consumer<Bootstrap> bootstrapCustomizer)
         throws IOException {
@@ -193,7 +214,8 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       int lengthFieldOffset = 3;
       int lengthFieldLength = 4;
       int lengthAdjustement = 1;
-      AmqpHandler amqpHandler = new AmqpHandler(maxInboundMessageBodySize, this::close);
+      AmqpHandler amqpHandler =
+          new AmqpHandler(maxInboundMessageBodySize, this::close, willRecover);
       int port = ConnectionFactory.portOrDefault(addr.getPort(), sslContext != null);
       b.handler(
           new ChannelInitializer<SocketChannel>() {
@@ -401,14 +423,26 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     private final int maxPayloadSize;
     private final Runnable closeSequence;
+    private final Predicate<ShutdownSignalException> willRecover;
     private volatile AMQConnection connection;
+    private volatile Channel ch;
     private final AtomicBoolean writable = new AtomicBoolean(true);
     private final AtomicReference<CountDownLatch> writableLatch =
         new AtomicReference<>(new CountDownLatch(1));
 
-    private AmqpHandler(int maxPayloadSize, Runnable closeSequence) {
+    private AmqpHandler(
+        int maxPayloadSize,
+        Runnable closeSequence,
+        Predicate<ShutdownSignalException> willRecover) {
       this.maxPayloadSize = maxPayloadSize;
       this.closeSequence = closeSequence;
+      this.willRecover = willRecover;
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+      this.ch = ctx.channel();
+      super.channelActive(ctx);
     }
 
     @Override
@@ -441,7 +475,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         if (noProblem
             && (!this.connection.isRunning() || this.connection.hasBrokerInitiatedShutdown())) {
           // looks like the frame was Close-Ok or Close
-          ctx.executor().submit(() -> this.connection.doFinalShutdown());
+          this.dispatchShutdownToConnection(() -> this.connection.doFinalShutdown());
         }
       } finally {
         m.release();
@@ -468,10 +502,10 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         AMQConnection c = this.connection;
         if (c.isOpen()) {
           // it is likely to be an IO exception
-          c.handleIoError(null);
+          this.dispatchShutdownToConnection(() -> c.handleIoError(null));
         } else {
           // just in case, the call is idempotent anyway
-          c.doFinalShutdown();
+          this.dispatchShutdownToConnection(c::doFinalShutdown);
         }
       }
     }
@@ -497,7 +531,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
               this.connection.getAddress().getHostName(),
               this.connection.getPort());
           if (needToDispatchIoError()) {
-            this.connection.handleHeartbeatFailure();
+            this.dispatchShutdownToConnection(() -> this.connection.handleHeartbeatFailure());
           }
         } else if (e.state() == IdleState.WRITER_IDLE) {
           this.connection.writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
@@ -509,7 +543,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     private void handleIoError(Throwable cause) {
       if (needToDispatchIoError()) {
-        this.connection.handleIoError(cause);
+        this.dispatchShutdownToConnection(() -> this.connection.handleIoError(cause));
       } else {
         this.closeSequence.run();
       }
@@ -526,6 +560,32 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     private CountDownLatch writableLatch() {
       return this.writableLatch.get();
+    }
+
+    protected void dispatchShutdownToConnection(Runnable connectionShutdownRunnable) {
+      String name = "rabbitmq-connection-shutdown";
+      AMQConnection c = this.connection;
+      if (c == null || ch == null) {
+        // not enough information, we dispatch in separate thread
+        Environment.newThread(connectionShutdownRunnable, name).start();
+      } else {
+        if (ch.eventLoop().inEventLoop()) {
+          if (this.willRecover.test(c.getCloseReason())) {
+            // the connection will recover, we don't want this to happen in the event loop,
+            // it could cause a deadlock, so using a separate thread
+            name = name + "-" + c;
+            System.out.println("in separate thread");
+            Environment.newThread(connectionShutdownRunnable, name).start();
+          } else {
+            // no recovery, it is safe to dispatch in the event loop
+            System.out.println("in event loop");
+            ch.eventLoop().submit(connectionShutdownRunnable);
+          }
+        } else {
+          // not in the event loop, we can run it in the same thread
+          connectionShutdownRunnable.run();
+        }
+      }
     }
   }
 

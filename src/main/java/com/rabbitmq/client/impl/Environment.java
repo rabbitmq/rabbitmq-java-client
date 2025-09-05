@@ -1,4 +1,5 @@
-// Copyright (c) 2007-2023 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
+// Copyright (c) 2007-2025 Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -12,40 +13,45 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.impl;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * Infers information about the execution environment, e.g.
- * security permissions.
- * Package-protected API.
+ * Infers information about the execution environment, e.g. security permissions. Package-protected
+ * API.
  */
 public class Environment {
 
-    /**
-     * This method is deprecated and subject to removal in the next major release.
-     *
-     * There is no replacement for this method, as it used to use the
-     * {@link SecurityManager}, which is itself deprecated and subject to removal.
-     * @deprecated
-     * @return always returns true
-     */
-    @Deprecated
-    public static boolean isAllowedToModifyThreads() {
-       return true;
-    }
+  /**
+   * This method is deprecated and subject to removal in the next major release.
+   *
+   * <p>There is no replacement for this method, as it used to use the {@link SecurityManager},
+   * which is itself deprecated and subject to removal.
+   *
+   * @deprecated
+   * @return always returns true
+   */
+  @Deprecated
+  public static boolean isAllowedToModifyThreads() {
+    return true;
+  }
 
-    public static Thread newThread(ThreadFactory factory, Runnable runnable, String name) {
-        Thread t = factory.newThread(runnable);
-        t.setName(name);
-        return t;
-    }
+  static Thread newThread(Runnable runnable, String name) {
+    return newThread(Executors.defaultThreadFactory(), runnable, name);
+  }
 
-    public static Thread newThread(ThreadFactory factory, Runnable runnable, String name, boolean isDaemon) {
-        Thread t = newThread(factory, runnable, name);
-        t.setDaemon(isDaemon);
-        return t;
-    }
+  public static Thread newThread(ThreadFactory factory, Runnable runnable, String name) {
+    Thread t = factory.newThread(runnable);
+    t.setName(name);
+    return t;
+  }
+
+  public static Thread newThread(
+      ThreadFactory factory, Runnable runnable, String name, boolean isDaemon) {
+    Thread t = newThread(factory, runnable, name);
+    t.setDaemon(isDaemon);
+    return t;
+  }
 }

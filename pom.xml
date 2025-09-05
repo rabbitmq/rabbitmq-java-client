@@ -776,6 +776,7 @@
             <includes>
               <include>src/main/java/com/rabbitmq/client/ConnectionFactory.java</include>
               <include>src/main/java/com/rabbitmq/client/impl/NettyFrameHandlerFactory.java</include>
+              <include>src/main/java/com/rabbitmq/client/impl/Environment.java</include>
               <include>src/main/java/com/rabbitmq/client/observation/**/*.java</include>
               <include>src/test/java/com/rabbitmq/client/test/functional/MicrometerObservationCollectorMetrics.java</include>
               <include>src/test/java/com/rabbitmq/client/test/NettyTest.java</include>
