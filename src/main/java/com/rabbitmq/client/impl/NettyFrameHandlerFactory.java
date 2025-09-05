@@ -57,6 +57,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -430,6 +431,8 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     private final AtomicReference<CountDownLatch> writableLatch =
         new AtomicReference<>(new CountDownLatch(1));
     private final AtomicBoolean shutdownDispatched = new AtomicBoolean(false);
+    private static final AtomicInteger SEQUENCE = new AtomicInteger(0);
+    private final String id;
 
     private AmqpHandler(
         int maxPayloadSize,
@@ -438,6 +441,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       this.maxPayloadSize = maxPayloadSize;
       this.closeSequence = closeSequence;
       this.willRecover = willRecover;
+      this.id = "amqp-handler-" + SEQUENCE.getAndIncrement();
     }
 
     @Override
@@ -501,6 +505,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     public void channelInactive(ChannelHandlerContext ctx) {
       if (needToDispatchIoError()) {
         AMQConnection c = this.connection;
+        LOGGER.debug("Dispatching shutdown when channel became inactive ({})", this.id);
         if (c.isOpen()) {
           // it is likely to be an IO exception
           this.dispatchShutdownToConnection(() -> c.handleIoError(null));
@@ -565,7 +570,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     protected void dispatchShutdownToConnection(Runnable connectionShutdownRunnable) {
       if (this.shutdownDispatched.compareAndSet(false, true)) {
-        String name = "rabbitmq-connection-shutdown";
+        String name = "rabbitmq-connection-shutdown-" + this.id;
         AMQConnection c = this.connection;
         if (c == null || ch == null) {
           // not enough information, we dispatch in separate thread
@@ -575,7 +580,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
             if (this.willRecover.test(c.getCloseReason()) || ch.eventLoop().isShuttingDown()) {
               // the connection will recover, we don't want this to happen in the event loop,
               // it could cause a deadlock, so using a separate thread
-              name = name + "-" + c;
+              //              name = name + "-" + c;
               Environment.newThread(connectionShutdownRunnable, name).start();
             } else {
               // no recovery, it is safe to dispatch in the event loop
