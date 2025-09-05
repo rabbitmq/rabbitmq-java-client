@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
 public class TestUtils {
 
   public static final String IO_LAYER = System.getProperty("io.layer", "netty");
-  private static final String IO_SOCKET = "socket";
+  public static final String IO_SOCKET = "socket";
   public static final String IO_NETTY = "netty";
   public static final List<String> IO_LAYERS =
       Collections.unmodifiableList(Arrays.asList(IO_SOCKET, IO_NETTY));
