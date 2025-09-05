@@ -31,6 +31,9 @@ import io.netty.channel.nio.NioIoHandler;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -105,7 +108,8 @@ public class AmqpClientTestExtension
   @Override
   public void beforeAll(ExtensionContext context) {
     if (TestUtils.isNetty()) {
-      EventLoopGroup eventLoopGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+      ThreadFactory tf = new NamedThreadFactory(context.getTestClass().get().getSimpleName() + "-");
+      EventLoopGroup eventLoopGroup = new MultiThreadIoEventLoopGroup(tf, NioIoHandler.newFactory());
       store(context)
           .put("nettyEventLoopGroup", eventLoopGroup);
       TestUtils.eventLoopGroup(eventLoopGroup);
@@ -163,6 +167,31 @@ public class AmqpClientTestExtension
     @Override
     public void close() {
       this.executorService.shutdownNow();
+    }
+  }
+
+  private static class NamedThreadFactory implements ThreadFactory {
+
+    private final ThreadFactory backingThreadFactory;
+
+    private final String prefix;
+
+    private final AtomicLong count = new AtomicLong(0);
+
+    private NamedThreadFactory(String prefix) {
+      this(Executors.defaultThreadFactory(), prefix);
+    }
+
+    private NamedThreadFactory(ThreadFactory backingThreadFactory, String prefix) {
+      this.backingThreadFactory = backingThreadFactory;
+      this.prefix = prefix;
+    }
+
+    @Override
+    public Thread newThread(Runnable r) {
+      Thread thread = this.backingThreadFactory.newThread(r);
+      thread.setName(prefix + count.getAndIncrement());
+      return thread;
     }
   }
 }

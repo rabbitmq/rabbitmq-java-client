@@ -774,6 +774,7 @@
         <configuration>
           <java>
             <includes>
+              <include>src/main/java/com/rabbitmq/AmqpClientTestExtension.java</include>
               <include>src/main/java/com/rabbitmq/client/ConnectionFactory.java</include>
               <include>src/main/java/com/rabbitmq/client/impl/NettyFrameHandlerFactory.java</include>
               <include>src/main/java/com/rabbitmq/client/impl/Environment.java</include>
