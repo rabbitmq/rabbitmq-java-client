@@ -442,6 +442,7 @@ public abstract class AbstractMetricsCollector implements MetricsCollector {
      *
      * @deprecated Use {@link #markRejectedMessage(boolean)} instead
      */
+    @Deprecated
     protected abstract void markRejectedMessage();
 
     /**
