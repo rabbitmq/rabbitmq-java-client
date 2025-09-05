@@ -26,7 +26,7 @@ jobs:
           repository: rabbitmq/tls-gen
           path: './tls-gen'
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.x'
       - name: Set up JDK
