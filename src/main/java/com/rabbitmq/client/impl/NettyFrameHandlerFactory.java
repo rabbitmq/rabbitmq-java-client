@@ -502,6 +502,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       if (needToDispatchIoError()) {
         AMQConnection c = this.connection;
         if (c.isOpen()) {
+          LOGGER.debug("Dispatching shutdown when channel became inactive");
           // it is likely to be an IO exception
           this.dispatchShutdownToConnection(() -> c.handleIoError(null));
         } else {
