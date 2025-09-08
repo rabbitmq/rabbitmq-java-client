@@ -143,16 +143,19 @@ public class AmqpClientTestExtension
               .getRoot()
               .getStore(ExtensionContext.Namespace.GLOBAL)
               .getOrComputeIfAbsent(ExecutorServiceCloseableResourceWrapper.class);
-      wrapper.executorService.submit(
-          () -> {
-            try {
-              eventLoopGroup.shutdownGracefully(0, 0, SECONDS).get(10, SECONDS);
-            } catch (InterruptedException e) {
-              Thread.currentThread().interrupt();
-            } catch (Exception e) {
-              LOGGER.warn("Error while asynchronously closing Netty event loop group", e);
-            }
-          });
+
+      wrapper
+          .executorService
+          .submit(
+              () -> {
+                try {
+                  eventLoopGroup.shutdownGracefully(0, 0, SECONDS).get(10, SECONDS);
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+                } catch (Exception e) {
+                  LOGGER.warn("Error while asynchronously closing Netty event loop group", e);
+                }
+              });
     }
   }
 

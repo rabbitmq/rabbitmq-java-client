@@ -125,7 +125,7 @@ public class BrokerTestCase {
     public void openConnection()
             throws IOException, TimeoutException {
         if (connection == null) {
-            connection = connectionFactory.newConnection(UUID.randomUUID().toString());
+            connection = connectionFactory.newConnection(generateConnectionName());
         }
     }
 
@@ -324,6 +324,11 @@ public class BrokerTestCase {
 
     protected String generateExchangeName() {
         return name("exchange", this.testInfo.getTestClass().get(),
+            this.testInfo.getTestMethod().get().getName());
+    }
+
+    protected String generateConnectionName() {
+        return name("conn", this.testInfo.getTestClass().get(),
             this.testInfo.getTestMethod().get().getName());
     }
 
