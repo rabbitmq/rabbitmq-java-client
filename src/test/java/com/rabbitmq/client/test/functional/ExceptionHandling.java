@@ -40,6 +40,7 @@ import com.rabbitmq.client.impl.ForgivingExceptionHandler;
 public class ExceptionHandling {
     private ConnectionFactory newConnectionFactory(ExceptionHandler eh) {
         ConnectionFactory cf = TestUtils.connectionFactory();
+        cf.setNetworkRecoveryInterval(2000);
         cf.setExceptionHandler(eh);
         return cf;
     }
@@ -74,21 +75,22 @@ public class ExceptionHandling {
             throws InterruptedException, TimeoutException, IOException {
         ConnectionFactory cf = newConnectionFactory(eh);
         assertEquals(cf.getExceptionHandler(), eh);
-        Connection conn = cf.newConnection();
-        assertEquals(conn.getExceptionHandler(), eh);
-        Channel ch = conn.createChannel();
-        String q = ch.queueDeclare().getQueue();
-        ch.basicConsume(q, new DefaultConsumer(ch) {
-            @Override
-            public void handleDelivery(String consumerTag, Envelope envelope,
-                                       AMQP.BasicProperties properties, byte[] body) throws IOException {
-                throw new RuntimeException("exception expected here, don't freak out");
-            }
-        });
-        ch.basicPublish("", q, null, "".getBytes());
-        wait(latch);
+        try (Connection conn = cf.newConnection()) {
+            assertEquals(conn.getExceptionHandler(), eh);
+            Channel ch = conn.createChannel();
+            String q = ch.queueDeclare().getQueue();
+            ch.basicConsume(q, new DefaultConsumer(ch) {
+                @Override
+                public void handleDelivery(String consumerTag, Envelope envelope,
+                                           AMQP.BasicProperties properties, byte[] body) throws IOException {
+                    throw new RuntimeException("exception expected here, don't freak out");
+                }
+            });
+            ch.basicPublish("", q, null, "".getBytes());
+            wait(latch);
 
-        assertEquals(!expectChannelClose, ch.isOpen());
+            assertEquals(!expectChannelClose, ch.isOpen());
+        }
     }
 
     @Test public void nullExceptionHandler() {

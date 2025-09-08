@@ -200,6 +200,14 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       } else {
         this.eventLoopGroup = null;
       }
+
+      if (b.config().group() == null) {
+        throw new IllegalStateException("The event loop group is not set");
+      } else if (b.config().group().isShuttingDown()) {
+        LOGGER.warn("The Netty loop group was shut down, it is not possible to connect or recover");
+        throw new IllegalStateException("The event loop group was shut down");
+      }
+
       if (b.config().channelFactory() == null) {
         b.channel(NioSocketChannel.class);
       }
@@ -317,6 +325,10 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     @Override
     public void initialize(AMQConnection connection) {
+      LOGGER.debug(
+          "Setting connection {} to AMQP handler {}",
+          connection.getClientProvidedName(),
+          this.handler.id);
       this.handler.connection = connection;
     }
 

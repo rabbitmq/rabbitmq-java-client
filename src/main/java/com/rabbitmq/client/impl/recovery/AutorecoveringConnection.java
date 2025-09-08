@@ -592,16 +592,16 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
         }
         LOGGER.debug("Connection {} has recovered", newConn);
         this.addAutomaticRecoveryListener(newConn);
-	    this.recoverShutdownListeners(newConn);
-	    this.recoverBlockedListeners(newConn);
-	    this.recoverChannels(newConn);
-	    // don't assign new delegate connection until channel recovery is complete
-	    this.delegate = newConn;
-	    if (this.params.isTopologyRecoveryEnabled()) {
-	        notifyTopologyRecoveryListenersStarted();
-	        recoverTopology(params.getTopologyRecoveryExecutor());
-	    }
-		this.notifyRecoveryListenersComplete();
+        this.recoverShutdownListeners(newConn);
+        this.recoverBlockedListeners(newConn);
+        this.recoverChannels(newConn);
+        // don't assign new delegate connection until channel recovery is complete
+        this.delegate = newConn;
+        if (this.params.isTopologyRecoveryEnabled()) {
+            notifyTopologyRecoveryListenersStarted();
+            recoverTopology(params.getTopologyRecoveryExecutor());
+        }
+        this.notifyRecoveryListenersComplete();
     }
 
     private void recoverShutdownListeners(final RecoveryAwareAMQConnection newConn) {
@@ -625,25 +625,27 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
                 attempts++;
                 // No Sonar: no need to close this resource because we're the one that creates it
                 // and hands it over to the user
-				RecoveryAwareAMQConnection newConn = this.cf.newConnection(); //NOSONAR
-				synchronized(recoveryLock) {
-					if (!manuallyClosed) {
-						// This is the standard case.				
-						return newConn;
-					}
-				}
-				// This is the once in a blue moon case.  
-				// Application code just called close as the connection
-				// was being re-established.  So we attempt to close the newly created connection.
-				newConn.abort();
-				return null;
+                RecoveryAwareAMQConnection newConn = this.cf.newConnection(); //NOSONAR
+                synchronized(recoveryLock) {
+                    if (!manuallyClosed) {
+                        // This is the standard case.
+                        return newConn;
+                    }
+                }
+                // This is the once in a blue moon case.
+                // Application code just called close as the connection
+                // was being re-established.  So we attempt to close the newly created connection.
+                newConn.abort();
+                return null;
+            } catch (IllegalStateException e) {
+                this.getExceptionHandler().handleConnectionRecoveryException(this, e);
+                return null;
             } catch (Exception e) {
                 Thread.sleep(this.params.getRecoveryDelayHandler().getDelay(attempts));
                 this.getExceptionHandler().handleConnectionRecoveryException(this, e);
             }
         }
-		
-		return null;
+        return null;
     }
 
     private void recoverChannels(final RecoveryAwareAMQConnection newConn) {

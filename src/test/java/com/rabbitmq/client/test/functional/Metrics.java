@@ -82,7 +82,7 @@ public class Metrics extends BrokerTestCase {
         Connection connection1 = null;
         Connection connection2 = null;
         try {
-            connection1 = connectionFactory.newConnection();
+            connection1 = connectionFactory.newConnection(generateConnectionName());
             assertThat(metrics.getConnections().getCount()).isEqualTo(1L);
 
             connection1.createChannel();
@@ -102,7 +102,7 @@ public class Metrics extends BrokerTestCase {
             channel.basicGet(QUEUE, true);
             assertThat(metrics.getConsumedMessages().getCount()).isEqualTo(2L);
 
-            connection2 = connectionFactory.newConnection();
+            connection2 = connectionFactory.newConnection(generateConnectionName());
             assertThat(metrics.getConnections().getCount()).isEqualTo(2L);
 
             connection2.createChannel();
@@ -142,7 +142,7 @@ public class Metrics extends BrokerTestCase {
         connectionFactory.setMetricsCollector(metrics);
         Connection connection = null;
         try {
-            connection = connectionFactory.newConnection();
+            connection = connectionFactory.newConnection(generateConnectionName());
             Channel channel = connection.createChannel();
             channel.confirmSelect();
             assertThat(metrics.getPublishUnroutedMessages().getCount()).isEqualTo(0L);
@@ -168,7 +168,7 @@ public class Metrics extends BrokerTestCase {
         connectionFactory.setMetricsCollector(metrics);
         Connection connection = null;
         try {
-            connection = connectionFactory.newConnection();
+            connection = connectionFactory.newConnection(generateConnectionName());
             Channel channel = connection.createChannel();
             channel.confirmSelect();
             assertThat(metrics.getPublishAcknowledgedMessages().getCount()).isEqualTo(0L);
@@ -191,7 +191,7 @@ public class Metrics extends BrokerTestCase {
 
         Connection connection = null;
         try {
-            connection = connectionFactory.newConnection();
+            connection = connectionFactory.newConnection(generateConnectionName());
             Channel channel1 = connection.createChannel();
             Channel channel2 = connection.createChannel();
 
@@ -259,7 +259,7 @@ public class Metrics extends BrokerTestCase {
 
         Connection connection = null;
         try {
-            connection = connectionFactory.newConnection();
+            connection = connectionFactory.newConnection(generateConnectionName());
             Channel channel = connection.createChannel();
 
             sendMessage(channel);
@@ -299,7 +299,7 @@ public class Metrics extends BrokerTestCase {
         try {
             Channel [] channels = new Channel[nbChannels];
             for(int i = 0; i < nbConnections; i++) {
-                connections[i] = connectionFactory.newConnection();
+                connections[i] = connectionFactory.newConnection(generateConnectionName());
                 for(int j = 0; j < nbChannelsPerConnection; j++) {
                     Channel channel = connections[i].createChannel();
                     channel.basicQos(1);
@@ -342,7 +342,7 @@ public class Metrics extends BrokerTestCase {
             executorService.shutdownNow();
 
             executorService = Executors.newFixedThreadPool(nbTasks);
-            tasks = new ArrayList<Callable<Void>>();
+            tasks = new ArrayList<>();
             for(int i = 0; i < nbTasks; i++) {
                 Channel channelForConsuming = channels[i];
                 tasks.add(random.nextBoolean() ?
@@ -371,7 +371,7 @@ public class Metrics extends BrokerTestCase {
             executorService.shutdownNow();
 
             executorService = Executors.newFixedThreadPool(nbTasks);
-            tasks = new ArrayList<Callable<Void>>();
+            tasks = new ArrayList<>();
             for(int i = 0; i < nbTasks; i++) {
                 Channel channelForConsuming = channels[i];
                 tasks.add(random.nextBoolean() ?
@@ -400,7 +400,7 @@ public class Metrics extends BrokerTestCase {
 
         Connection connection = null;
         try {
-            connection = connectionFactory.newConnection();
+            connection = connectionFactory.newConnection(generateConnectionName());
             Channel channel = connection.createChannel();
 
             assertThat(metrics.getConnections().getCount()).isEqualTo(1L);
@@ -424,7 +424,7 @@ public class Metrics extends BrokerTestCase {
 
         Connection connection = null;
         try {
-            connection = connectionFactory.newConnection(UUID.randomUUID().toString());
+            connection = connectionFactory.newConnection(generateConnectionName());
 
             Collection<?> shutdownHooks = getShutdownHooks(connection);
             assertThat(shutdownHooks.size()).isEqualTo(0);
@@ -454,7 +454,7 @@ public class Metrics extends BrokerTestCase {
 
         Connection connection = null;
         try {
-            connection = connectionFactory.newConnection(UUID.randomUUID().toString());
+            connection = connectionFactory.newConnection(generateConnectionName());
 
             Channel channel1 = connection.createChannel();
             AtomicInteger ackedMessages = new AtomicInteger(0);

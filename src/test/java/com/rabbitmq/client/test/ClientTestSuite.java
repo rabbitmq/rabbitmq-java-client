@@ -86,6 +86,7 @@ import org.junit.platform.suite.api.Suite;
     ValueWriterTest.class,
     BlockedConnectionTest.class,
     NettyTest.class,
+    IoDeadlockOnConnectionClosing.class,
     ProtocolVersionMismatch.class
 })
 public class ClientTestSuite {

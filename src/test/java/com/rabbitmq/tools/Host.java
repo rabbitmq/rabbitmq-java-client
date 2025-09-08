@@ -40,7 +40,7 @@ public class Host {
     private static final Logger LOGGER = LoggerFactory.getLogger(Host.class);
 
     private static final String DOCKER_PREFIX = "DOCKER:";
-    private static final Pattern CONNECTION_NAME_PATTERN = Pattern.compile("\"connection_name\",\"(?<name>[a-zA-Z0-9\\-]+)?\"");
+    private static final Pattern CONNECTION_NAME_PATTERN = Pattern.compile("\"connection_name\",\"(?<name>[a-zA-Z0-9\\-_]+)?\"");
 
     public static String hostname() {
       try {

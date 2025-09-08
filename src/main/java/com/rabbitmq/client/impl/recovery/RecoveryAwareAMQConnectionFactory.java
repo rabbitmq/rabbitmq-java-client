@@ -71,10 +71,8 @@ public class RecoveryAwareAMQConnectionFactory {
                 conn.start();
                 metricsCollector.newConnection(conn);
                 return conn;
-            } catch (IOException e) {
+            } catch (IOException | TimeoutException e) {
                 lastException = e;
-            } catch (TimeoutException te) {
-                lastException = te;
             }
         }
 

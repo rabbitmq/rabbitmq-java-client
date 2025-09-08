@@ -57,7 +57,7 @@ public class ConnectionRecovery extends BrokerTestCase {
 
     @Test public void namedConnectionRecovery()
             throws IOException, InterruptedException, TimeoutException  {
-        String connectionName = "custom-name";
+        String connectionName = generateConnectionName();
         RecoverableConnection c = newRecoveringConnection(connectionName);
         try {
             assertThat(c.isOpen()).isTrue();
@@ -151,7 +151,7 @@ public class ConnectionRecovery extends BrokerTestCase {
                 return password;
             }
         });
-        RecoverableConnection c = (RecoverableConnection) cf.newConnection(UUID.randomUUID().toString());
+        RecoverableConnection c = (RecoverableConnection) cf.newConnection(generateConnectionName());
         try {
             assertThat(c.isOpen()).isTrue();
             assertThat(usernameRequested.get()).isEqualTo(1);
@@ -787,13 +787,14 @@ public class ConnectionRecovery extends BrokerTestCase {
     @Test public void recoveryWithExponentialBackoffDelayHandler() throws Exception {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         connectionFactory.setRecoveryDelayHandler(new RecoveryDelayHandler.ExponentialBackoffDelayHandler());
-        Connection testConnection = connectionFactory.newConnection(UUID.randomUUID().toString());
+        String connName = generateConnectionName();
+        Connection testConnection = connectionFactory.newConnection(connName);
         try {
             assertThat(testConnection.isOpen()).isTrue();
             TestUtils.closeAndWaitForRecovery((RecoverableConnection) testConnection);
             assertThat(testConnection.isOpen()).isTrue();
         } finally {
-            connection.close();
+            testConnection.close();
         }
     }
     
@@ -807,7 +808,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         connectionFactory.setTopologyRecoveryExecutor(executor);
         assertThat(connectionFactory.getTopologyRecoveryExecutor()).isEqualTo(executor);
         RecoverableConnection testConnection = (RecoverableConnection) connectionFactory.newConnection(
-            UUID.randomUUID().toString()
+            generateConnectionName()
         );
         try {
             final List<Channel> channels = new ArrayList<Channel>();
@@ -970,26 +971,26 @@ public class ConnectionRecovery extends BrokerTestCase {
         return buildConnectionFactoryWithRecoveryEnabled(false);
     }
 
-    private static RecoverableConnection newRecoveringConnection(boolean disableTopologyRecovery)
+    private RecoverableConnection newRecoveringConnection(boolean disableTopologyRecovery)
             throws IOException, TimeoutException {
         ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
-        return (AutorecoveringConnection) cf.newConnection(UUID.randomUUID().toString());
+        return (AutorecoveringConnection) cf.newConnection(generateConnectionName());
     }
 
-    private static RecoverableConnection newRecoveringConnection(Address[] addresses)
+    private RecoverableConnection newRecoveringConnection(Address[] addresses)
             throws IOException, TimeoutException {
         ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(false);
         // specifically use the Address[] overload
-        return (AutorecoveringConnection) cf.newConnection(addresses, UUID.randomUUID().toString());
+        return (AutorecoveringConnection) cf.newConnection(addresses, generateConnectionName());
     }
 
-    private static RecoverableConnection newRecoveringConnection(boolean disableTopologyRecovery, List<Address> addresses)
+    private RecoverableConnection newRecoveringConnection(boolean disableTopologyRecovery, List<Address> addresses)
             throws IOException, TimeoutException {
         ConnectionFactory cf = buildConnectionFactoryWithRecoveryEnabled(disableTopologyRecovery);
-        return (AutorecoveringConnection) cf.newConnection(addresses, UUID.randomUUID().toString());
+        return (AutorecoveringConnection) cf.newConnection(addresses, generateConnectionName());
     }
 
-    private static RecoverableConnection newRecoveringConnection(List<Address> addresses)
+    private RecoverableConnection newRecoveringConnection(List<Address> addresses)
             throws IOException, TimeoutException {
         return newRecoveringConnection(false, addresses);
     }
