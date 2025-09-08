@@ -1063,6 +1063,10 @@ public class ConnectionFactory implements Cloneable {
   protected synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
     if (netty) {
       if (this.frameHandlerFactory == null) {
+        Predicate<ShutdownSignalException> recoveryCondition =
+            this.connectionRecoveryTriggeringCondition == null
+                ? AutorecoveringConnection.DEFAULT_CONNECTION_RECOVERY_TRIGGERING_CONDITION
+                : this.connectionRecoveryTriggeringCondition;
         this.frameHandlerFactory =
             new NettyFrameHandlerFactory(
                 this.nettyConf.eventLoopGroup,
@@ -1072,7 +1076,9 @@ public class ConnectionFactory implements Cloneable {
                 this.nettyConf.enqueuingTimeout,
                 connectionTimeout,
                 socketConf,
-                maxInboundMessageBodySize);
+                maxInboundMessageBodySize,
+                this.automaticRecovery,
+                recoveryCondition);
       }
       return this.frameHandlerFactory;
     } else {

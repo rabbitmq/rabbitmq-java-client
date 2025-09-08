@@ -23,6 +23,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MalformedFrameException;
+import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.SocketConfigurator;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -51,16 +52,16 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.time.Duration;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import javax.net.ssl.SSLHandshakeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
   private final Consumer<Channel> channelCustomizer;
   private final Consumer<Bootstrap> bootstrapCustomizer;
   private final Duration enqueuingTimeout;
+  private final Predicate<ShutdownSignalException> willRecover;
 
   public NettyFrameHandlerFactory(
       EventLoopGroup eventLoopGroup,
@@ -82,7 +84,9 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       Duration enqueuingTimeout,
       int connectionTimeout,
       SocketConfigurator configurator,
-      int maxInboundMessageBodySize) {
+      int maxInboundMessageBodySize,
+      boolean automaticRecovery,
+      Predicate<ShutdownSignalException> recoveryCondition) {
     super(connectionTimeout, configurator, sslContextFactory != null, maxInboundMessageBodySize);
     this.eventLoopGroup = eventLoopGroup;
     this.sslContextFactory = sslContextFactory == null ? connName -> null : sslContextFactory;
@@ -90,6 +94,20 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     this.bootstrapCustomizer =
         bootstrapCustomizer == null ? Utils.noOpConsumer() : bootstrapCustomizer;
     this.enqueuingTimeout = enqueuingTimeout;
+    this.willRecover =
+        sse -> {
+          if (!automaticRecovery) {
+            return false;
+          } else {
+            try {
+              return recoveryCondition.test(sse);
+            } catch (Exception e) {
+              // we assume it will recover, so we take the safe path to dispatch the closing
+              // it avoids the risk of deadlock
+              return true;
+            }
+          }
+        };
   }
 
   private static void closeNettyState(Channel channel, EventLoopGroup eventLoopGroup) {
@@ -133,6 +151,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         sslContext,
         this.eventLoopGroup,
         this.enqueuingTimeout,
+        this.willRecover,
         this.channelCustomizer,
         this.bootstrapCustomizer);
   }
@@ -163,6 +182,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         SslContext sslContext,
         EventLoopGroup elg,
         Duration enqueuingTimeout,
+        Predicate<ShutdownSignalException> willRecover,
         Consumer<Channel> channelCustomizer,
         Consumer<Bootstrap> bootstrapCustomizer)
         throws IOException {
@@ -180,6 +200,14 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       } else {
         this.eventLoopGroup = null;
       }
+
+      if (b.config().group() == null) {
+        throw new IllegalStateException("The event loop group is not set");
+      } else if (b.config().group().isShuttingDown()) {
+        LOGGER.warn("The Netty loop group was shut down, it is not possible to connect or recover");
+        throw new IllegalStateException("The event loop group was shut down");
+      }
+
       if (b.config().channelFactory() == null) {
         b.channel(NioSocketChannel.class);
       }
@@ -195,7 +223,8 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       int lengthFieldOffset = 3;
       int lengthFieldLength = 4;
       int lengthAdjustement = 1;
-      AmqpHandler amqpHandler = new AmqpHandler(maxInboundMessageBodySize, this::close);
+      AmqpHandler amqpHandler =
+          new AmqpHandler(maxInboundMessageBodySize, this::close, willRecover);
       int port = ConnectionFactory.portOrDefault(addr.getPort(), sslContext != null);
       b.handler(
           new ChannelInitializer<SocketChannel>() {
@@ -296,6 +325,10 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     @Override
     public void initialize(AMQConnection connection) {
+      LOGGER.debug(
+          "Setting connection {} to AMQP handler {}",
+          connection.getClientProvidedName(),
+          this.handler.id);
       this.handler.connection = connection;
     }
 
@@ -333,7 +366,6 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
               if (canWriteNow) {
                 this.doWriteFrame(frame);
               } else {
-                this.handler.logEvents();
                 throw new IOException("Frame enqueuing failed");
               }
             } catch (InterruptedException e) {
@@ -404,14 +436,30 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     private final int maxPayloadSize;
     private final Runnable closeSequence;
+    private final Predicate<ShutdownSignalException> willRecover;
     private volatile AMQConnection connection;
+    private volatile Channel ch;
     private final AtomicBoolean writable = new AtomicBoolean(true);
     private final AtomicReference<CountDownLatch> writableLatch =
         new AtomicReference<>(new CountDownLatch(1));
+    private final AtomicBoolean shutdownDispatched = new AtomicBoolean(false);
+    private static final AtomicInteger SEQUENCE = new AtomicInteger(0);
+    private final String id;
 
-    private AmqpHandler(int maxPayloadSize, Runnable closeSequence) {
+    private AmqpHandler(
+        int maxPayloadSize,
+        Runnable closeSequence,
+        Predicate<ShutdownSignalException> willRecover) {
       this.maxPayloadSize = maxPayloadSize;
       this.closeSequence = closeSequence;
+      this.willRecover = willRecover;
+      this.id = "amqp-handler-" + SEQUENCE.getAndIncrement();
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+      this.ch = ctx.channel();
+      super.channelActive(ctx);
     }
 
     @Override
@@ -444,49 +492,16 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         if (noProblem
             && (!this.connection.isRunning() || this.connection.hasBrokerInitiatedShutdown())) {
           // looks like the frame was Close-Ok or Close
-          ctx.executor().submit(() -> this.connection.doFinalShutdown());
+          this.dispatchShutdownToConnection(() -> this.connection.doFinalShutdown());
         }
       } finally {
         m.release();
       }
     }
 
-    private static class Event {
-      private final long time;
-      private final String label;
-
-      public Event(long time, String label) {
-        this.time = time;
-        this.label = label;
-      }
-
-      @Override
-      public String toString() {
-        return this.label + " " + this.time;
-      }
-    }
-
-    private static final int MAX_EVENTS = 100;
-    private final Queue<Event> events = new ConcurrentLinkedQueue<>();
-
-    private void logEvents() {
-      if (this.events.size() > 0) {
-        long start = this.events.peek().time;
-        LOGGER.info("channel writability history:");
-        events.forEach(e -> LOGGER.info("{}: {}", (e.time - start) / 1_000_000, e.label));
-      }
-    }
-
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
       boolean canWrite = ctx.channel().isWritable();
-      Event event = new Event(System.nanoTime(), Boolean.toString(canWrite));
-      if (this.events.size() >= MAX_EVENTS) {
-        this.events.poll();
-        this.events.offer(event);
-      }
-      this.events.add(event);
-
       if (this.writable.compareAndSet(!canWrite, canWrite)) {
         if (canWrite) {
           CountDownLatch latch = writableLatch.getAndSet(new CountDownLatch(1));
@@ -502,12 +517,13 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     public void channelInactive(ChannelHandlerContext ctx) {
       if (needToDispatchIoError()) {
         AMQConnection c = this.connection;
+        LOGGER.debug("Dispatching shutdown when channel became inactive ({})", this.id);
         if (c.isOpen()) {
           // it is likely to be an IO exception
-          c.handleIoError(null);
+          this.dispatchShutdownToConnection(() -> c.handleIoError(null));
         } else {
           // just in case, the call is idempotent anyway
-          c.doFinalShutdown();
+          this.dispatchShutdownToConnection(c::doFinalShutdown);
         }
       }
     }
@@ -533,7 +549,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
               this.connection.getAddress().getHostName(),
               this.connection.getPort());
           if (needToDispatchIoError()) {
-            this.connection.handleHeartbeatFailure();
+            this.dispatchShutdownToConnection(() -> this.connection.handleHeartbeatFailure());
           }
         } else if (e.state() == IdleState.WRITER_IDLE) {
           this.connection.writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
@@ -545,7 +561,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     private void handleIoError(Throwable cause) {
       if (needToDispatchIoError()) {
-        this.connection.handleIoError(cause);
+        this.dispatchShutdownToConnection(() -> this.connection.handleIoError(cause));
       } else {
         this.closeSequence.run();
       }
@@ -562,6 +578,32 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     private CountDownLatch writableLatch() {
       return this.writableLatch.get();
+    }
+
+    protected void dispatchShutdownToConnection(Runnable connectionShutdownRunnable) {
+      if (this.shutdownDispatched.compareAndSet(false, true)) {
+        String name = "rabbitmq-connection-shutdown-" + this.id;
+        AMQConnection c = this.connection;
+        if (c == null || ch == null) {
+          // not enough information, we dispatch in separate thread
+          Environment.newThread(connectionShutdownRunnable, name).start();
+        } else {
+          if (ch.eventLoop().inEventLoop()) {
+            if (this.willRecover.test(c.getCloseReason()) || ch.eventLoop().isShuttingDown()) {
+              // the connection will recover, we don't want this to happen in the event loop,
+              // it could cause a deadlock, so using a separate thread
+              //              name = name + "-" + c;
+              Environment.newThread(connectionShutdownRunnable, name).start();
+            } else {
+              // no recovery, it is safe to dispatch in the event loop
+              ch.eventLoop().submit(connectionShutdownRunnable);
+            }
+          } else {
+            // not in the event loop, we can run it in the same thread
+            connectionShutdownRunnable.run();
+          }
+        }
+      }
     }
   }
 
