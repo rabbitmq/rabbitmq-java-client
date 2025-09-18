@@ -68,7 +68,7 @@
     <micrometer-tracing-test.version>1.5.4</micrometer-tracing-test.version>
     <micrometer-docs-generator.version>1.0.4</micrometer-docs-generator.version>
     <jetty.version>9.4.58.v20250814</jetty.version>
-    <bouncycastle.version>1.81</bouncycastle.version>
+    <bouncycastle.version>1.82</bouncycastle.version>
     <netcrusher.version>0.10</netcrusher.version>
     <gson.version>2.13.2</gson.version>
 
