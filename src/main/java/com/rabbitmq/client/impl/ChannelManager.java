@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Manages a set of channels, indexed by channel number (<code><b>1.._channelMax</b></code>).
@@ -38,15 +39,14 @@ public class ChannelManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
 
+    private final AtomicBoolean closed = new AtomicBoolean(false);
     /** Monitor for <code>_channelMap</code> and <code>channelNumberAllocator</code> */
     private final Object monitor = new Object();
     /** Mapping from <code><b>1.._channelMax</b></code> to {@link ChannelN} instance */
-    private final Map<Integer, ChannelN> _channelMap = new HashMap<Integer, ChannelN>();
+    private final Map<Integer, ChannelN> _channelMap = new HashMap<>();
     private final IntAllocator channelNumberAllocator;
 
     private final ConsumerWorkService workService;
-
-    private final Set<CountDownLatch> shutdownSet = new HashSet<CountDownLatch>();
 
     /** Maximum channel number available on this connection. */
     private final int _channelMax;
@@ -109,61 +109,54 @@ public class ChannelManager {
      * @param signal reason for shutdown
      */
     public void handleSignal(final ShutdownSignalException signal) {
-        Set<ChannelN> channels;
-        synchronized(this.monitor) {
-            channels = new HashSet<ChannelN>(_channelMap.values());
-        }
-
-        for (final ChannelN channel : channels) {
-            releaseChannelNumber(channel);
-            // async shutdown if possible
-            // see https://github.com/rabbitmq/rabbitmq-java-client/issues/194
-            Runnable channelShutdownRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    channel.processShutdownSignal(signal, true, true);
-                }
-            };
-            if(this.shutdownExecutor == null) {
-                channelShutdownRunnable.run();
-            } else {
-                Future<?> channelShutdownTask = this.shutdownExecutor.submit(channelShutdownRunnable);
-                try {
-                    channelShutdownTask.get(channelShutdownTimeout, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    LOGGER.warn("Couldn't properly close channel {} on shutdown after waiting for {} ms", channel.getChannelNumber(), channelShutdownTimeout);
-                    channelShutdownTask.cancel(true);
-                }
+        if (this.closed.compareAndSet(false, true)) {
+            Set<ChannelN> channels;
+            synchronized(this.monitor) {
+                channels = new HashSet<>(_channelMap.values());
             }
-            shutdownSet.add(channel.getShutdownLatch());
-            channel.notifyListeners();
-        }
-        scheduleShutdownProcessing();
-    }
-
-    private void scheduleShutdownProcessing() {
-        final Set<CountDownLatch> sdSet = new HashSet<CountDownLatch>(shutdownSet);
-        final ConsumerWorkService ssWorkService = workService;
-        Runnable target = new Runnable() {
-            @Override
-            public void run() {
-                for (CountDownLatch latch : sdSet) {
+            Set<CountDownLatch> shutdownSet = new HashSet<>();
+            for (final ChannelN channel : channels) {
+                releaseChannelNumber(channel);
+                // async shutdown if possible
+                // see https://github.com/rabbitmq/rabbitmq-java-client/issues/194
+                Runnable channelShutdownRunnable = () -> channel.processShutdownSignal(signal, true, true);
+                if(this.shutdownExecutor == null) {
+                    channelShutdownRunnable.run();
+                } else {
+                    Future<?> channelShutdownTask = this.shutdownExecutor.submit(channelShutdownRunnable);
                     try {
-                        int shutdownTimeout = ssWorkService.getShutdownTimeout();
-                        if (shutdownTimeout == 0) {
-                            latch.await();
-                        } else {
-                            boolean completed = latch.await(shutdownTimeout, TimeUnit.MILLISECONDS);
-                            if (!completed) {
-                                LOGGER.warn("Consumer dispatcher for channel didn't shutdown after waiting for {} ms", shutdownTimeout);
-                            }
-                        }
-                    } catch (Throwable e) {
-                         /*ignored*/
+                        channelShutdownTask.get(channelShutdownTimeout, TimeUnit.MILLISECONDS);
+                    } catch (Exception e) {
+                        LOGGER.warn("Couldn't properly close channel {} on shutdown after waiting for {} ms", channel.getChannelNumber(), channelShutdownTimeout);
+                        channelShutdownTask.cancel(true);
                     }
                 }
-                ssWorkService.shutdown();
+                shutdownSet.add(channel.getShutdownLatch());
+                channel.notifyListeners();
             }
+            scheduleShutdownProcessing(shutdownSet);
+        }
+    }
+
+    private void scheduleShutdownProcessing(Set<CountDownLatch> shutdownSet) {
+        final ConsumerWorkService ssWorkService = workService;
+        Runnable target = () -> {
+            for (CountDownLatch latch : shutdownSet) {
+                try {
+                    int shutdownTimeout = ssWorkService.getShutdownTimeout();
+                    if (shutdownTimeout == 0) {
+                        latch.await();
+                    } else {
+                        boolean completed = latch.await(shutdownTimeout, TimeUnit.MILLISECONDS);
+                        if (!completed) {
+                            LOGGER.warn("Consumer dispatcher for channel didn't shutdown after waiting for {} ms", shutdownTimeout);
+                        }
+                    }
+                } catch (Throwable e) {
+                     /*ignored*/
+                }
+            }
+            ssWorkService.shutdown();
         };
         if(this.shutdownExecutor != null) {
             shutdownExecutor.execute(target);

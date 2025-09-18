@@ -1023,7 +1023,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
     private void finishShutdown(ShutdownSignalException sse) {
         ChannelManager cm = _channelManager;
-        if (cm != null) cm.handleSignal(sse);
+        if (cm != null) {
+            cm.handleSignal(sse);
+        }
     }
 
     /** Public API - {@inheritDoc} */
