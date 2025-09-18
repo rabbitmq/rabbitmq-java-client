@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Manages a set of channels, indexed by channel number (<code><b>1.._channelMax</b></code>).
@@ -40,8 +42,8 @@ public class ChannelManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelManager.class);
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    /** Monitor for <code>_channelMap</code> and <code>channelNumberAllocator</code> */
-    private final Object monitor = new Object();
+    /** Lock for <code>_channelMap</code> and <code>channelNumberAllocator</code> */
+    private final Lock lock = new ReentrantLock();
     /** Mapping from <code><b>1.._channelMax</b></code> to {@link ChannelN} instance */
     private final Map<Integer, ChannelN> _channelMap = new HashMap<>();
     private final IntAllocator channelNumberAllocator;
@@ -97,10 +99,13 @@ public class ChannelManager {
      * @throws UnknownChannelException if there is no channel with number <code><b>channelNumber</b></code> on this connection
      */
     public ChannelN getChannel(int channelNumber) {
-        synchronized (this.monitor) {
+        lock.lock();
+        try {
             ChannelN ch = _channelMap.get(channelNumber);
             if(ch == null) throw new UnknownChannelException(channelNumber);
             return ch;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -111,8 +116,11 @@ public class ChannelManager {
     public void handleSignal(final ShutdownSignalException signal) {
         if (this.closed.compareAndSet(false, true)) {
             Set<ChannelN> channels;
-            synchronized(this.monitor) {
+            lock.lock();
+            try {
                 channels = new HashSet<>(_channelMap.values());
+            } finally {
+                lock.unlock();
             }
             Set<CountDownLatch> shutdownSet = new HashSet<>();
             for (final ChannelN channel : channels) {
@@ -171,13 +179,16 @@ public class ChannelManager {
 
     public ChannelN createChannel(AMQConnection connection) throws IOException {
         ChannelN ch;
-        synchronized (this.monitor) {
+        lock.lock();
+        try {
             int channelNumber = channelNumberAllocator.allocate();
             if (channelNumber == -1) {
                 return null;
             } else {
                 ch = addNewChannel(connection, channelNumber);
             }
+        } finally {
+            lock.unlock();
         }
         ch.open(); // now that it's been safely added
         return ch;
@@ -185,12 +196,15 @@ public class ChannelManager {
 
     public ChannelN createChannel(AMQConnection connection, int channelNumber) throws IOException {
         ChannelN ch;
-        synchronized (this.monitor) {
+        lock.lock();
+        try {
             if (channelNumberAllocator.reserve(channelNumber)) {
                 ch = addNewChannel(connection, channelNumber);
             } else {
                 return null;
             }
+        } finally {
+            lock.unlock();
         }
         ch.open(); // now that it's been safely added
         return ch;
@@ -233,7 +247,8 @@ public class ChannelManager {
         // a way as to cause disconnectChannel on the old channel to try to
         // remove the new one. Ideally we would fix this race at the source,
         // but it's much easier to just catch it here.
-        synchronized (this.monitor) {
+        lock.lock();
+        try {
             int channelNumber = channel.getChannelNumber();
             ChannelN existing = _channelMap.remove(channelNumber);
             // Nothing to do here. Move along.
@@ -246,11 +261,9 @@ public class ChannelManager {
                 return;
             }
             channelNumberAllocator.free(channelNumber);
+        } finally {
+            lock.unlock();
         }
-    }
-
-    public ExecutorService getShutdownExecutor() {
-        return shutdownExecutor;
     }
 
     public void setShutdownExecutor(ExecutorService shutdownExecutor) {
