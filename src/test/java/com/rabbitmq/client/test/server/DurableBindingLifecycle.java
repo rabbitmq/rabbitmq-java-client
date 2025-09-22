@@ -42,7 +42,7 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
     @Override
     protected void restart() throws IOException, TimeoutException {
         if (clusteredConnection != null) {
-            clusteredConnection.abort();
+            clusteredConnection.abort(10_000);
             clusteredConnection = null;
             clusteredChannel = null;
             alternateConnection = null;

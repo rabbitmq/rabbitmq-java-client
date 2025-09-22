@@ -95,7 +95,7 @@ public class ExchangeDeclare extends ExchangeEquivalenceBase {
         try {
             doTestExchangeDeclaredWithEnumerationEquivalent(c.createChannel());
         } finally {
-            c.abort();
+            c.abort(10_000);
         }
 
     }

@@ -68,7 +68,7 @@ public class ClusteredTestBase extends BrokerTestCase {
 
         if (clusteredConnection != null &&
             !clustered(connection, clusteredConnection)) {
-            clusteredConnection.close();
+            clusteredConnection.close(10_000);
             clusteredConnection = null;
 
             if (!nonClusteredWarningPrinted) {
@@ -116,7 +116,7 @@ public class ClusteredTestBase extends BrokerTestCase {
     @Override
     public void closeConnection() throws IOException {
         if (clusteredConnection != null) {
-            clusteredConnection.abort();
+            clusteredConnection.abort(10_000);
             clusteredConnection = null;
             alternateConnection = null;
         }

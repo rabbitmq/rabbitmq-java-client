@@ -61,7 +61,7 @@ public class QueueingConsumerTests extends BrokerTestCase{
       }.start();
     }
 
-    connection.close();
+    connection.close(10_000);
 
     // Far longer than this could reasonably take
     assertTrue(latch.await(5, TimeUnit.SECONDS));

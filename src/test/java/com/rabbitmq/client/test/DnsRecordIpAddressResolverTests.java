@@ -23,7 +23,7 @@ public class DnsRecordIpAddressResolverTests extends BrokerTestCase {
         try {
             connection.createChannel();
         } finally {
-            connection.abort();
+            connection.abort(10_000);
         }
     }
 
@@ -34,7 +34,7 @@ public class DnsRecordIpAddressResolverTests extends BrokerTestCase {
         try {
             connection.createChannel();
         } finally {
-            connection.abort();
+            connection.abort(10_000);
         }
     }
 

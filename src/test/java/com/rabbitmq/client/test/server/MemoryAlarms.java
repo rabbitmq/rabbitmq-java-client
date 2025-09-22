@@ -58,7 +58,7 @@ public class MemoryAlarms extends BrokerTestCase {
             channel2 = null;
         }
         if (connection2 != null) {
-            connection2.abort();
+            connection2.abort(10_000);
             connection2 = null;
         }
         super.tearDown(info);

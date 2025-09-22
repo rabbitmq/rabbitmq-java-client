@@ -46,7 +46,7 @@ public class ChannelNumberAllocationTests {
   }
 
   @AfterEach public void tearDown() throws Exception{
-    connection.close();
+    connection.close(10_000);
     connection = null;
   }
 

@@ -22,6 +22,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
@@ -33,6 +35,8 @@ import static com.rabbitmq.client.test.TestUtils.versionCompare;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BrokerTestCase {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BrokerTestCase.class);
 
     private String brokerVersion;
 
@@ -140,7 +144,11 @@ public class BrokerTestCase {
     public void closeConnection()
             throws IOException {
         if (connection != null) {
-            connection.abort();
+            try {
+                connection.abort(10_000);
+            } catch (Exception e) {
+                LOGGER.warn("Error while closing connection: {}", e.getMessage());
+            }
             connection = null;
         }
     }

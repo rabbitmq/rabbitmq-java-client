@@ -623,7 +623,7 @@ public class Metrics extends BrokerTestCase {
     private void safeClose(Connection connection) {
         if(connection != null) {
             try {
-                connection.abort();
+                connection.abort(10_000);
             } catch (Exception e) {
                 // OK
             }

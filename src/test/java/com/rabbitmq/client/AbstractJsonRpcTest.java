@@ -68,8 +68,8 @@ public abstract class AbstractJsonRpcTest {
         if (serverChannel != null) {
             serverChannel.queueDelete(queue);
         }
-        clientConnection.close();
-        serverConnection.close();
+        clientConnection.close(10_000);
+        serverConnection.close(10_000);
     }
 
     public interface RpcService {
