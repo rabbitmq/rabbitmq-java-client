@@ -93,7 +93,7 @@ public class CloseInMainLoop extends BrokerTestCase{
 
   @Test public void closeOKNormallyReceived() throws Exception{
     SpecialConnection connection = new SpecialConnection();
-    connection.close();
+    connection.close(10_000);
     assertTrue(connection.hadValidShutdown());
   }
 

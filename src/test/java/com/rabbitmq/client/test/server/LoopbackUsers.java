@@ -83,7 +83,7 @@ public class LoopbackUsers {
     }
 
     private void succeedConnect(String name, String addr) throws IOException, TimeoutException {
-        getFactory(name, addr).newConnection().close();
+        getFactory(name, addr).newConnection().close(10_000);
     }
 
     private void failConnect(String name, String addr) throws IOException, TimeoutException {

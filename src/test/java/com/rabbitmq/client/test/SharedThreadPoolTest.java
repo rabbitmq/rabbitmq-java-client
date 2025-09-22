@@ -76,7 +76,7 @@ public class SharedThreadPoolTest extends BrokerTestCase {
 
     void close(Connection connection) throws IOException {
         if (connection != null) {
-            connection.close();
+            connection.close(10_000);
         }
     }
 }

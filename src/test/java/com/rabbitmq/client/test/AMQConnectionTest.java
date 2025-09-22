@@ -167,30 +167,30 @@ public class AMQConnectionTest {
         String providedName = "event consumers connection";
         Connection connection = factory.newConnection(providedName);
         assertEquals(providedName, connection.getClientProvidedName());
-        connection.close();
+        connection.close(10_000);
 
         List<Address> addrs1 = Arrays.asList(new Address("127.0.0.1"), new Address("127.0.0.1", 5672));
         connection = factory.newConnection(addrs1, providedName);
         assertEquals(providedName, connection.getClientProvidedName());
-        connection.close();
+        connection.close(10_000);
 
         Address[] addrs2 = {new Address("127.0.0.1"), new Address("127.0.0.1", 5672)};
         connection = factory.newConnection(addrs2, providedName);
         assertEquals(providedName, connection.getClientProvidedName());
-        connection.close();
+        connection.close(10_000);
 
         ExecutorService xs = Executors.newSingleThreadExecutor();
         connection = factory.newConnection(xs, providedName);
         assertEquals(providedName, connection.getClientProvidedName());
-        connection.close();
+        connection.close(10_000);
 
         connection = factory.newConnection(xs, addrs1, providedName);
         assertEquals(providedName, connection.getClientProvidedName());
-        connection.close();
+        connection.close(10_000);
 
         connection = factory.newConnection(xs, addrs2, providedName);
         assertEquals(providedName, connection.getClientProvidedName());
-        connection.close();
+        connection.close(10_000);
     }
 
     /** Mock frame handler to facilitate testing. */
