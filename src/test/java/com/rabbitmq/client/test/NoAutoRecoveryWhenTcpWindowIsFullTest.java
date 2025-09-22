@@ -155,7 +155,7 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
 
     private void closeConnectionIfOpen(Connection connection) throws IOException {
         if (connection.isOpen()) {
-            connection.close();
+            connection.close(10_000);
         }
     }
 

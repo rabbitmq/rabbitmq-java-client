@@ -55,7 +55,7 @@ public class ChannelRpcTimeoutIntegrationTest {
             Channel channel = connection.createChannel();
             channel.queueDeclare();
         } finally {
-            connection.close();
+            connection.close(10_000);
         }
 
     }
@@ -78,7 +78,7 @@ public class ChannelRpcTimeoutIntegrationTest {
                 assertThat(e.getMethod()).isInstanceOf(AMQP.Queue.Declare.class);
             }
         } finally {
-            connection.close();
+            connection.close(10_000);
         }
     }
 

@@ -95,7 +95,7 @@ public class BlockedConnectionTest extends BrokerTestCase {
       if (blocked) {
         unblock();
       }
-      c.close();
+      c.close(10_000);
     }
   }
 }

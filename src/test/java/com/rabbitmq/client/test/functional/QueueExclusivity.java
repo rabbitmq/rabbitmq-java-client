@@ -49,7 +49,7 @@ public class QueueExclusivity extends BrokerTestCase {
 
     protected void releaseResources() throws IOException {
         if (altConnection != null && altConnection.isOpen()) {
-            altConnection.close();
+            altConnection.close(10_000);
         }
     }
 

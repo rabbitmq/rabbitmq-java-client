@@ -66,7 +66,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             assertThat(c.isOpen()).isTrue();
             assertThat(connectionName).isEqualTo(c.getClientProvidedName());
         } finally {
-            c.abort();
+            c.abort(10_000);
         }
     }
 
@@ -85,7 +85,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             TestUtils.closeAndWaitForRecovery(c);
             assertThat(c.isOpen()).isTrue();
         } finally {
-            c.abort();
+            c.abort(10_000);
         }
 
     }
@@ -101,7 +101,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             TestUtils.closeAndWaitForRecovery(c);
             assertThat(c.isOpen()).isTrue();
         } finally {
-            c.abort();
+            c.abort(10_000);
         }
     }
 
@@ -125,7 +125,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         } catch (java.io.IOException e) {
             // expected
         } finally {
-            c.abort();
+            c.abort(10_000);
         }
     }
     
@@ -163,7 +163,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             assertThat(usernameRequested.get()).isGreaterThanOrEqualTo(2);
             assertThat(passwordRequested.get()).isEqualTo(2);
         } finally {
-            c.abort();
+            c.abort(10_000);
         }
     }
 
@@ -204,7 +204,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertThat(events).element(1).isEqualTo("shutdown hook 2");
         recoveryCanBeginLatch.await(5, TimeUnit.SECONDS);
         assertThat(events).element(2).isEqualTo("recovery start hook 1");
-        connection.close();
+        connection.close(10_000);
         wait(latch);
     }
 
@@ -214,7 +214,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertThat(connection.isOpen()).isTrue();
         closeAndWaitForRecovery();
         assertThat(connection.isOpen()).isTrue();
-        connection.close();
+        connection.close(10_000);
         wait(latch);
     }
 
@@ -226,7 +226,7 @@ public class ConnectionRecovery extends BrokerTestCase {
         assertThat(connection.isOpen()).isTrue();
         closeAndWaitForRecovery();
         assertThat(connection.isOpen()).isTrue();
-        connection.close();
+        connection.close(10_000);
         wait(latch);
     }
 
@@ -749,7 +749,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             publishingChannel.basicPublish("", q, null, "msg".getBytes());
         }
         wait(latch);
-        publishingConnection.abort();
+        publishingConnection.abort(10_000);
     }
 
     @Test public void consumersAreRemovedFromConnectionWhenChannelIsClosed() throws Exception {
@@ -780,7 +780,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             channel2.close();
             assertThat(connectionConsumers).isEmpty();
         } finally {
-            connection.abort();
+            connection.abort(10_000);
         }
     }
 
@@ -794,7 +794,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             TestUtils.closeAndWaitForRecovery((RecoverableConnection) testConnection);
             assertThat(testConnection.isOpen()).isTrue();
         } finally {
-            testConnection.close();
+            testConnection.close(10_000);
         }
     }
     
@@ -862,7 +862,7 @@ public class ConnectionRecovery extends BrokerTestCase {
             for (String x : exchanges)
                 cleanupChannel.exchangeDelete(x);
         } finally {
-            testConnection.close();
+            testConnection.close(10_000);
         }
     }
 

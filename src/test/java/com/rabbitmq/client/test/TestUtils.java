@@ -151,7 +151,7 @@ public class TestUtils {
   public static void close(Connection connection) {
     if (connection != null) {
       try {
-        connection.close();
+        connection.close(10_000);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -160,7 +160,7 @@ public class TestUtils {
 
   public static void abort(Connection connection) {
     if (connection != null) {
-      connection.abort();
+      connection.abort(10_000);
     }
   }
 

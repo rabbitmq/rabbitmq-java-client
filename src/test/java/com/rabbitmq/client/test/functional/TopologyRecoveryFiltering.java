@@ -75,7 +75,7 @@ public class TopologyRecoveryFiltering extends BrokerTestCase {
     @Override
     protected void releaseResources() throws IOException {
         super.releaseResources();
-        c.close();
+        c.close(10_000);
         deleteExchanges(exchangesToDelete);
         deleteQueues(queuesToDelete);
     }

@@ -105,7 +105,7 @@ public class SaslMechanisms extends BrokerTestCase {
         ConnectionFactory factory = TestUtils.connectionFactory();
         factory.setSaslConfig(DefaultSaslConfig.ANONYMOUS);
         Connection connection = factory.newConnection();
-        connection.close();
+        connection.close(10_000);
     }
 
     public void connectionCloseAuthFailure(String username, String password) throws IOException, TimeoutException {
@@ -113,7 +113,7 @@ public class SaslMechanisms extends BrokerTestCase {
         try {
             Connection conn = connectionWithoutCapabilities(username, password);
             fail("Expected PossibleAuthenticationFailureException " + failDetail);
-            conn.abort();
+            conn.abort(10_000);
         } catch (PossibleAuthenticationFailureException paf) {
             if (paf instanceof AuthenticationFailureException) {
                 fail("Not expecting AuthenticationFailureException " + failDetail);
@@ -138,7 +138,7 @@ public class SaslMechanisms extends BrokerTestCase {
         ConnectionFactory factory = TestUtils.connectionFactory();
         factory.setSaslConfig(new Config(name, responses));
         Connection connection = factory.newConnection();
-        connection.close();
+        connection.close(10_000);
     }
 
     private void loginBad(String name, byte[][] responses) throws IOException, TimeoutException {
