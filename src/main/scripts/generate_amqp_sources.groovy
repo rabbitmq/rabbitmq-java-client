@@ -15,8 +15,9 @@ def md5(final file) {
 }
 
 def generate_source(final type, final filename) {
+  def pythonBin = System.getenv('PYTHON_BIN') ?: 'python'
   String[] command = [
-    'python',
+    pythonBin,
     properties['script'], type,
     properties['spec'],
     filename
