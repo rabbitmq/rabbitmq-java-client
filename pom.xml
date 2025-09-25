@@ -91,7 +91,7 @@
     <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
     <jshell-maven-plugin.version>1.4</jshell-maven-plugin.version>
     <spotless.version>3.0.0</spotless.version>
-    <google-java-format.version>1.19.2</google-java-format.version>
+    <google-java-format.version>1.28.0</google-java-format.version>
     <!--
     These groovy scripts are used later in this POM file to generate
     source files and resources for the library itself and for the
@@ -516,6 +516,15 @@
       <scope>test</scope>
     </dependency>
 
+
+    <!-- add explicitly to update automatically with dependabot -->
+    <dependency>
+      <groupId>com.google.googlejavaformat</groupId>
+      <artifactId>google-java-format</artifactId>
+      <version>${google-java-format.version}</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <dependencyManagement>
@@ -788,6 +797,7 @@
               <version>${google-java-format.version}</version>
               <style>GOOGLE</style>
             </googleJavaFormat>
+            <removeUnusedImports />
           </java>
           <!--          <ratchetFrom>origin/main</ratchetFrom>-->
           <licenseHeader> <!-- specify either content or file, but not both -->
