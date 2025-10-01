@@ -17,6 +17,8 @@ updates:
         versions: [ "[1.3,)" ]
       - dependency-name: "org.apache.felix:maven-bundle-plugin"
         versions: [ "[6.0,)" ]
+      - dependency-name: "org.junit:*"
+        versions: [ "[6.0,)" ]
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
@@ -31,6 +33,8 @@ updates:
       - dependency-name: "ch.qos.logback:logback-classic"
         versions: [ "[1.3,)" ]
       - dependency-name: "org.apache.felix:maven-bundle-plugin"
+        versions: [ "[6.0,)" ]
+      - dependency-name: "org.junit:*"
         versions: [ "[6.0,)" ]
   - package-ecosystem: "github-actions"
     directory: "/"
