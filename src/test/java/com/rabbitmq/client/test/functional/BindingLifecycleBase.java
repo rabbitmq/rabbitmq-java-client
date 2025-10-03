@@ -16,14 +16,18 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static com.rabbitmq.client.test.TestUtils.waitAtMost;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
 
@@ -63,40 +67,47 @@ public class BindingLifecycleBase extends ClusteredTestBase {
   }
 
   protected void doAutoDelete(boolean durable, int queues) throws IOException, TimeoutException {
-    String[] queueNames = null;
+    List<String> queueNames = new ArrayList<>();
     Binding binding = Binding.randomBinding();
     channel.exchangeDeclare(binding.x, "direct", durable, true, null);
     channel.queueDeclare(binding.q, durable, false, true, null);
     channel.queueBind(binding.q, binding.x, binding.k);
     if (queues > 1) {
       int j = queues - 1;
-      queueNames = new String[j];
       for (int i = 0; i < j; i++) {
-        queueNames[i] = randomString();
-        channel.queueDeclare(queueNames[i], durable, false, false, null);
-        channel.queueBind(queueNames[i], binding.x, binding.k);
-        channel.basicConsume(queueNames[i], true, new QueueingConsumer(channel));
+        queueNames.add(randomString());
+        channel.queueDeclare(queueNames.get(i), durable, false, false, null);
+        channel.queueBind(queueNames.get(i), binding.x, binding.k);
+        channel.basicConsume(queueNames.get(i), true, new QueueingConsumer(channel));
       }
     }
     subscribeSendUnsubscribe(binding);
     if (durable) {
       restart();
     }
-    if (queues > 1 && queueNames != null) {
-      for (String s : queueNames) {
-        channel.basicConsume(s, true, new QueueingConsumer(channel));
-        Binding tmp = new Binding(s, binding.x, binding.k);
+    if (queues > 1) {
+      for (String q : queueNames) {
+        channel.basicConsume(q, true, new QueueingConsumer(channel));
+        Binding tmp = new Binding(q, binding.x, binding.k);
         sendUnroutable(tmp);
       }
     }
+    waitAtMost(() -> {
+      Channel ch = connection.createChannel();
+      try {
+        ch.queueDeclarePassive(binding.q);
+      } catch (IOException e) {
+        return true;
+      }
+      return false;
+    });
     channel.queueDeclare(binding.q, durable, true, true, null);
     // if (queues == 1): Because the exchange does not exist, this
     // bind should fail
     try {
       channel.queueBind(binding.q, binding.x, binding.k);
       sendRoutable(binding);
-    }
-    catch (IOException e) {
+    } catch (IOException e) {
       checkShutdownSignal(AMQP.NOT_FOUND, e);
       channel = null;
       return;
@@ -106,7 +117,7 @@ public class BindingLifecycleBase extends ClusteredTestBase {
       fail("Queue bind should have failed");
     }
     // Do some cleanup
-    if (queues > 1 && queueNames != null) {
+    if (queues > 1) {
       for (String q : queueNames) {
         channel.queueDelete(q);
       }
