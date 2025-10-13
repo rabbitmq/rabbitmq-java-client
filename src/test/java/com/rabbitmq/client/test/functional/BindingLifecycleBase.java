@@ -30,6 +30,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.QueueingConsumer;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * This tests whether bindings are created and nuked properly.
@@ -41,11 +42,17 @@ import com.rabbitmq.client.QueueingConsumer;
  *
  */
 public class BindingLifecycleBase extends ClusteredTestBase {
-  protected static final String K = "K-" + System.currentTimeMillis();
   protected static final int N = 1;
-  protected static final String Q = "Q-" + System.currentTimeMillis();
-  protected static final String X = "X-" + System.currentTimeMillis();
   protected static final byte[] payload = ("" + System.currentTimeMillis()).getBytes();
+
+  protected String q, x, k;
+
+  @BeforeEach
+  void initNames() {
+    this.q = generateQueueName();
+    this.x = generateExchangeName();
+    this.k = "K-" + System.currentTimeMillis();
+  }
 
   protected static String randomString() {
     return "-" + System.nanoTime();

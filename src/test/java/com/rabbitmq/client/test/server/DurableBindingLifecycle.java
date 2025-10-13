@@ -64,19 +64,19 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
      *   Tests whether durable bindings are correctly recovered.
      */
     @Test public void durableBindingRecovery() throws IOException, TimeoutException {
-        declareDurableTopicExchange(X);
-        declareAndBindDurableQueue(Q, X, K);
+        declareDurableTopicExchange(x);
+        declareAndBindDurableQueue(q, x, k);
 
         restart();
 
         for (int i = 0; i < N; i++) {
-            basicPublishVolatile(X, K);
+            basicPublishVolatile(x, k);
         }
 
         AtomicInteger receivedCount = new AtomicInteger(0);
         waitAtMost(() -> {
             GetResponse r;
-            r = basicGet(Q);
+            r = basicGet(q);
             if (r != null) {
                 assertThat(r.getEnvelope().isRedeliver()).isFalse();
                 receivedCount.incrementAndGet();
@@ -84,8 +84,8 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
             return receivedCount.get() == N;
         });
 
-        deleteQueue(Q);
-        deleteExchange(X);
+        deleteQueue(q);
+        deleteExchange(x);
     }
 
     /**
@@ -106,24 +106,24 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
      * verify that the durable routes have been turfed.
      */
     @Test public void durableBindingsDeletion() throws IOException, TimeoutException {
-        declareDurableTopicExchange(X);
-        declareAndBindDurableQueue(Q, X, K);
+        declareDurableTopicExchange(x);
+        declareAndBindDurableQueue(q, x, k);
 
-        deleteExchange(X);
+        deleteExchange(x);
 
         restart();
 
-        declareDurableTopicExchange(X);
+        declareDurableTopicExchange(x);
 
         for (int i = 0; i < N; i++) {
-            basicPublishVolatile(X, K);
+            basicPublishVolatile(x, k);
         }
 
-        GetResponse response = channel.basicGet(Q, true);
+        GetResponse response = channel.basicGet(q, true);
         assertNull(response, "The initial response SHOULD BE null");
 
-        deleteQueue(Q);
-        deleteExchange(X);
+        deleteQueue(q);
+        deleteExchange(x);
     }
 
 
@@ -135,15 +135,15 @@ public class DurableBindingLifecycle extends BindingLifecycleBase {
      * publish a message to it using the queue name as a routing key
      */
     @Test public void defaultBindingRecovery() throws IOException, TimeoutException {
-        declareDurableQueue(Q);
+        declareDurableQueue(q);
 
         restart();
 
-        basicPublishVolatile("", Q);
+        basicPublishVolatile("", q);
 
-        waitAtMost(() -> channel.basicGet(Q, true) != null);
+        waitAtMost(() -> channel.basicGet(q, true) != null);
 
-        deleteQueue(Q);
+        deleteQueue(q);
     }
 
     /**
