@@ -17,6 +17,7 @@
 package com.rabbitmq.client.test.functional;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.test.BrokerTestCase;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import static com.rabbitmq.client.test.TestUtils.waitAtMost;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -38,19 +40,21 @@ public class QueueLifecycle extends BrokerTestCase {
         channel.queueDeclarePassive(name);
     }
 
-    void verifyQueueMissing(String name) throws IOException {
-        // we can't in general check with a passive declare, since that
-        // may return an IOException because of exclusivity. But we can
-        // check that we can happily declare another with the same name:
-        // the only circumstance in which this won't result in an error is
-        // if it doesn't exist.
-        try {
-            channel.queueDeclare(name, false, false, false, null);
-        } catch (IOException ioe) {
-            fail("Queue.Declare threw an exception, probably meaning that the queue already exists");
-        }
-        // clean up
-        channel.queueDelete(name);
+    void verifyQueueMissing(String name) {
+      waitAtMost(
+          () -> {
+            Channel ch = connection.createChannel();
+            boolean result;
+            // the queue should be gone, declare-passive should fail
+            try {
+              ch.queueDeclarePassive(name);
+              ch.close();
+              result = false;
+            } catch (IOException e) {
+              result = true;
+            }
+            return result;
+          });
     }
 
     /**
@@ -139,7 +143,7 @@ public class QueueLifecycle extends BrokerTestCase {
     }
 
     @Test public void exclusiveNotAutoDelete() throws IOException {
-        String name = "exclusivequeue";
+        String name = generateQueueName();
         channel.queueDeclare(name, false, true, false, null);
         // now it's there
         verifyQueue(name, false, true, false, null);
@@ -151,7 +155,7 @@ public class QueueLifecycle extends BrokerTestCase {
     }
 
     @Test public void exclusiveGoesWithConnection() throws IOException, TimeoutException {
-        String name = "exclusivequeue2";
+        String name = generateQueueName();
         channel.queueDeclare(name, false, true, false, null);
         // now it's there
         verifyQueue(name, false, true, false, null);
