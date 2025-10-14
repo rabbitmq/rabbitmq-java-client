@@ -18,7 +18,7 @@ jobs:
       matrix:
         rabbitmq-image:
           - pivotalrabbitmq/rabbitmq:v4.1.x-otp27
-          - pivotalrabbitmq/rabbitmq:main-otp27
+          - pivotalrabbitmq/rabbitmq:v4.2.x-otp27
     name:  Test against ${{ matrix.rabbitmq-image }}
     steps:
       - uses: actions/checkout@v5
