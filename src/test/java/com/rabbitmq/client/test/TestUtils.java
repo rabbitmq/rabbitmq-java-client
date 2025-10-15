@@ -39,6 +39,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.function.Supplier;
+
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
@@ -119,6 +121,10 @@ public class TestUtils {
   }
 
   public static void waitAtMost(Duration timeout, CallableBooleanSupplier condition) {
+    waitAtMost(timeout, condition, null);
+  }
+
+  public static void waitAtMost(Duration timeout, CallableBooleanSupplier condition, Supplier<String> message) {
     try {
       if (condition.getAsBoolean()) {
         return;
@@ -145,7 +151,13 @@ public class TestUtils {
       }
       waitedTime += waitTime;
     }
-    Assertions.fail("Waited " + timeout.getSeconds() + " second(s), condition never got true");
+    String msg;
+    if (message == null) {
+      msg = "Waited " + timeout.getSeconds() + " second(s), condition never got true";
+    } else {
+      msg = "Waited " + timeout.getSeconds() + " second(s), " + message.get();
+    }
+    Assertions.fail(msg);
   }
 
   public static void close(Connection connection) {
