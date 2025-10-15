@@ -118,6 +118,8 @@ public class SaslMechanisms extends BrokerTestCase {
             if (paf instanceof AuthenticationFailureException) {
                 fail("Not expecting AuthenticationFailureException " + failDetail);
             }
+        } catch (IOException e) {
+          // can happen if the broker closes the connection abruptly
         }
     }
 
