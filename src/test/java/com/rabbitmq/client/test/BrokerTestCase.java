@@ -31,7 +31,9 @@ import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import static com.rabbitmq.client.test.TestUtils.currentVersion;
+import static com.rabbitmq.client.test.TestUtils.queueExists;
 import static com.rabbitmq.client.test.TestUtils.versionCompare;
+import static com.rabbitmq.client.test.TestUtils.waitAtMost;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BrokerTestCase {
@@ -255,11 +257,8 @@ public class BrokerTestCase {
 
     protected void declareAndBindDurableQueue(String q, String x, String r) throws IOException {
         declareDurableQueue(q);
+        waitAtMost(() -> queueExists(q, this.connection));
         channel.queueBind(q, x, r);
-    }
-
-    protected void declareDurableDirectExchange(String x) throws IOException {
-        channel.exchangeDeclare(x, "direct", true);
     }
 
     protected void declareDurableQueue(String q) throws IOException {
