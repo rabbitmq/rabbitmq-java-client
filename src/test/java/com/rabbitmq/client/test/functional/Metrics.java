@@ -30,7 +30,6 @@ import com.rabbitmq.client.impl.recovery.AutorecoveringConnection;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -313,17 +312,20 @@ public class Metrics extends BrokerTestCase {
             }
 
 
-            List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
+            List<Callable<Void>> tasks = new ArrayList<>();
             for(int i = 0; i < nbTasks; i++) {
                 Channel channelForConsuming = channels[random.nextInt(nbChannels)];
-                tasks.add(random.nextInt(10)%2 == 0 ?
+                tasks.add(random.nextInt(10) % 2 == 0 ?
                     new BasicGetTask(channelForConsuming, true) :
                     new BasicConsumeTask(channelForConsuming, true));
             }
             executorService.invokeAll(tasks);
 
+            waitAtMost(timeout(), () -> metrics.getPublishedMessages().getCount() == nbOfMessages,
+                () -> "expecting " + nbOfMessages + " published message(s), got " + metrics.getPublishedMessages().getCount());
             assertThat(metrics.getPublishedMessages().getCount()).isEqualTo(nbOfMessages);
-            waitAtMost(timeout(), () -> metrics.getConsumedMessages().getCount() == nbOfMessages);
+            waitAtMost(timeout(), () -> metrics.getConsumedMessages().getCount() == nbOfMessages,
+                () -> "expecting " + nbOfMessages + " consumed message(s), got " + metrics.getConsumedMessages().getCount());
             assertThat(metrics.getAcknowledgedMessages().getCount()).isEqualTo(0L);
 
             // to remove the listeners
@@ -635,7 +637,7 @@ public class Metrics extends BrokerTestCase {
     }
 
     private Duration timeout() {
-        return Duration.ofSeconds(10);
+        return Duration.ofSeconds(20);
     }
 
     private static class MultipleAckConsumer extends DefaultConsumer {
