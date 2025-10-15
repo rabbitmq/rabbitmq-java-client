@@ -114,7 +114,6 @@
     <!-- For testing only -->
     <make.bin>make</make.bin>
     <rabbitmq.dir>${deps.dir}/rabbit</rabbitmq.dir>
-    <rabbitmqctl.bin>${rabbitmq.dir}/scripts/rabbitmqctl</rabbitmqctl.bin>
 
     <test-broker.A.nodename>rabbit@localhost</test-broker.A.nodename>
     <test-broker.A.node_port>5672</test-broker.A.node_port>
