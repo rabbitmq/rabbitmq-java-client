@@ -17,7 +17,10 @@ package com.rabbitmq.client.test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AddressResolver;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.ListAddressResolver;
 import com.rabbitmq.client.MalformedFrameException;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -31,11 +34,16 @@ import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.ReferenceCountUtil;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProtocolVersionMismatch {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ProtocolVersionMismatch.class);
 
   @ParameterizedTest
   @MethodSource("com.rabbitmq.client.test.TestUtils#ioLayers")
@@ -45,7 +53,10 @@ public class ProtocolVersionMismatch {
       ConnectionFactory cf = TestUtils.connectionFactory();
       TestUtils.setIoLayer(cf, ioLayer);
       cf.setPort(port);
-      assertThatThrownBy(cf::newConnection).hasRootCauseInstanceOf(MalformedFrameException.class);
+      AddressResolver addressResolver =
+          new ListAddressResolver(Collections.singletonList(new Address("localhost", port)));
+      assertThatThrownBy(() -> cf.newConnection(addressResolver))
+          .hasRootCauseInstanceOf(MalformedFrameException.class);
     }
   }
 
@@ -69,6 +80,7 @@ public class ProtocolVersionMismatch {
                           new ChannelInboundHandlerAdapter() {
                             @Override
                             public void channelRead(ChannelHandlerContext ctx, Object msg) {
+                              LOGGER.debug("Client connection in test AMQP 1.0 server");
                               // discard the data
                               ReferenceCountUtil.release(msg);
                               ByteBuf b = ctx.alloc().buffer(AMQP_HEADER.length);
