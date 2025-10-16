@@ -59,5 +59,11 @@ jobs:
             -Dit.test=ClientTestSuite,FunctionalTestSuite,ServerTestSuite,SslTestSuite \
             --no-transfer-progress \
             -Dnet.bytebuddy.experimental=true
+      - name: Get broker logs
+        run: docker cp rabbitmq:/var/log/rabbitmq broker-logs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: broker-logs-java-${{ matrix.version }}
+          path: broker-logs
       - name: Stop broker
         run: docker stop rabbitmq && docker rm rabbitmq
