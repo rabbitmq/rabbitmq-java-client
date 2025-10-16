@@ -16,7 +16,7 @@ This client releases are independent of RabbitMQ server releases and can be used
 
 == Minimum Supported JDK Version
 
-They require Java 8 or higher.
+This library requires Java 8 or higher.
 
 == Dependency (Maven Artifact)
 
