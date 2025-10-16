@@ -55,6 +55,18 @@ jobs:
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
             -Dmaven.javadoc.skip=true \
             --no-transfer-progress
+      - name: Get broker logs
+        if: ${{ always() }}
+        run: |
+          docker cp rabbitmq0:/var/log/rabbitmq broker-logs-0
+          docker cp rabbitmq1:/var/log/rabbitmq broker-logs-1
+          docker cp rabbitmq2:/var/log/rabbitmq broker-logs-2
+      - name: Upload broker logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: broker-logs
+          path: broker-logs-*
       - name: Stop cluster
         run: docker compose --file ci/cluster/docker-compose.yml down
       - name: Publish snapshot

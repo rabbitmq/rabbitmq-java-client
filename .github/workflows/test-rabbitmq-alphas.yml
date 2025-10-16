@@ -16,9 +16,11 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        rabbitmq-image:
-          - pivotalrabbitmq/rabbitmq:v4.1.x-otp27
-          - pivotalrabbitmq/rabbitmq:v4.2.x-otp27
+        include:
+          - rabbitmq-image: pivotalrabbitmq/rabbitmq:v4.1.x-otp27
+            rabbitmq-branch: 4.1
+          - rabbitmq-image: pivotalrabbitmq/rabbitmq:v4.2.x-otp27
+            rabbitmq-branch: 4.2
     name:  Test against ${{ matrix.rabbitmq-image }}
     steps:
       - uses: actions/checkout@v5
@@ -59,5 +61,17 @@ jobs:
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
             -Dmaven.javadoc.skip=true \
             --no-transfer-progress
+      - name: Get broker logs
+        if: ${{ always() }}
+        run: |
+          docker cp rabbitmq0:/var/log/rabbitmq broker-logs-0
+          docker cp rabbitmq1:/var/log/rabbitmq broker-logs-1
+          docker cp rabbitmq2:/var/log/rabbitmq broker-logs-2
+      - name: Upload broker logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: broker-logs-${{ matrix.rabbitmq-branch }}
+          path: broker-logs-*
       - name: Stop cluster
         run: docker compose --file ci/cluster/docker-compose.yml down
