@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
@@ -135,7 +134,8 @@ public class TestUtils {
     waitAtMost(timeout, condition, null);
   }
 
-  public static void waitAtMost(Duration timeout, CallableBooleanSupplier condition, Supplier<String> message) {
+  public static void waitAtMost(
+      Duration timeout, CallableBooleanSupplier condition, Supplier<String> message) {
     try {
       if (condition.getAsBoolean()) {
         return;

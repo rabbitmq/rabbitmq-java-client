@@ -9,6 +9,7 @@
     <logger name="com.rabbitmq.client.test.server.TopicPermissions" level="debug" />
     <logger name="com.rabbitmq.client.impl.AbstractMetricsCollector" level="debug" />
     <logger name="com.rabbitmq.client.impl.NettyFrameHandlerFactory" level="debug" />
+    <logger name="com.rabbitmq.client.test.ProtocolVersionMismatch" level="debug" />
 
     <root level="warn">
         <appender-ref ref="STDOUT" />
