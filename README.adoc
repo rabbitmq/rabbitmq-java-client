@@ -1,6 +1,5 @@
-:client-stable: 5.26.0
-:client-rc: 5.17.0.RC2
-:client-snapshot: 5.27.0-SNAPSHOT
+:client-stable: 5.27.0
+:client-snapshot: 5.28.0-SNAPSHOT
 
 = RabbitMQ Java Client
 
@@ -41,61 +40,6 @@ This library requires Java 8 or higher.
 ----
 compile 'com.rabbitmq:amqp-client:{client-stable}'
 ----
-
-////
-=== Milestones and Release Candidates
-
-==== Maven
-
-.pom.xml
-[source,xml,subs="attributes,specialcharacters"]
-----
-<dependency>
-    <groupId>com.rabbitmq</groupId>
-    <artifactId>amqp-client</artifactId>
-    <version>{client-rc}</version>
-</dependency>
-----
-
-Milestones and release candidates are available on the RabbitMQ Milestone Repository:
-
-.pom.xml
-[source,xml,subs="attributes,specialcharacters"]
-----
-<repositories>
-  <repository>
-    <id>packagecloud-rabbitmq-maven-milestones</id>
-    <url>https://packagecloud.io/rabbitmq/maven-milestones/maven2</url>
-    <releases>
-      <enabled>true</enabled>
-    </releases>
-    <snapshots>
-      <enabled>false</enabled>
-    </snapshots>
-  </repository>
-</repositories>
-----
-
-==== Gradle
-
-.build.gradle
-[source,groovy,subs="attributes,specialcharacters"]
-----
-compile 'com.rabbitmq:amqp-client:{client-rc}'
-----
-
-Milestones and release candidates are available on the RabbitMQ Milestone Repository:
-
-.build.gradle
-[source,groovy,subs="attributes,specialcharacters"]
-----
-repositories {
-  maven {
-    url "https://packagecloud.io/rabbitmq/maven-milestones/maven2"
-  }
-}
-----
-////
 
 === Snapshots
 
@@ -138,7 +82,7 @@ Snapshots are available on the central portal snapshot repository:
 compile 'com.rabbitmq:amqp-client:{client-snapshot}'
 ----
 
-Snapshots are available on the Sonatype OSS snapshot repository:
+Snapshots are available on the central portal snapshot repository:
 
 .build.gradle
 [source,groovy,subs="attributes,specialcharacters"]
