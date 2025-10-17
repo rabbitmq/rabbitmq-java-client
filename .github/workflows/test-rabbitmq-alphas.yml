@@ -6,9 +6,17 @@ on:
   pull_request:
     branches:
       - 5.x.x-stable
+    paths:
+      - src/**
+      - pom.xml
+      - ci/**
   push:
     branches:
       - 5.x.x-stable
+    paths:
+      - src/**
+      - pom.xml
+      - ci/**
   workflow_dispatch:
 
 jobs:
