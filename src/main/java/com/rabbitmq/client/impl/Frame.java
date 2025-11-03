@@ -214,7 +214,7 @@ public class Frame {
 
                 @Override
                 public void write(byte[] b) {
-                    buf.writeBytes(buf);
+                    buf.writeBytes(b);
                 }
 
                 @Override
