@@ -25,10 +25,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - rabbitmq-image: pivotalrabbitmq/rabbitmq:v4.1.x-otp27
-            rabbitmq-branch: 4.1
           - rabbitmq-image: pivotalrabbitmq/rabbitmq:v4.2.x-otp27
             rabbitmq-branch: 4.2
+          - rabbitmq-image: pivotalrabbitmq/rabbitmq:main-otp27
+            rabbitmq-branch: 4.3
     name:  Test against ${{ matrix.rabbitmq-image }}
     steps:
       - uses: actions/checkout@v5

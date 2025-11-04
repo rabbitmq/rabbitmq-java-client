@@ -6,7 +6,7 @@ services:
       - rabbitmq-cluster
     hostname: node0
     container_name: rabbitmq0
-    image: ${RABBITMQ_IMAGE:-rabbitmq:4.1}
+    image: ${RABBITMQ_IMAGE:-rabbitmq:4.2}
     pull_policy: always
     ports:
       - "5672:5672"
@@ -22,7 +22,7 @@ services:
       - rabbitmq-cluster
     hostname: node1
     container_name: rabbitmq1
-    image: ${RABBITMQ_IMAGE:-rabbitmq:4.1}
+    image: ${RABBITMQ_IMAGE:-rabbitmq:4.2}
     pull_policy: always
     ports:
       - "5673:5672"
@@ -37,7 +37,7 @@ services:
       - rabbitmq-cluster
     hostname: node2
     container_name: rabbitmq2
-    image: ${RABBITMQ_IMAGE:-rabbitmq:4.1}
+    image: ${RABBITMQ_IMAGE:-rabbitmq:4.2}
     pull_policy: always
     ports:
       - "5674:5672"
