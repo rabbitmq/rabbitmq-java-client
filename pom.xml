@@ -794,6 +794,7 @@
               <include>src/test/java/com/rabbitmq/client/test/CloseInMainLoop.java</include>
               <include>src/test/java/com/rabbitmq/client/test/ProtocolVersionMismatch.java</include>
               <include>src/test/java/com/rabbitmq/client/test/TestUtils.java</include>
+              <include>src/test/java/com/rabbitmq/client/test/RpcTopologyRecordingTest.java</include>
             </includes>
             <googleJavaFormat>
               <version>${google-java-format.version}</version>
