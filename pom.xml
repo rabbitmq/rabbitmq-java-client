@@ -90,7 +90,7 @@
     <checksum.maven.plugin.version>1.11</checksum.maven.plugin.version>
     <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
     <jshell-maven-plugin.version>1.4</jshell-maven-plugin.version>
-    <spotless.version>3.0.0</spotless.version>
+    <spotless.version>3.1.0</spotless.version>
     <google-java-format.version>1.32.0</google-java-format.version>
     <!--
     These groovy scripts are used later in this POM file to generate
