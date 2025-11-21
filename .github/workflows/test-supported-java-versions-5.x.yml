@@ -17,11 +17,11 @@ jobs:
             version: '17'
     name:  Test against Java ${{ matrix.distribution }} ${{ matrix.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: 5.x.x-stable
       - name: Checkout tls-gen
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: rabbitmq/tls-gen
           path: './tls-gen'
