@@ -22,9 +22,9 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Checkout tls-gen
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: rabbitmq/tls-gen
           path: './tls-gen'
