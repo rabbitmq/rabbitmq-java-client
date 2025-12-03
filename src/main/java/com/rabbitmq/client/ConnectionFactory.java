@@ -1382,9 +1382,8 @@ public class ConnectionFactory implements Cloneable {
    * @deprecated user {@link #netty()} instead
    */
   @Deprecated
-  public ConnectionFactory setNioParams(NioParams nioParams) {
+  public void setNioParams(NioParams nioParams) {
     this.nioParams = nioParams;
-    return this;
   }
 
   /**
@@ -1415,20 +1414,18 @@ public class ConnectionFactory implements Cloneable {
    * @deprecated Use {@link #netty()} instead
    */
   @Deprecated
-  public ConnectionFactory useNio() {
+  public void useNio() {
     this.nio = true;
     this.netty = false;
-    return this;
   }
 
   /**
    * Use blocking IO for communication with the server. With blocking IO, each connection creates
    * its own thread to read data from the server.
    */
-  public ConnectionFactory useBlockingIo() {
+  public void useBlockingIo() {
     this.nio = false;
     this.netty = false;
-    return this;
   }
 
   /**
