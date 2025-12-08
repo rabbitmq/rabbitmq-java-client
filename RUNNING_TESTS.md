@@ -88,6 +88,18 @@ top-level directory of the source tree:
        -Dit.test=DeadLetterExchange
 ```
 
+* To run a single test class:
+
+```
+./mvnw verify -Dit.test=Confirm
+```
+
+* To run a specific test method within a test class:
+
+```
+./mvnw verify -Dit.test=Confirm#testBasicPublishAsync
+```
+
 Test reports can be found in `target/failsafe-reports`.
 
 ## Running Against a Broker in a Docker Container
@@ -95,7 +107,7 @@ Test reports can be found in `target/failsafe-reports`.
 Run the broker:
 
 ```
-docker run -it --rm --name rabbitmq -p 5672:5672 rabbitmq:3.8
+docker run --pull always --rm --tty --interactive --name rabbitmq --publish 5672:5672 rabbitmq:latest
 ```
 
 Launch the tests:
