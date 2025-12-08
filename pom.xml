@@ -59,7 +59,7 @@
     <netty.version>4.2.7.Final</netty.version>
     <metrics.version>4.2.37</metrics.version>
     <micrometer.version>1.16.0</micrometer.version>
-    <opentelemetry.version>1.56.0</opentelemetry.version>
+    <opentelemetry.version>1.57.0</opentelemetry.version>
     <jackson.version>2.20.1</jackson.version>
     <logback.version>1.2.13</logback.version>
     <junit.jupiter.version>5.14.1</junit.jupiter.version>
