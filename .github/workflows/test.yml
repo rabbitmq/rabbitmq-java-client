@@ -71,7 +71,7 @@ jobs:
           docker cp rabbitmq2:/var/log/rabbitmq broker-logs-2
       - name: Upload broker logs
         if: ${{ always() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: broker-logs
           path: broker-logs-*
