@@ -17,16 +17,34 @@ package com.rabbitmq.client;
 
 import com.rabbitmq.client.impl.AMQConnection;
 
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * Helper class to load {@link ConnectionFactory} settings from a property file.
@@ -72,6 +90,7 @@ public class ConnectionFactoryConfigurator {
     public static final String SSL_ENABLED = "ssl.enabled";
     public static final String SSL_KEY_STORE = "ssl.key.store";
     public static final String SSL_KEY_STORE_PASSWORD = "ssl.key.store.password";
+    public static final String SSL_KEY_PASSWORD = "ssl.key.password";
     public static final String SSL_KEY_STORE_TYPE = "ssl.key.store.type";
     public static final String SSL_KEY_STORE_ALGORITHM = "ssl.key.store.algorithm";
     public static final String SSL_TRUST_STORE = "ssl.trust.store";
@@ -80,11 +99,13 @@ public class ConnectionFactoryConfigurator {
     public static final String SSL_TRUST_STORE_ALGORITHM = "ssl.trust.store.algorithm";
     public static final String SSL_VALIDATE_SERVER_CERTIFICATE = "ssl.validate.server.certificate";
     public static final String SSL_VERIFY_HOSTNAME = "ssl.verify.hostname";
+    public static final String PEM_TYPE = "PEM";
 
     // aliases allow to be compatible with keys from Spring Boot and still be consistent with
     // the initial naming of the keys
     private static final Map<String, List<String>> ALIASES = new ConcurrentHashMap<String, List<String>>() {{
         put(SSL_KEY_STORE, Arrays.asList("ssl.key-store"));
+        put(SSL_KEY_PASSWORD, Arrays.asList("ssl.key-password"));
         put(SSL_KEY_STORE_PASSWORD, Arrays.asList("ssl.key-store-password"));
         put(SSL_KEY_STORE_TYPE, Arrays.asList("ssl.key-store-type"));
         put(SSL_KEY_STORE_ALGORITHM, Arrays.asList("ssl.key-store-algorithm"));
@@ -228,6 +249,7 @@ public class ConnectionFactoryConfigurator {
         String algorithm = lookUp(SSL_ALGORITHM, properties, prefix);
         String keyStoreLocation = lookUp(SSL_KEY_STORE, properties, prefix);
         String keyStorePassword = lookUp(SSL_KEY_STORE_PASSWORD, properties, prefix);
+        String keyPassword = lookUp(SSL_KEY_PASSWORD, properties, prefix);
         String keyStoreType = lookUp(SSL_KEY_STORE_TYPE, properties, prefix, "PKCS12");
         String keyStoreAlgorithm = lookUp(SSL_KEY_STORE_ALGORITHM, properties, prefix, "SunX509");
         String trustStoreLocation = lookUp(SSL_TRUST_STORE, properties, prefix);
@@ -250,7 +272,7 @@ public class ConnectionFactoryConfigurator {
                         algorithm
                 );
             } else {
-                KeyManager[] keyManagers = configureKeyManagers(keyStoreLocation, keyStorePassword, keyStoreType, keyStoreAlgorithm);
+                KeyManager[] keyManagers = configureKeyManagers(keyStoreLocation, keyStorePassword, keyStoreType, keyStoreAlgorithm, keyPassword);
                 TrustManager[] trustManagers = configureTrustManagers(trustStoreLocation, trustStorePassword, trustStoreType, trustStoreAlgorithm);
 
                 // create ssl context
@@ -263,29 +285,55 @@ public class ConnectionFactoryConfigurator {
                     cf.enableHostnameVerification();
                 }
             }
-        } catch (NoSuchAlgorithmException | IOException | CertificateException |
-                UnrecoverableKeyException | KeyStoreException | KeyManagementException e) {
+        } catch (IOException | GeneralSecurityException e) {
             throw new IllegalStateException("Error while configuring TLS", e);
         }
     }
 
-    private static KeyManager[] configureKeyManagers(String keystore, String keystorePassword, String keystoreType, String keystoreAlgorithm) throws KeyStoreException, IOException, NoSuchAlgorithmException,
-            CertificateException, UnrecoverableKeyException {
-        char[] keyPassphrase = null;
-        if (keystorePassword != null) {
-            keyPassphrase = keystorePassword.toCharArray();
-        }
+    private static KeyManager[] configureKeyManagers(String keyStoreLocation, String keystorePassword, String keystoreType, String keystoreAlgorithm, String keyPassword) throws IOException, GeneralSecurityException {
         KeyManager[] keyManagers = null;
-        if (keystore != null) {
-            KeyStore ks = KeyStore.getInstance(keystoreType);
-            try (InputStream in = loadResource(keystore)) {
-                ks.load(in, keyPassphrase);
+        if (keyStoreLocation != null) {
+            KeyStore ks = configureKeyStore(keyStoreLocation, keystorePassword, keystoreType, keyPassword);
+
+            char[] password = "".toCharArray();
+            if (PEM_TYPE.equalsIgnoreCase(keystoreType) && keyPassword != null) {
+                password = keyPassword.toCharArray();
+            } else if (keystorePassword != null) {
+                password = keystorePassword.toCharArray();
             }
+
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(keystoreAlgorithm);
-            kmf.init(ks, keyPassphrase);
+            kmf.init(ks, password);
             keyManagers = kmf.getKeyManagers();
         }
         return keyManagers;
+    }
+
+    private static KeyStore configureKeyStore(String keyStoreLocation, String keyStorePassword, String keystoreType, String keyPassword) throws GeneralSecurityException, IOException {
+        try (InputStream in = loadResource(keyStoreLocation)) {
+            if (PEM_TYPE.equalsIgnoreCase(keystoreType)) {
+                if (keyStorePassword != null && !keyStorePassword.isEmpty())
+                    throw new CertificateException("KeyStore password cannot be specified with PEM format, only key password may be specified");
+                else {
+                    StringBuilder readerBuilder = new StringBuilder();
+                    try (BufferedReader br = new BufferedReader(new InputStreamReader(in, US_ASCII))) {
+                        String inputLine;
+                        while ((inputLine = br.readLine()) != null) {
+                            readerBuilder.append(inputLine).append('\n');
+                        }
+                    }
+
+                    String pemFileContents = readerBuilder.toString();
+                    return PemReader.loadKeyStore(pemFileContents, pemFileContents, Optional.ofNullable(keyPassword));
+                }
+            } else {
+                char[] keyPassphrase = keyStorePassword == null ? null : keyStorePassword.toCharArray();
+
+                KeyStore ks = KeyStore.getInstance(keystoreType);
+                ks.load(in, keyPassphrase);
+                return ks;
+            }
+        }
     }
 
     private static TrustManager[] configureTrustManagers(String truststore, String truststorePassword, String truststoreType, String truststoreAlgorithm)
