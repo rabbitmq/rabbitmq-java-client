@@ -21,10 +21,12 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -57,26 +59,47 @@ public final class PemReader {
 
     private static final Pattern CERT_PATTERN = Pattern.compile(
         "-+BEGIN\\s+.*CERTIFICATE[^-]*-+\\s*"  // Header
-            + "([a-z0-9+/=\\r\\n]+)"           // Base64 text
+            + "([a-z0-9+/=\\s]+)"           // Base64 text
             + "-+END\\s+.*CERTIFICATE[^-]*-+", // Footer
         CASE_INSENSITIVE);
 
     private static final Pattern PRIVATE_KEY_PATTERN = Pattern.compile(
         "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+\\s*"  // Header
-            + "([a-z0-9+/=\\r\\n]+)"              // Base64 text
+            + "([a-z0-9+/=\\s]+)"              // Base64 text
             + "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", // Footer
         CASE_INSENSITIVE);
 
     private PemReader() {
     }
 
-    public static KeyStore loadKeyStore(String certificateChainFile, String privateKeyFile, Optional<String> keyPassword) throws IOException, GeneralSecurityException {
-        PrivateKey key = loadPrivateKey(privateKeyFile, keyPassword);
+    /**
+     * Loads a KeyStore from PEM file contents.
+     * <p>
+     * This method reads a private key and certificate chain from PEM-formatted content
+     * and stores them in a JKS KeyStore. The certificate file must contain at least one
+     * certificate.
+     *
+     * @param certificateChainContents the PEM-formatted content containing the certificate chain
+     * @param privateKeyContents the PEM-formatted content containing the private key
+     * @param keyPassword optional password for the private key; if the key is encrypted, this password
+     *                    will be used to decrypt it
+     * @return a KeyStore containing the private key and certificate chain
+     * @throws IOException if an I/O error occurs while reading the PEM content
+     * @throws GeneralSecurityException if a security-related error occurs, such as:
+     *         <ul>
+     *         <li>the private key cannot be loaded</li>
+     *         <li>the certificate chain is empty</li>
+     *         <li>the KeyStore cannot be initialized</li>
+     *         </ul>
+     * @throws CertificateException if the certificate file does not contain any certificates
+     */
+    public static KeyStore loadKeyStore(String certificateChainContents, String privateKeyContents, Optional<String> keyPassword) throws IOException, GeneralSecurityException {
+        PrivateKey key = loadPrivateKey(privateKeyContents, keyPassword);
 
-        List<X509Certificate> certificateChain = readCertificateChain(certificateChainFile);
+        List<X509Certificate> certificateChain = readCertificateChain(certificateChainContents);
         if (certificateChain.isEmpty()) {
             throw new CertificateException("Certificate file does not contain any certificates: "
-                                           + certificateChainFile);
+                                           + certificateChainContents);
         }
 
         KeyStore keyStore = KeyStore.getInstance("JKS");
@@ -88,8 +111,20 @@ public final class PemReader {
         return keyStore;
     }
 
-    public static List<X509Certificate> readCertificateChain(String certificateChain) throws CertificateException {
-        Matcher matcher = CERT_PATTERN.matcher(certificateChain);
+    /**
+     * Reads a chain of X.509 certificates from PEM-formatted content.
+     * <p>
+     * This method extracts all certificates found in the provided PEM content. Certificates
+     * are identified by BEGIN CERTIFICATE and END CERTIFICATE markers. The certificates are
+     * returned in the order they appear in the input.
+     *
+     * @param certificateChainContents the PEM-formatted content containing one or more certificates
+     * @return a list of X.509 certificates extracted from the PEM content; may be empty if no
+     *         certificates are found
+     * @throws CertificateException if any certificate cannot be parsed or generated
+     */
+    public static List<X509Certificate> readCertificateChain(String certificateChainContents) throws CertificateException {
+        Matcher matcher = CERT_PATTERN.matcher(certificateChainContents);
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
         List<X509Certificate> certificates = new ArrayList<>();
 
@@ -103,6 +138,28 @@ public final class PemReader {
         return certificates;
     }
 
+    /**
+     * Loads a private key from PEM-formatted content.
+     * <p>
+     * This method supports both encrypted and unencrypted private keys. The key must be in
+     * PKCS#8 format. To convert a key to PKCS#8 format, use:
+     * {@code openssl pkcs8 -topk8 ...}
+     * <p>
+     * The method attempts to load the key using RSA, EC, and DSA algorithms in that order.
+     *
+     * @param privateKey the PEM-formatted content containing the private key
+     * @param keyPassword optional password for decrypting an encrypted private key; if empty,
+     *                    the key is assumed to be unencrypted
+     * @return the loaded private key
+     * @throws IOException if an I/O error occurs while reading the key
+     * @throws GeneralSecurityException if a security-related error occurs, such as:
+     *         <ul>
+     *           <li>no private key is found in the content</li>
+     *           <li>the key format is invalid</li>
+     *           <li>the key cannot be decrypted with the provided password</li>
+     *          <li>the key algorithm is not supported (RSA, EC, or DSA)</li>
+     *         </ul>
+     */
     public static PrivateKey loadPrivateKey(String privateKey, Optional<String> keyPassword) throws IOException, GeneralSecurityException {
         Matcher matcher = PRIVATE_KEY_PATTERN.matcher(privateKey);
         if (!matcher.find()) {
@@ -126,20 +183,28 @@ public final class PemReader {
 
         // this code requires a key in PKCS8 format which is not the default openssl format
         // to convert to the PKCS8 format you use : openssl pkcs8 -topk8 ...
+        List<String> attemptedAlgorithms = new ArrayList<>();
         try {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             return keyFactory.generatePrivate(encodedKeySpec);
-        } catch (InvalidKeySpecException ignore) {
+        } catch (InvalidKeySpecException e) {
+            attemptedAlgorithms.add("RSA: " + e.getMessage());
         }
 
         try {
             KeyFactory keyFactory = KeyFactory.getInstance("EC");
             return keyFactory.generatePrivate(encodedKeySpec);
-        } catch (InvalidKeySpecException ignore) {
+        } catch (InvalidKeySpecException e) {
+            attemptedAlgorithms.add("RSA: " + e.getMessage());
         }
 
-        KeyFactory keyFactory = KeyFactory.getInstance("DSA");
-        return keyFactory.generatePrivate(encodedKeySpec);
+        try {
+            return KeyFactory.getInstance("DSA").generatePrivate(encodedKeySpec);
+        } catch (InvalidKeySpecException e) {
+            attemptedAlgorithms.add("DSA: " + e.getMessage());
+            throw new KeyStoreException(
+                    "Failed to load private key with any supported algorithm. Attempts: " + attemptedAlgorithms, e);
+        }
     }
 
     private static byte[] base64Decode(String base64) {
