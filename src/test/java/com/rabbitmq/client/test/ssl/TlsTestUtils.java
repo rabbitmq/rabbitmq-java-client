@@ -17,6 +17,7 @@
 package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.PemReader;
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.Host;
 import io.netty.handler.ssl.ClientAuth;
@@ -24,21 +25,27 @@ import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
-import java.io.FileInputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.stream.Collectors;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 class TlsTestUtils {
 
@@ -147,11 +154,55 @@ class TlsTestUtils {
             "./rabbitmq-configuration/tls/client_" + hostname() + "_certificate.pem"));
   }
 
-  static X509Certificate loadCertificate(String file) throws Exception {
-    try (FileInputStream inputStream = new FileInputStream(file)) {
-      CertificateFactory fact = CertificateFactory.getInstance("X.509");
-      return (X509Certificate) fact.generateCertificate(inputStream);
+  static X509Certificate loadCertificate(String file) throws Exception
+  {
+    List<X509Certificate> certs = loadCertificateChain(file);
+    if (certs.isEmpty()) {
+      throw new CertificateException("No certificates found in file: " + file);
     }
+    return certs.get(0);
+    }
+
+  /**
+   * Load certificate chain from PEM file.
+   * Supports files with multiple concatenated certificates and mixed content (cert + key).
+   *
+   * @param file Path to PEM file
+   * @return List of certificates found in the file
+   */
+  static List<X509Certificate> loadCertificateChain(String file) throws Exception
+  {
+    String pemContent = new String(Files.readAllBytes(Paths.get(file)), US_ASCII);
+    return PemReader.readCertificateChain(pemContent);
+  }
+
+  /**
+   * Load KeyStore from combined PEM file containing both certificate(s) and private key.
+   *
+   * @param file Path to PEM file containing certificate chain and private key
+   * @param keyPassword Password for encrypted private key (null if unencrypted)
+   * @return KeyStore containing the certificate chain and private key
+   */
+  static KeyStore loadKeyStoreFromPem(String file, String keyPassword) throws Exception
+  {
+    String pemContent = new String(Files.readAllBytes(Paths.get(file)), US_ASCII);
+    return PemReader.loadKeyStore(pemContent, pemContent, Optional.ofNullable(keyPassword));
+  }
+
+  /**
+   * Load KeyStore from separate certificate and private key PEM files.
+   *
+   * @param certFile Path to PEM file containing certificate chain
+   * @param keyFile Path to PEM file containing private key
+   * @param keyPassword Password for encrypted private key (null if unencrypted)
+   * @return KeyStore containing the certificate chain and private key
+   */
+  static KeyStore loadKeyStoreFromPem(String certFile, String keyFile, String keyPassword)
+      throws Exception
+  {
+    String certContent = new String(Files.readAllBytes(Paths.get(certFile)), US_ASCII);
+    String keyContent = new String(Files.readAllBytes(Paths.get(keyFile)), US_ASCII);
+    return PemReader.loadKeyStore(certContent, keyContent, Optional.ofNullable(keyPassword));
   }
 
   private static String tlsArtefactPath(String in) {

@@ -17,20 +17,31 @@ package com.rabbitmq.client.test;
 
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.ConnectionFactoryConfigurator;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.*;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import static com.rabbitmq.client.impl.AMQConnection.defaultClientProperties;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  *
@@ -165,6 +176,48 @@ public class PropertyFileInitialisationTest {
             configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE, baseDirectory + "keystore.p12");
             configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_PASSWORD, "bunnies");
             configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_TYPE, "PKCS12");
+            configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_ALGORITHM, "SunX509");
+
+            configuration.put(ConnectionFactoryConfigurator.SSL_TRUST_STORE, baseDirectory + "truststore.jks");
+            configuration.put(ConnectionFactoryConfigurator.SSL_TRUST_STORE_PASSWORD, "bunnies");
+            configuration.put(ConnectionFactoryConfigurator.SSL_TRUST_STORE_TYPE, "JKS");
+            configuration.put(ConnectionFactoryConfigurator.SSL_TRUST_STORE_ALGORITHM, "SunX509");
+
+            configuration.put(ConnectionFactoryConfigurator.SSL_VERIFY_HOSTNAME, "true");
+
+            ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+            ConnectionFactoryConfigurator.load(connectionFactory, configuration, "");
+
+            verify(connectionFactory, times(1)).useSslProtocol(any(SSLContext.class));
+            verify(connectionFactory, times(1)).enableHostnameVerification();
+        });
+    }
+
+    @Test
+    @DisplayName("TLS initialisation with PEM keystore and Key Store password should fail")
+    void tlsInitialisationWithPemAndKeyStorePasswordShouldFail() {
+        Map<String, String> configuration = new HashMap<>();
+        configuration.put(ConnectionFactoryConfigurator.SSL_ENABLED, "true");
+        configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE, "./src/test/resources/property-file-initialisation/tls/certificates.pem");
+        configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_PASSWORD, "bunnies");
+        configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_TYPE, "PEM");
+        configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_ALGORITHM, "S unX509");
+
+        ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+        assertThatThrownBy(() -> ConnectionFactoryConfigurator.load(connectionFactory, configuration, ""))
+                .isInstanceOf(IllegalStateException.class)
+                .hasRootCauseInstanceOf(CertificateException.class);
+    }
+
+    @Test
+    @DisplayName("TLS initialisation with PEM certificates should succeed")
+    void tlsInitialisationWithPemCertificatesShouldSucceed() {
+        Stream.of("./src/test/resources/property-file-initialisation/tls/",
+                "classpath:/property-file-initialisation/tls/").forEach(baseDirectory -> {
+            Map<String, String> configuration = new HashMap<>();
+            configuration.put(ConnectionFactoryConfigurator.SSL_ENABLED, "true");
+            configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE, baseDirectory + "certificates.pem");
+            configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_TYPE, "PEM");
             configuration.put(ConnectionFactoryConfigurator.SSL_KEY_STORE_ALGORITHM, "SunX509");
 
             configuration.put(ConnectionFactoryConfigurator.SSL_TRUST_STORE, baseDirectory + "truststore.jks");
