@@ -1,5 +1,5 @@
-// Copyright (c) 2023-2026 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom
-// Inc. and/or its subsidiaries.
+// Copyright (c) 2023-2026 Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -13,7 +13,6 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -21,9 +20,6 @@ import static org.junit.jupiter.api.extension.ConditionEvaluationResult.disabled
 import static org.junit.jupiter.api.extension.ConditionEvaluationResult.enabled;
 
 import com.rabbitmq.client.test.TestUtils;
-import com.rabbitmq.client.test.functional.FunctionalTestSuite;
-import com.rabbitmq.client.test.server.HaTestSuite;
-import com.rabbitmq.client.test.server.ServerTestSuite;
 import com.rabbitmq.client.test.ssl.SslTestSuite;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
@@ -33,7 +29,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -52,6 +47,7 @@ public class AmqpClientTestExtension
         AfterAllCallback {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AmqpClientTestExtension.class);
+
   static {
     LOGGER.debug("Available processor(s): {}", Runtime.getRuntime().availableProcessors());
   }
@@ -109,9 +105,9 @@ public class AmqpClientTestExtension
   public void beforeAll(ExtensionContext context) {
     if (TestUtils.isNetty()) {
       ThreadFactory tf = new NamedThreadFactory(context.getTestClass().get().getSimpleName() + "-");
-      EventLoopGroup eventLoopGroup = new MultiThreadIoEventLoopGroup(tf, NioIoHandler.newFactory());
-      store(context)
-          .put("nettyEventLoopGroup", eventLoopGroup);
+      EventLoopGroup eventLoopGroup =
+          new MultiThreadIoEventLoopGroup(tf, NioIoHandler.newFactory());
+      store(context).put("nettyEventLoopGroup", eventLoopGroup);
       TestUtils.eventLoopGroup(eventLoopGroup);
     }
   }
@@ -144,18 +140,16 @@ public class AmqpClientTestExtension
               .getStore(ExtensionContext.Namespace.GLOBAL)
               .getOrComputeIfAbsent(ExecutorServiceCloseableResourceWrapper.class);
 
-      wrapper
-          .executorService
-          .submit(
-              () -> {
-                try {
-                  eventLoopGroup.shutdownGracefully(0, 0, SECONDS).get(10, SECONDS);
-                } catch (InterruptedException e) {
-                  Thread.currentThread().interrupt();
-                } catch (Exception e) {
-                  LOGGER.warn("Error while asynchronously closing Netty event loop group", e);
-                }
-              });
+      wrapper.executorService.submit(
+          () -> {
+            try {
+              eventLoopGroup.shutdownGracefully(0, 0, SECONDS).get(10, SECONDS);
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            } catch (Exception e) {
+              LOGGER.warn("Error while asynchronously closing Netty event loop group", e);
+            }
+          });
     }
   }
 
