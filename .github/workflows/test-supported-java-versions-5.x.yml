@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: 5.x.x-stable
+          ref: v5.x
       - name: Checkout tls-gen
         uses: actions/checkout@v6
         with:
