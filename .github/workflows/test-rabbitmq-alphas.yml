@@ -5,14 +5,14 @@ on:
     - cron: '0 4 ? * SUN,THU'
   pull_request:
     branches:
-      - 5.x.x-stable
+      - v5.x
     paths:
       - src/**
       - pom.xml
       - ci/**
   push:
     branches:
-      - 5.x.x-stable
+      - v5.x
     paths:
       - src/**
       - pom.xml

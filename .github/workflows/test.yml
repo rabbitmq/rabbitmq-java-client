@@ -3,14 +3,14 @@ name: Test against RabbitMQ stable
 on:
   pull_request:
     branches:
-      - 5.x.x-stable
+      - v5.x
     paths:
       - src/**
       - pom.xml
       - ci/**
   push:
     branches:
-      - 5.x.x-stable
+      - v5.x
     paths:
       - src/**
       - pom.xml
