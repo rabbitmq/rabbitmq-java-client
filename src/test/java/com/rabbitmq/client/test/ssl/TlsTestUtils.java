@@ -1,5 +1,5 @@
-// Copyright (c) 2007-2026 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom
-// Inc. and/or its subsidiaries.
+// Copyright (c) 2007-2026 Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -13,8 +13,9 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client.test.ssl;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.PemReader;
@@ -25,11 +26,6 @@ import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -44,8 +40,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static java.nio.charset.StandardCharsets.US_ASCII;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 class TlsTestUtils {
 
@@ -69,11 +67,19 @@ class TlsTestUtils {
   }
 
   static SslContext toSslContext(SSLContext jdkSslContext) {
-    return new JdkSslContext(jdkSslContext, true, null, IdentityCipherSuiteFilter.INSTANCE,
-        null, ClientAuth.NONE, null, false);
+    return new JdkSslContext(
+        jdkSslContext,
+        true,
+        null,
+        IdentityCipherSuiteFilter.INSTANCE,
+        null,
+        ClientAuth.NONE,
+        null,
+        false);
   }
 
-  static void maybeConfigureNetty(ConnectionFactory cf, TrustManager trustManager) throws Exception {
+  static void maybeConfigureNetty(ConnectionFactory cf, TrustManager trustManager)
+      throws Exception {
     if (TestUtils.isNetty()) {
       cf.netty().sslContext(SslContextBuilder.forClient().trustManager(trustManager).build());
     }
@@ -154,24 +160,22 @@ class TlsTestUtils {
             "./rabbitmq-configuration/tls/client_" + hostname() + "_certificate.pem"));
   }
 
-  static X509Certificate loadCertificate(String file) throws Exception
-  {
+  static X509Certificate loadCertificate(String file) throws Exception {
     List<X509Certificate> certs = loadCertificateChain(file);
     if (certs.isEmpty()) {
       throw new CertificateException("No certificates found in file: " + file);
     }
     return certs.get(0);
-    }
+  }
 
   /**
-   * Load certificate chain from PEM file.
-   * Supports files with multiple concatenated certificates and mixed content (cert + key).
+   * Load certificate chain from PEM file. Supports files with multiple concatenated certificates
+   * and mixed content (cert + key).
    *
    * @param file Path to PEM file
    * @return List of certificates found in the file
    */
-  static List<X509Certificate> loadCertificateChain(String file) throws Exception
-  {
+  static List<X509Certificate> loadCertificateChain(String file) throws Exception {
     String pemContent = new String(Files.readAllBytes(Paths.get(file)), US_ASCII);
     return PemReader.readCertificateChain(pemContent);
   }
@@ -183,8 +187,7 @@ class TlsTestUtils {
    * @param keyPassword Password for encrypted private key (null if unencrypted)
    * @return KeyStore containing the certificate chain and private key
    */
-  static KeyStore loadKeyStoreFromPem(String file, String keyPassword) throws Exception
-  {
+  static KeyStore loadKeyStoreFromPem(String file, String keyPassword) throws Exception {
     String pemContent = new String(Files.readAllBytes(Paths.get(file)), US_ASCII);
     return PemReader.loadKeyStore(pemContent, pemContent, Optional.ofNullable(keyPassword));
   }
@@ -198,8 +201,7 @@ class TlsTestUtils {
    * @return KeyStore containing the certificate chain and private key
    */
   static KeyStore loadKeyStoreFromPem(String certFile, String keyFile, String keyPassword)
-      throws Exception
-  {
+      throws Exception {
     String certContent = new String(Files.readAllBytes(Paths.get(certFile)), US_ASCII);
     String keyContent = new String(Files.readAllBytes(Paths.get(keyFile)), US_ASCII);
     return PemReader.loadKeyStore(certContent, keyContent, Optional.ofNullable(keyPassword));
@@ -226,14 +228,10 @@ class TlsTestUtils {
   private static class AlwaysTrustManager implements X509TrustManager {
 
     @Override
-    public void checkClientTrusted(X509Certificate[] chain, String authType) {
-
-    }
+    public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
     @Override
-    public void checkServerTrusted(X509Certificate[] chain, String authType) {
-
-    }
+    public void checkServerTrusted(X509Certificate[] chain, String authType) {}
 
     @Override
     public X509Certificate[] getAcceptedIssuers() {

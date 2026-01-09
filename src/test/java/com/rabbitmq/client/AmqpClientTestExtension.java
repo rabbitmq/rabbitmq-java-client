@@ -1,5 +1,5 @@
-// Copyright (c) 2023-2026 Broadcom. All Rights Reserved. The term "Broadcom" refers to Broadcom
-// Inc. and/or its subsidiaries.
+// Copyright (c) 2023-2026 Broadcom. All Rights Reserved.
+// The term "Broadcom" refers to Broadcom Inc. and/or its subsidiaries.
 //
 // This software, the RabbitMQ Java client library, is triple-licensed under the
 // Mozilla Public License 2.0 ("MPL"), the GNU General Public License version 2
@@ -13,24 +13,18 @@
 //
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
-
 package com.rabbitmq.client;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.extension.ConditionEvaluationResult.disabled;
 import static org.junit.jupiter.api.extension.ConditionEvaluationResult.enabled;
 
 import com.rabbitmq.client.test.TestUtils;
-import com.rabbitmq.client.test.functional.FunctionalTestSuite;
-import com.rabbitmq.client.test.server.HaTestSuite;
-import com.rabbitmq.client.test.server.ServerTestSuite;
 import com.rabbitmq.client.test.ssl.SslTestSuite;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.LockInfo;
@@ -39,7 +33,6 @@ import java.lang.management.MonitorInfo;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadInfo;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -53,7 +46,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -72,6 +64,7 @@ public class AmqpClientTestExtension
         AfterAllCallback {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AmqpClientTestExtension.class);
+
   static {
     LOGGER.debug("Available processor(s): {}", Runtime.getRuntime().availableProcessors());
   }
@@ -131,27 +124,34 @@ public class AmqpClientTestExtension
   public void beforeAll(ExtensionContext context) {
     if (TestUtils.isNetty()) {
       Duration timeout = Duration.ofMinutes(20);
-      ScheduledFuture<?> task = executor(context).schedule(() -> {
-        try {
-          LOGGER.warn("Test {} has been running for {}", CURRENT_TEST.get(), timeout);
-          logThreadDump();
-        } catch (Exception e) {
-          LOGGER.warn("Error during test timeout task", e);
-        }
-      }, timeout.toMillis(), MILLISECONDS);
+      ScheduledFuture<?> task =
+          executor(context)
+              .schedule(
+                  () -> {
+                    try {
+                      LOGGER.warn("Test {} has been running for {}", CURRENT_TEST.get(), timeout);
+                      logThreadDump();
+                    } catch (Exception e) {
+                      LOGGER.warn("Error during test timeout task", e);
+                    }
+                  },
+                  timeout.toMillis(),
+                  MILLISECONDS);
       store(context).put("threadDumpTask", task);
       ThreadFactory tf = new NamedThreadFactory(context.getTestClass().get().getSimpleName() + "-");
-      EventLoopGroup eventLoopGroup = new MultiThreadIoEventLoopGroup(tf, NioIoHandler.newFactory());
-      store(context)
-          .put("nettyEventLoopGroup", eventLoopGroup);
+      EventLoopGroup eventLoopGroup =
+          new MultiThreadIoEventLoopGroup(tf, NioIoHandler.newFactory());
+      store(context).put("nettyEventLoopGroup", eventLoopGroup);
       TestUtils.eventLoopGroup(eventLoopGroup);
     }
   }
 
   @Override
   public void beforeEach(ExtensionContext context) {
-    String test = String.format("%s.%s", context.getTestClass().get().getSimpleName(),
-        context.getTestMethod().get().getName());
+    String test =
+        String.format(
+            "%s.%s",
+            context.getTestClass().get().getSimpleName(), context.getTestMethod().get().getName());
     CURRENT_TEST.set(test);
     LOGGER.info("Starting test: {} (IO layer: {})", test, TestUtils.IO_LAYER);
   }
@@ -168,22 +168,24 @@ public class AmqpClientTestExtension
   public void afterAll(ExtensionContext context) {
     if (TestUtils.isNetty()) {
       TestUtils.resetEventLoopGroup();
-      ScheduledFuture<?> threadDumpTask = store(context).get("threadDumpTask", ScheduledFuture.class);
+      ScheduledFuture<?> threadDumpTask =
+          store(context).get("threadDumpTask", ScheduledFuture.class);
       if (threadDumpTask != null) {
         threadDumpTask.cancel(true);
       }
       EventLoopGroup eventLoopGroup = eventLoopGroup(context);
       ExecutorService executor = executor(context);
 
-      executor.submit(() -> {
-        try {
-          eventLoopGroup.shutdownGracefully(0, 0, SECONDS).get(10, SECONDS);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
-        } catch (Exception e) {
-          LOGGER.warn("Error while asynchronously closing Netty event loop group", e);
-        }
-      });
+      executor.submit(
+          () -> {
+            try {
+              eventLoopGroup.shutdownGracefully(0, 0, SECONDS).get(10, SECONDS);
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            } catch (Exception e) {
+              LOGGER.warn("Error while asynchronously closing Netty event loop group", e);
+            }
+          });
     }
   }
 
@@ -241,8 +243,7 @@ public class AmqpClientTestExtension
 
   private static void logThreadDump() {
     PlainTextThreadDumpFormatter formatter = new PlainTextThreadDumpFormatter();
-    ThreadInfo[] threadInfos =
-        ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
+    ThreadInfo[] threadInfos = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
     String threadDump = formatter.format(threadInfos);
     LOGGER.warn(threadDump);
   }
