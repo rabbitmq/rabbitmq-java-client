@@ -117,6 +117,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * @param channelNumber The channel number to be associated with this channel
      * @param workService service for managing this channel's consumer callbacks
      * @param metricsCollector service for managing metrics
+     * @param observationCollector service for managing observations
      */
     public ChannelN(AMQConnection connection, int channelNumber,
                     ConsumerWorkService workService,
