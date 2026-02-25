@@ -19,6 +19,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.GetResponse;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 final class NoOpObservationCollector implements ObservationCollector {
 
@@ -27,7 +28,7 @@ final class NoOpObservationCollector implements ObservationCollector {
       PublishCall call,
       AMQP.Basic.Publish publish,
       AMQP.BasicProperties properties,
-      byte[] body,
+      ByteBuffer body,
       ConnectionInfo connectionInfo)
       throws IOException {
     call.publish(properties);

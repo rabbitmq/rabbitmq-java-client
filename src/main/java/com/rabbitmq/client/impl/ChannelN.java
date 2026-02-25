@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -715,6 +716,18 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              BasicProperties props, byte[] body)
         throws IOException
     {
+        basicPublish(exchange, routingKey, mandatory, immediate, props,
+                body == null ? null : ByteBuffer.wrap(body), null);
+    }
+
+    /** Public API - {@inheritDoc} */
+    @Override
+    public void basicPublish(String exchange, String routingKey,
+                             boolean mandatory, boolean immediate,
+                             BasicProperties props, ByteBuffer body,
+                             WriteListener listener)
+        throws IOException
+    {
         final long deliveryTag;
         if (nextPublishSeqNo > 0) {
             deliveryTag = getNextPublishSeqNo();
@@ -734,7 +747,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 .build();
         try {
             ObservationCollector.PublishCall publishCall = properties -> {
-                AMQCommand command = new AMQCommand(publish, properties, body);
+                AMQCommand command = new AMQCommand(publish, properties, body, listener);
                 transmit(command);
             };
             observationCollector.publish(publishCall, publish, props, body, this.connectionInfo());

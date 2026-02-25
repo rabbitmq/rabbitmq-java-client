@@ -784,6 +784,7 @@
             <includes>
               <include>src/main/java/com/rabbitmq/client/ConnectionFactory.java</include>
               <include>src/main/java/com/rabbitmq/client/PemReader.java</include>
+              <include>src/main/java/com/rabbitmq/client/WriteListener.java</include>
               <include>src/main/java/com/rabbitmq/client/impl/NettyFrameHandlerFactory.java</include>
               <include>src/main/java/com/rabbitmq/client/impl/Environment.java</include>
               <include>src/main/java/com/rabbitmq/client/observation/**/*.java</include>
@@ -797,6 +798,8 @@
               <include>src/test/java/com/rabbitmq/client/test/ProtocolVersionMismatch.java</include>
               <include>src/test/java/com/rabbitmq/client/test/TestUtils.java</include>
               <include>src/test/java/com/rabbitmq/client/test/RpcTopologyRecordingTest.java</include>
+              <include>src/test/java/com/rabbitmq/client/test/PublishWithByteBufferTest.java</include>
+              <include>src/test/java/com/rabbitmq/client/test/ByteBufferPublishTest.java</include>
             </includes>
             <googleJavaFormat>
               <version>${google-java-format.version}</version>

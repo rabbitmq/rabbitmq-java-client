@@ -264,7 +264,7 @@ public class AMQConnectionTest {
             return -1;
         }
 
-        public void flush() throws IOException {
+        public void flush(WriteListener listener) throws IOException {
             // no need to implement this: don't bother writing the frame
         }
 

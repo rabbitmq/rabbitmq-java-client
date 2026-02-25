@@ -18,11 +18,13 @@ package com.rabbitmq.client.impl;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
+import com.rabbitmq.client.WriteListener;
 
 /**
  * AMQP 0-9-1-specific implementation of {@link Command} which accumulates
@@ -46,14 +48,17 @@ public class AMQCommand implements Command {
     /** The assembler for this command - synchronised on - contains all the state */
     private final CommandAssembler assembler;
     private final Lock assemblerLock = new ReentrantLock();
+    private final WriteListener writeListener;
 
+    /** Construct a command for inbound frame assembly with a max body length. */
     AMQCommand(int maxBodyLength) {
-        this(null, null, null, maxBodyLength);
+        this.assembler = new CommandAssembler(null, null, maxBodyLength);
+        this.writeListener = null;
     }
 
-    /** Construct a command ready to fill in by reading frames */
+    /** Construct a command ready to fill in by reading frames. */
     public AMQCommand() {
-        this(null, null, null, Integer.MAX_VALUE);
+        this(Integer.MAX_VALUE);
     }
 
     /**
@@ -61,29 +66,31 @@ public class AMQCommand implements Command {
      * @param method the wrapped method
      */
     public AMQCommand(com.rabbitmq.client.Method method) {
-        this(method, null, null, Integer.MAX_VALUE);
+        this.assembler = new CommandAssembler((Method) method, null, Integer.MAX_VALUE);
+        this.writeListener = null;
     }
 
     /**
-     * Construct a command with a specified method, header and body.
+     * Construct a command with a ByteBuffer body for transmission.
      * @param method the wrapped method
      * @param contentHeader the wrapped content header
-     * @param body the message body data
+     * @param body the message body as a ByteBuffer
      */
-    public AMQCommand(com.rabbitmq.client.Method method, AMQContentHeader contentHeader, byte[] body) {
-        this.assembler = new CommandAssembler((Method) method, contentHeader, body, Integer.MAX_VALUE);
+    public AMQCommand(com.rabbitmq.client.Method method, AMQContentHeader contentHeader, ByteBuffer body) {
+        this(method, contentHeader, body, null);
     }
 
     /**
-     * Construct a command with a specified method, header and body.
+     * Construct a command with a ByteBuffer body and a write completion listener.
      * @param method the wrapped method
      * @param contentHeader the wrapped content header
-     * @param body the message body data
-     * @param maxBodyLength the maximum size for an inbound message body
+     * @param body the message body as a ByteBuffer
+     * @param writeListener called when the network layer finishes writing, may be {@code null}
      */
-    public AMQCommand(com.rabbitmq.client.Method method, AMQContentHeader contentHeader, byte[] body,
-                      int maxBodyLength) {
-        this.assembler = new CommandAssembler((Method) method, contentHeader, body, maxBodyLength);
+    public AMQCommand(com.rabbitmq.client.Method method, AMQContentHeader contentHeader, ByteBuffer body,
+                      WriteListener writeListener) {
+        this.assembler = new CommandAssembler((Method) method, contentHeader, body);
+        this.writeListener = writeListener;
     }
 
     /** Public API - {@inheritDoc} */
@@ -122,13 +129,13 @@ public class AMQCommand implements Command {
         try {
             Method m = this.assembler.getMethod();
             if (m.hasContent()) {
-                byte[] body = this.assembler.getContentBody();
-
-                Frame headerFrame = this.assembler.getContentHeader().toFrame(channelNumber, body.length);
+                ByteBuffer body = this.assembler.getByteBufferBody();
+                int bodySize = body == null ? 0 : body.remaining();
+                Frame headerFrame = this.assembler.getContentHeader().toFrame(channelNumber, bodySize);
 
                 int frameMax = connection.getFrameMax();
                 boolean cappedFrameMax = frameMax > 0;
-                int bodyPayloadMax = cappedFrameMax ? frameMax - EMPTY_FRAME_SIZE : body.length;
+                int bodyPayloadMax = cappedFrameMax ? frameMax - EMPTY_FRAME_SIZE : bodySize;
 
                 if (cappedFrameMax && headerFrame.size() > frameMax) {
                     String msg = String.format("Content headers exceeded max frame size: %d > %d", headerFrame.size(), frameMax);
@@ -137,14 +144,14 @@ public class AMQCommand implements Command {
                 connection.writeFrame(m.toFrame(channelNumber));
                 connection.writeFrame(headerFrame);
 
-                for (int offset = 0; offset < body.length; offset += bodyPayloadMax) {
-                    int remaining = body.length - offset;
-
-                    int fragmentLength = (remaining < bodyPayloadMax) ? remaining
-                            : bodyPayloadMax;
-                    Frame frame = Frame.fromBodyFragment(channelNumber, body,
-                            offset, fragmentLength);
-                    connection.writeFrame(frame);
+                if (body != null) {
+                    int bodyPosition = body.position();
+                    for (int offset = 0; offset < bodySize; offset += bodyPayloadMax) {
+                        int remaining = bodySize - offset;
+                        int fragmentLength = (remaining < bodyPayloadMax) ? remaining : bodyPayloadMax;
+                        Frame frame = Frame.fromBodyFragment(channelNumber, body, bodyPosition + offset, fragmentLength);
+                        connection.writeFrame(frame);
+                    }
                 }
             } else {
                 connection.writeFrame(m.toFrame(channelNumber));
@@ -153,7 +160,7 @@ public class AMQCommand implements Command {
             assemblerLock.unlock();
         }
 
-        connection.flush();
+        connection.flush(this.writeListener);
     }
 
     @Override public String toString() {
@@ -200,7 +207,7 @@ public class AMQCommand implements Command {
      * code in Frame.
      */
     private static void checkEmptyFrameSize() {
-        Frame f = new Frame(AMQP.FRAME_BODY, 0, new byte[0]);
+        Frame f = new Frame(AMQP.FRAME_BODY, 0, ByteBuffer.wrap(new byte[0]));
         ByteArrayOutputStream s = new ByteArrayOutputStream();
         try {
             f.writeTo(new DataOutputStream(s));
