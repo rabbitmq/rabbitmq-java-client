@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import javax.net.SocketFactory;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 
 /**
  * Test that the server correctly handles us when we send it bad frames
@@ -112,7 +113,7 @@ public class UnexpectedFrames extends BrokerTestCase {
                     // We can't just skip the method as that will lead us to
                     // send 0 bytes and hang waiting for a response.
                     return new Frame(AMQP.FRAME_HEADER,
-                                     frame.channel, frame.getPayload());
+                                     frame.channel, ByteBuffer.wrap(frame.getPayload()));
                 }
                 return frame;
             }
@@ -136,7 +137,7 @@ public class UnexpectedFrames extends BrokerTestCase {
                 if (frame.type == AMQP.FRAME_HEADER) {
                     byte[] payload = frame.getPayload();
                     Frame confusedFrame = new Frame(AMQP.FRAME_HEADER,
-                                                    frame.channel, payload);
+                                                    frame.channel, ByteBuffer.wrap(payload));
                     // First two bytes = class ID, must match class ID from
                     // method.
                     payload[0] = 12;
@@ -162,9 +163,9 @@ public class UnexpectedFrames extends BrokerTestCase {
     @Test public void unknownFrameType() throws IOException {
         expectError(AMQP.FRAME_ERROR, new Confuser() {
             public Frame confuse(Frame frame) {
-                if (frame.type == AMQP.FRAME_METHOD) {
+                    if (frame.type == AMQP.FRAME_METHOD) {
                     return new Frame(0, frame.channel,
-                                     "1234567890\0001234567890".getBytes());
+                                     ByteBuffer.wrap("1234567890\0001234567890".getBytes()));
                 }
                 return frame;
             }

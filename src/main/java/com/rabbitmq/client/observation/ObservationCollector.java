@@ -19,6 +19,7 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.GetResponse;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * API to instrument operations in the AMQP client. The supported operations are publishing,
@@ -40,9 +41,8 @@ public interface ObservationCollector {
   /**
    * Decorate message publishing.
    *
-   * <p>Implementations are expected to call {@link PublishCall#publish( PublishCall,
-   * AMQP.Basic.Publish, AMQP.BasicProperties, byte[], ConnectionInfo)} to make sure the message is
-   * actually sent.
+   * <p>Implementations are expected to call {@link PublishCall#publish(AMQP.BasicProperties)} to
+   * make sure the message is actually sent.
    *
    * @param call
    * @param publish
@@ -55,7 +55,7 @@ public interface ObservationCollector {
       PublishCall call,
       AMQP.Basic.Publish publish,
       AMQP.BasicProperties properties,
-      byte[] body,
+      ByteBuffer body,
       ConnectionInfo connectionInfo)
       throws IOException;
 

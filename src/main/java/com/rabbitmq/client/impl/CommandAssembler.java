@@ -16,6 +16,7 @@
 package com.rabbitmq.client.impl;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,20 +51,41 @@ final class CommandAssembler {
     /** sum of the lengths of all fragments */
     private int bodyLength;
 
+    /** Zero-copy body buffer, mutually exclusive with bodyN usage on the outbound path */
+    private final ByteBuffer byteBufferBody;
+
     /** No bytes of content body not yet accumulated */
     private long remainingBodyBytes;
 
     private final int maxBodyLength;
 
-    public CommandAssembler(Method method, AMQContentHeader contentHeader, byte[] body,
+    public CommandAssembler(Method method, AMQContentHeader contentHeader,
                             int maxBodyLength) {
         this.method = method;
         this.contentHeader = contentHeader;
         this.bodyN = new ArrayList<>(2);
         this.bodyLength = 0;
+        this.byteBufferBody = null;
         this.remainingBodyBytes = 0;
         this.maxBodyLength = maxBodyLength;
-        appendBodyFragment(body);
+        if (method == null) {
+            this.state = CAState.EXPECTING_METHOD;
+        } else if (contentHeader == null) {
+            this.state = method.hasContent() ? CAState.EXPECTING_CONTENT_HEADER : CAState.COMPLETE;
+        } else {
+            this.remainingBodyBytes = contentHeader.getBodySize() - this.bodyLength;
+            updateContentBodyState();
+        }
+    }
+
+    public CommandAssembler(Method method, AMQContentHeader contentHeader, ByteBuffer body) {
+        this.method = method;
+        this.contentHeader = contentHeader;
+        this.bodyN = new ArrayList<>(0);
+        this.bodyLength = body == null ? 0 : body.remaining();
+        this.byteBufferBody = body;
+        this.remainingBodyBytes = 0;
+        this.maxBodyLength = Integer.MAX_VALUE;
         if (method == null) {
             this.state = CAState.EXPECTING_METHOD;
         } else if (contentHeader == null) {
@@ -151,7 +173,17 @@ final class CommandAssembler {
     }
 
     public synchronized byte[] getContentBody() {
+        if (byteBufferBody != null) {
+            ByteBuffer dup = byteBufferBody.duplicate();
+            byte[] result = new byte[dup.remaining()];
+            dup.get(result);
+            return result;
+        }
         return coalesceContentBody();
+    }
+
+    public ByteBuffer getByteBufferBody() {
+        return this.byteBufferBody;
     }
 
     private void appendBodyFragment(byte[] fragment) {

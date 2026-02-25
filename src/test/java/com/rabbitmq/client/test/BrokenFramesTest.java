@@ -19,6 +19,7 @@ package com.rabbitmq.client.test;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.UnexpectedFrameError;
+import com.rabbitmq.client.WriteListener;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.AMQImpl.Basic.Publish;
 import com.rabbitmq.client.impl.Frame;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -79,7 +81,7 @@ public class BrokenFramesTest {
         Publish method = new Publish(1, "test", "test", false, false);
 
         frames.add(method.toFrame(0));
-        frames.add(Frame.fromBodyFragment(channelNumber, contentBody, 0, contentBody.length));
+        frames.add(Frame.fromBodyFragment(channelNumber, ByteBuffer.wrap(contentBody), 0, contentBody.length));
 
         myFrameHandler.setFrames(frames.iterator());
 
@@ -151,7 +153,7 @@ public class BrokenFramesTest {
             return -1;
         }
 
-        public void flush() throws IOException {
+        public void flush(WriteListener listener) throws IOException {
             // no need to implement this: don't bother writing the frame
         }
 
