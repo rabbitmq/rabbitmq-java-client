@@ -16,6 +16,7 @@
 package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.WriteListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -213,8 +214,18 @@ public class SocketFrameHandler implements FrameHandler {
     }
 
     @Override
-    public void flush() throws IOException {
-        _outputStream.flush();
+    public void flush(WriteListener listener) throws IOException {
+        try {
+            _outputStream.flush();
+            if (listener != null) {
+                listener.done(true, null);
+            }
+        } catch (IOException e) {
+            if (listener != null) {
+                listener.done(false, e);
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -222,12 +233,9 @@ public class SocketFrameHandler implements FrameHandler {
         try { _socket.setSoLinger(true, SOCKET_CLOSING_TIMEOUT); } catch (Exception _e) {}
         // async flush if possible
         // see https://github.com/rabbitmq/rabbitmq-java-client/issues/194
-        Callable<Void> flushCallable = new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                flush();
-                return null;
-            }
+        Callable<Void> flushCallable = () -> {
+            flush(null);
+            return null;
         };
         Future<Void> flushTask = null;
         try {

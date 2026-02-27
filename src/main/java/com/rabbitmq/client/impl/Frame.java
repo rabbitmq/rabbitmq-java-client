@@ -23,6 +23,7 @@ import io.netty.buffer.ByteBuf;
 import java.io.*;
 import java.math.BigDecimal;
 import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,9 @@ public class Frame {
     /** Frame payload (for outbound frames) */
     private final ByteArrayOutputStream accumulator;
 
+    /** Frame payload as a ByteBuffer (for basic.publish body frames) */
+    private final ByteBuffer byteBufferPayload;
+
     private static final int NON_BODY_SIZE = 1 /* type */ + 2 /* channel */ + 4 /* payload size */ + 1 /* end character */;
 
     /**
@@ -55,6 +59,7 @@ public class Frame {
         this.channel = channel;
         this.payload = null;
         this.accumulator = new ByteArrayOutputStream();
+        this.byteBufferPayload = null;
     }
 
     /**
@@ -66,15 +71,31 @@ public class Frame {
         this.channel = channel;
         this.payload = payload;
         this.accumulator = null;
+        this.byteBufferPayload = null;
     }
 
-    public static Frame fromBodyFragment(int channelNumber, byte[] body, int offset, int length)
-        throws IOException
-    {
-        Frame frame = new Frame(AMQP.FRAME_BODY, channelNumber);
-        DataOutputStream bodyOut = frame.getOutputStream();
-        bodyOut.write(body, offset, length);
-        return frame;
+    /**
+     * For basic.publish frames.
+     * @param type
+     * @param channel
+     * @param byteBufferPayload
+     */
+    public Frame(int type, int channel, ByteBuffer byteBufferPayload) {
+        this.type = type;
+        this.channel = channel;
+        this.payload = null;
+        this.accumulator = null;
+        this.byteBufferPayload = byteBufferPayload;
+    }
+
+    /**
+     * Body frame from a ByteBuffer slice. The buffer is not copied;
+     * the caller must not modify it after this call.
+     */
+    public static Frame fromBodyFragment(int channelNumber, ByteBuffer body, int offset, int length) {
+        ByteBuffer slice = body.duplicate();
+        slice.position(offset).limit(offset + length);
+        return new Frame(AMQP.FRAME_BODY, channelNumber, slice.slice());
     }
 
     /**
@@ -191,12 +212,21 @@ public class Frame {
     public void writeTo(DataOutputStream os) throws IOException {
         os.writeByte(type);
         os.writeShort(channel);
-        if (accumulator != null) {
+        if (byteBufferPayload != null) {
+            ByteBuffer buf = byteBufferPayload.duplicate();
+            os.writeInt(buf.remaining());
+            if (buf.hasArray()) {
+                os.write(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
+            } else {
+                byte[] tmp = new byte[buf.remaining()];
+                buf.get(tmp);
+                os.write(tmp);
+            }
+        } else if (accumulator != null) {
             os.writeInt(accumulator.size());
             accumulator.writeTo(os);
         } else {
-            os.writeInt(payload.length);
-            os.write(payload);
+            throw new IllegalStateException("Either a ByteBuffer or an accumulator is used to write a frame");
         }
         os.write(AMQP.FRAME_END);
     }
@@ -222,15 +252,14 @@ public class Frame {
                     buf.writeBytes(b, off, len);
                 }
             });
-        } else {
-            buf.writeInt(payload.length);
-            buf.writeBytes(payload);
         }
         buf.writeByte(AMQP.FRAME_END);
     }
 
     public int size() {
-        if(accumulator != null) {
+        if (byteBufferPayload != null) {
+            return byteBufferPayload.remaining() + NON_BODY_SIZE;
+        } else if (accumulator != null) {
             return accumulator.size() + NON_BODY_SIZE;
         } else {
             return payload.length + NON_BODY_SIZE;
@@ -238,10 +267,25 @@ public class Frame {
     }
 
     /**
+     * Returns the ByteBuffer payload if this frame was constructed from one, or null otherwise.
+     * The returned buffer is a duplicate; its position and limit are independent of the original.
+     */
+    ByteBuffer getByteBufferPayload() {
+        return byteBufferPayload == null ? null : byteBufferPayload.duplicate();
+    }
+
+    /**
      * Public API - retrieves the frame payload
      */
     public byte[] getPayload() {
         if (payload != null) return payload;
+
+        if (byteBufferPayload != null) {
+            ByteBuffer dup = byteBufferPayload.duplicate();
+            byte[] result = new byte[dup.remaining()];
+            dup.get(result);
+            return result;
+        }
 
         // This is a Frame we've constructed ourselves. For some reason (e.g.
         // testing), we're acting as if we received it even though it
@@ -266,7 +310,9 @@ public class Frame {
     @Override public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Frame(type=").append(type).append(", channel=").append(channel).append(", ");
-        if (accumulator == null) {
+        if (byteBufferPayload != null) {
+            sb.append(byteBufferPayload.remaining()).append(" bytes of ByteBuffer payload)");
+        } else if (accumulator == null) {
             sb.append(payload.length).append(" bytes of payload)");
         } else {
             sb.append(accumulator.size()).append(" bytes of accumulator)");
