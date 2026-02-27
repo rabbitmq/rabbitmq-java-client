@@ -16,6 +16,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static com.rabbitmq.client.test.TestUtils.BrokerVersion.RABBITMQ_4_2;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import com.rabbitmq.client.test.TestUtils.BrokerVersionAtMost;
 import org.junit.jupiter.api.Test;
 
 import com.rabbitmq.client.AMQP;
@@ -70,9 +72,7 @@ public class QosTests extends BrokerTestCase
      * receive n messages - check that we receive no fewer and cannot
      * receive more
      **/
-    public static List<Delivery> drain(QueueingConsumer c, int n)
-        throws IOException
-    {
+    public static List<Delivery> drain(QueueingConsumer c, int n) {
         List<Delivery> res = new LinkedList<Delivery>();
         try {
             long start = System.currentTimeMillis();
@@ -90,9 +90,7 @@ public class QosTests extends BrokerTestCase
         return res;
     }
 
-    @Test public void messageLimitPrefetchSizeFails()
-        throws IOException
-    {
+    @Test public void messageLimitPrefetchSizeFails() {
         try {
             channel.basicQos(1000, 0, false);
             fail("basic.qos{pretfetch_size=NonZero} should not be supported");
@@ -101,6 +99,7 @@ public class QosTests extends BrokerTestCase
         }
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void messageLimitUnlimited()
         throws IOException
     {
@@ -109,6 +108,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void noAckNoAlterLimit()
         throws IOException
     {
@@ -119,6 +119,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void noAckObeysLimit()
         throws IOException
     {
@@ -142,6 +143,7 @@ public class QosTests extends BrokerTestCase
         drain(c2, 1);
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void permutations()
         throws IOException
     {
@@ -159,6 +161,7 @@ public class QosTests extends BrokerTestCase
         }
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void fairness()
         throws IOException
     {
@@ -188,6 +191,7 @@ public class QosTests extends BrokerTestCase
 
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void singleChannelAndQueueFairness()
         throws IOException
     {
@@ -237,6 +241,7 @@ public class QosTests extends BrokerTestCase
         assertTrue(counts.get("c2").intValue() > 0);
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void consumerLifecycle()
         throws IOException
     {
@@ -258,6 +263,7 @@ public class QosTests extends BrokerTestCase
         channel.queueDelete(queue);
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void setLimitAfterConsume()
         throws IOException
     {
@@ -273,6 +279,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void limitIncrease()
         throws IOException
     {
@@ -282,6 +289,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void limitDecrease()
         throws IOException
     {
@@ -293,6 +301,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void limitedToUnlimited()
         throws IOException
     {
@@ -302,6 +311,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 2);
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void limitingMultipleChannels()
         throws IOException
     {
@@ -326,6 +336,7 @@ public class QosTests extends BrokerTestCase
         ch2.abort();
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void limitInheritsUnackedCount()
         throws IOException
     {
@@ -338,6 +349,7 @@ public class QosTests extends BrokerTestCase
         drain(c, 1);
     }
 
+    @BrokerVersionAtMost(RABBITMQ_4_2)
     @Test public void recoverReducesLimit() throws Exception {
         channel.basicQos(2, true);
         QueueingConsumer c = new QueueingConsumer(channel);

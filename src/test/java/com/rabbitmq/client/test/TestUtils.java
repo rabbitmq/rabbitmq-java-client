@@ -38,6 +38,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.assertj.core.api.Assertions;
@@ -490,13 +491,17 @@ public class TestUtils {
     }
   }
 
-  private static class BaseBrokerVersionAtLeastCondition
+  private static class BaseBrokerVersionCondition
       implements org.junit.jupiter.api.extension.ExecutionCondition {
 
     private final Function<ExtensionContext, String> versionProvider;
+    private final BiFunction<String, String, Boolean> versionEvaluator;
 
-    private BaseBrokerVersionAtLeastCondition(Function<ExtensionContext, String> versionProvider) {
+    private BaseBrokerVersionCondition(
+        Function<ExtensionContext, String> versionProvider,
+        BiFunction<String, String, Boolean> versionEvaluator) {
       this.versionProvider = versionProvider;
+      this.versionEvaluator = versionEvaluator;
     }
 
     @Override
@@ -523,7 +528,7 @@ public class TestUtils {
                     },
                     String.class);
 
-        if (atLeastVersion(expectedVersion, brokerVersion)) {
+        if (versionEvaluator.apply(expectedVersion, brokerVersion)) {
           return ConditionEvaluationResult.enabled(
               "Broker version requirement met, expected "
                   + expectedVersion
@@ -540,8 +545,7 @@ public class TestUtils {
     }
   }
 
-  private static class AnnotationBrokerVersionAtLeastCondition
-      extends BaseBrokerVersionAtLeastCondition {
+  private static class AnnotationBrokerVersionAtLeastCondition extends BaseBrokerVersionCondition {
 
     private AnnotationBrokerVersionAtLeastCondition() {
       super(
@@ -549,14 +553,21 @@ public class TestUtils {
             BrokerVersionAtLeast annotation =
                 context.getElement().get().getAnnotation(BrokerVersionAtLeast.class);
             return annotation == null ? null : annotation.value().toString();
-          });
+          },
+          TestUtils::atLeastVersion);
     }
   }
 
-  static class BrokerVersionAtLeast310Condition extends BaseBrokerVersionAtLeastCondition {
+  private static class AnnotationBrokerVersionAtMostCondition extends BaseBrokerVersionCondition {
 
-    private BrokerVersionAtLeast310Condition() {
-      super(context -> "3.10.0");
+    private AnnotationBrokerVersionAtMostCondition() {
+      super(
+          context -> {
+            BrokerVersionAtMost annotation =
+                context.getElement().get().getAnnotation(BrokerVersionAtMost.class);
+            return annotation == null ? null : annotation.value().toString();
+          },
+          TestUtils::atMostVersion);
     }
   }
 
@@ -569,10 +580,20 @@ public class TestUtils {
     BrokerVersion value();
   }
 
+  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Documented
+  @ExtendWith(AnnotationBrokerVersionAtMostCondition.class)
+  public @interface BrokerVersionAtMost {
+
+    BrokerVersion value();
+  }
+
   public enum BrokerVersion {
     RABBITMQ_3_8("3.8.0"),
     RABBITMQ_3_10("3.10.0"),
-    RABBITMQ_4_0("4.0.0");
+    RABBITMQ_4_0("4.0.0"),
+    RABBITMQ_4_2("4.2.0");
 
     final String value;
 
