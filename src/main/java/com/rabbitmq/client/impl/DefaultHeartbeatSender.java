@@ -137,7 +137,7 @@ final class DefaultHeartbeatSender implements HeartbeatSender {
 
                 if (now > (lastActivityTime + this.heartbeatNanos)) {
                     frameHandler.writeFrame(new Frame(AMQP.FRAME_HEARTBEAT, 0));
-                    frameHandler.flush();
+                    frameHandler.flush(null);
                 }
             } catch (IOException e) {
                 // ignore

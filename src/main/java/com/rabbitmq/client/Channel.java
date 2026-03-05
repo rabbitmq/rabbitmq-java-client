@@ -19,6 +19,7 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.AMQP.*;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
@@ -298,6 +299,48 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      */
     void basicPublish(String exchange, String routingKey, boolean mandatory, boolean immediate, BasicProperties props, byte[] body)
             throws IOException;
+
+    /**
+     * Publish a message with a {@link ByteBuffer} body and a {@link WriteListener} for
+     * write completion notification.
+     *
+     * <p>The buffer's content between its current position and its limit will be sent.
+     *
+     * <p>The listener is called when the network layer has finished writing the body to the
+     * socket. This is useful for off-heap buffers that must be released after the write completes.
+     *
+     * <p>Using this method will only benefit workloads using off-heap {@link ByteBuffer}s and the Netty
+     * IO layer. Other workloads can stick to the basicPublish variants that use an array of bytes
+     * for message payloads.
+     *
+     * <p><strong>Threading:</strong> the listener may be called on the Netty event loop thread.
+     * It must not perform blocking operations.
+     *
+     * <p>This API is experimental and is susceptible to change at any time.
+     *
+     * @param exchange the exchange to publish the message to
+     * @param routingKey the routing key
+     * @param mandatory true if the 'mandatory' flag is to be set
+     * @param immediate true if the 'immediate' flag is to be
+     * set. Note that the RabbitMQ server does not support this flag.
+     * @param props other properties for the message - routing headers etc
+     * @param body the message body
+     * @param listener called when the write completes, may be {@code null}
+     * @throws java.io.IOException if an error is encountered
+     * @since 5.30.0
+     */
+    default void basicPublish(String exchange, String routingKey, boolean mandatory, boolean immediate, BasicProperties props, ByteBuffer body, WriteListener listener)
+            throws IOException {
+        byte[] bytes = null;
+        if (body != null) {
+            bytes = new byte[body.remaining()];
+            body.get(bytes);
+        }
+        basicPublish(exchange, routingKey, mandatory, immediate, props, bytes);
+        if (listener != null) {
+            listener.done(true, null);
+        }
+    }
 
     /**
      * Actively declare a non-autodelete, non-durable exchange with no extra arguments

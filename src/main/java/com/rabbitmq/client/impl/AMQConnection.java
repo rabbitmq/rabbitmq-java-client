@@ -655,8 +655,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
      * Public API - flush the output buffers
      */
     public void flush() throws IOException {
+        flush(null);
+    }
+
+    void flush(WriteListener listener) throws IOException {
         try {
-            _frameHandler.flush();
+            _frameHandler.flush(listener);
         } catch (IOException ioe) {
             this.errorOnWriteListener.handle(this, ioe);
         }
