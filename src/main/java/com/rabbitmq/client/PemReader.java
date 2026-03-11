@@ -218,11 +218,7 @@ public final class PemReader {
     try {
       return KeyFactory.getInstance("DSA").generatePrivate(encodedKeySpec);
     } catch (InvalidKeySpecException e) {
-      attemptedAlgorithms.add("DSA: " + e.getMessage());
-      throw new KeyStoreException(
-          "Failed to load private key with any supported algorithm. Attempts: "
-              + attemptedAlgorithms,
-          e);
+      throw new KeyStoreException("Failed to load private key with any supported algorithm", e);
     }
   }
 
