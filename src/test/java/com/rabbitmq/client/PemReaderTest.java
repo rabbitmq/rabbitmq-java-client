@@ -20,12 +20,10 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("PemReader Security Tests")
 class PemReaderTest {
 
   // Valid test certificates and keys (minimal examples)
@@ -52,7 +50,6 @@ class PemReaderTest {
           + "-----END ENCRYPTED PRIVATE KEY-----";
 
   @Test
-  @DisplayName("Iteration 1: Regex Fix - Valid Certificate Parsing")
   void testValidCertificateParsing() throws Exception {
     List<X509Certificate> certs = PemReader.readCertificateChain(VALID_CERTIFICATE);
     assertNotNull(certs);
@@ -60,14 +57,12 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 1: Regex Fix - Certificate with REQUEST marker")
   void testCertificateWithRequestMarker() throws Exception {
     List<X509Certificate> certs = PemReader.readCertificateChain(CERTIFICATE_WITH_REQUEST_MARKERS);
     assertNotNull(certs);
   }
 
   @Test
-  @DisplayName("Iteration 2: Base64 Decoding - Empty Certificate Content")
   void testEmptyBase64Content() throws Exception {
     String emptyBase64Cert = "-----BEGIN CERTIFICATE-----\n" + "-----END CERTIFICATE-----";
     List<X509Certificate> certs = PemReader.readCertificateChain(emptyBase64Cert);
@@ -76,7 +71,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 2: Base64 Decoding - Invalid Base64 Characters")
   void testInvalidBase64Characters() throws Exception {
     String invalidBase64 =
         "-----BEGIN CERTIFICATE-----\n" + "!!!INVALID_BASE64!!!\n" + "-----END CERTIFICATE-----";
@@ -85,7 +79,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 3: Exception Handling - Missing Certificate")
   void testMissingCertificateExceptionMessage() {
     String noCertContent = "This is not a certificate";
     assertThrows(
@@ -99,7 +92,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 3: Exception Handling - Missing Private Key")
   void testMissingPrivateKeyError() {
     String noKeyContent = "This is not a private key";
     assertThrows(
@@ -107,21 +99,18 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 5: Input Validation - Null Certificate Content")
   void testNullCertificateContent() {
     assertThrows(
         NullPointerException.class, () -> PemReader.readCertificateChain(null));
   }
 
   @Test
-  @DisplayName("Iteration 5: Input Validation - Null Private Key Content")
   void testNullPrivateKeyContent() {
     assertThrows(
         NullPointerException.class, () -> PemReader.loadPrivateKey(null, Optional.empty()));
   }
 
   @Test
-  @DisplayName("Iteration 7: ReDoS Resilience - Long Dashes in Header")
   void testRedosResilienceLongDashString() {
     String dosPayload =
         "-----BEGIN " + "-".repeat(1000) + "-----\n" + "data\n" + "-----END CERTIFICATE-----";
@@ -140,7 +129,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 7: ReDoS Resilience - Repeated Pattern")
   void testRedosResilienceRepeatedPattern() {
     String dosPayload =
         "-----BEGIN "
@@ -160,7 +148,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 8: Certificate Validation - Empty Certificate Chain")
   void testEmptyCertificateChain() throws Exception {
     String noCerts = "No certificates here";
     List<X509Certificate> certs = PemReader.readCertificateChain(noCerts);
@@ -168,7 +155,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 8: Certificate Validation - Multiple Certificates")
   void testMultipleCertificates() throws Exception {
     String multipleCerts = VALID_CERTIFICATE + "\n" + VALID_CERTIFICATE;
     // Should parse without error
@@ -176,7 +162,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 9: Memory Safety - Key Password Handling")
   void testKeyPasswordHandling() {
     // Document that password is converted to char array
     Optional<String> password = Optional.of("test-password");
@@ -184,14 +169,12 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 9: Memory Safety - Empty Password")
   void testEmptyPasswordHandling() {
     Optional<String> noPassword = Optional.empty();
     assertDoesNotThrow(() -> PemReader.loadPrivateKey(VALID_PRIVATE_KEY_PKCS8, noPassword));
   }
 
   @Test
-  @DisplayName("Iteration 10: Comprehensive - KeyStore Creation Flow")
   void testKeyStoreCreationFlow() {
     assertThrows(
         Exception.class,
@@ -201,7 +184,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 6: Regex Pattern Matching - Whitespace Variations")
   void testWhitespaceVariations() throws Exception {
     String[] variations = {
       "-----BEGIN CERTIFICATE-----\ndata\n-----END CERTIFICATE-----",
@@ -217,7 +199,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 6: Regex Pattern Matching - Case Insensitivity")
   void testCaseInsensitivity() throws Exception {
     String[] caseVariations = {
       "-----BEGIN certificate-----\ndata\n-----END certificate-----",
@@ -231,7 +212,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 4: Logic Bug - All Three Key Algorithms Attempted")
   void testAllAlgorithmsAttempted() {
     String invalidKey = "-----BEGIN PRIVATE KEY-----\ninvaliddata\n-----END PRIVATE KEY-----";
     Exception exception =
@@ -244,7 +224,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 7: Timing Side-Channel - Consistent Performance")
   void testConsistentPerformance() throws Exception {
     String validCert = VALID_CERTIFICATE;
     String invalidCert = "-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----";
@@ -273,7 +252,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 10: Edge Case - Very Long Certificate Chain")
   void testLongCertificateChain() {
     StringBuilder longChain = new StringBuilder();
     for (int i = 0; i < 100; i++) {
@@ -283,7 +261,6 @@ class PemReaderTest {
   }
 
   @Test
-  @DisplayName("Iteration 10: Edge Case - Mixed Valid and Invalid Content")
   void testMixedContent() {
     String mixed = "Some random text\n" + VALID_CERTIFICATE + "\nMore random text";
     assertDoesNotThrow(() -> PemReader.readCertificateChain(mixed));
