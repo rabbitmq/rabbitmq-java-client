@@ -78,13 +78,13 @@ public class BindingLifecycleBase extends ClusteredTestBase {
     List<String> queueNames = new ArrayList<>();
     Binding binding = Binding.randomBinding();
     channel.exchangeDeclare(binding.x, "direct", durable, true, null);
-    channel.queueDeclare(binding.q, durable, false, true, null);
+    channel.queueDeclare(binding.q, durable, !durable, true, null);
     channel.queueBind(binding.q, binding.x, binding.k);
     if (queues > 1) {
       int j = queues - 1;
       for (int i = 0; i < j; i++) {
         queueNames.add(randomString());
-        channel.queueDeclare(queueNames.get(i), durable, false, false, null);
+        channel.queueDeclare(queueNames.get(i), durable, !durable, false, null);
         channel.queueBind(queueNames.get(i), binding.x, binding.k);
         channel.basicConsume(queueNames.get(i), true, new QueueingConsumer(channel));
       }
