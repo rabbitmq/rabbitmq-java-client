@@ -60,17 +60,27 @@ public final class PemReader {
 
   private static final Pattern CERT_PATTERN =
       Pattern.compile(
-          "-+BEGIN\\s+.*CERTIFICATE[^-]*-+\\s*" // Header
+          "-+BEGIN\\s+[^-]*?CERTIFICATE[^-]*-+\\s*" // Header
               + "([a-z0-9+/=\\s]+)" // Base64 text
-              + "-+END\\s+.*CERTIFICATE[^-]*-+", // Footer
+              + "-+END\\s+[^-]*?CERTIFICATE[^-]*-+", // Footer
           CASE_INSENSITIVE);
 
   private static final Pattern PRIVATE_KEY_PATTERN =
       Pattern.compile(
-          "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+\\s*" // Header
+          "-+BEGIN\\s+[^-]*?PRIVATE\\s+KEY[^-]*-+\\s*" // Header
               + "([a-z0-9+/=\\s]+)" // Base64 text
-              + "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", // Footer
+              + "-+END\\s+[^-]*?PRIVATE\\s+KEY[^-]*-+", // Footer
           CASE_INSENSITIVE);
+
+  private static final CertificateFactory CERT_FACTORY;
+
+  static {
+    try {
+      CERT_FACTORY = CertificateFactory.getInstance("X.509");
+    } catch (CertificateException e) {
+      throw new ExceptionInInitializerError(e);
+    }
+  }
 
   private PemReader() {}
 
@@ -102,8 +112,7 @@ public final class PemReader {
 
     List<X509Certificate> certificateChain = readCertificateChain(certificateChainContents);
     if (certificateChain.isEmpty()) {
-      throw new CertificateException(
-          "Certificate file does not contain any certificates: " + certificateChainContents);
+      throw new CertificateException("Certificate file does not contain any certificates");
     }
 
     KeyStore keyStore = KeyStore.getInstance("JKS");
@@ -131,15 +140,13 @@ public final class PemReader {
   public static List<X509Certificate> readCertificateChain(String certificateChainContents)
       throws CertificateException {
     Matcher matcher = CERT_PATTERN.matcher(certificateChainContents);
-    CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
     List<X509Certificate> certificates = new ArrayList<>();
 
     int start = 0;
     while (matcher.find(start)) {
       byte[] buffer = base64Decode(matcher.group(1));
       certificates.add(
-          (X509Certificate)
-              certificateFactory.generateCertificate(new ByteArrayInputStream(buffer)));
+          (X509Certificate) CERT_FACTORY.generateCertificate(new ByteArrayInputStream(buffer)));
       start = matcher.end();
     }
 
@@ -205,17 +212,13 @@ public final class PemReader {
       KeyFactory keyFactory = KeyFactory.getInstance("EC");
       return keyFactory.generatePrivate(encodedKeySpec);
     } catch (InvalidKeySpecException e) {
-      attemptedAlgorithms.add("RSA: " + e.getMessage());
+      attemptedAlgorithms.add("EC: " + e.getMessage());
     }
 
     try {
       return KeyFactory.getInstance("DSA").generatePrivate(encodedKeySpec);
     } catch (InvalidKeySpecException e) {
-      attemptedAlgorithms.add("DSA: " + e.getMessage());
-      throw new KeyStoreException(
-          "Failed to load private key with any supported algorithm. Attempts: "
-              + attemptedAlgorithms,
-          e);
+      throw new KeyStoreException("Failed to load private key with any supported algorithm", e);
     }
   }
 
