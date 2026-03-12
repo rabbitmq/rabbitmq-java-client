@@ -63,7 +63,7 @@
     <jackson.version>2.21.1</jackson.version>
     <logback.version>1.2.13</logback.version>
     <junit.jupiter.version>5.14.3</junit.jupiter.version>
-    <mockito.version>5.22.0</mockito.version>
+    <mockito.version>5.23.0</mockito.version>
     <assertj.version>3.27.7</assertj.version>
     <micrometer-tracing-test.version>1.6.4</micrometer-tracing-test.version>
     <micrometer-docs-generator.version>1.0.4</micrometer-docs-generator.version>
