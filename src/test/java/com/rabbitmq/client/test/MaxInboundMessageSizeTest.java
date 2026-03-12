@@ -45,7 +45,7 @@ public class MaxInboundMessageSizeTest extends BrokerTestCase {
   @Override
   protected void createResources() throws IOException, TimeoutException {
     q = generateQueueName();
-    declareTransientQueue(q);
+    deleteAndDeclareQueue(q);
     super.createResources();
   }
 

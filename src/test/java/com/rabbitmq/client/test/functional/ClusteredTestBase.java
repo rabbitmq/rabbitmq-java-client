@@ -85,7 +85,7 @@ public class ClusteredTestBase extends BrokerTestCase {
         Channel ch1 = c1.createChannel();
         Channel ch2 = c2.createChannel();
         // autodelete but not exclusive
-        String q = ch1.queueDeclare("", false, false, true, null).getQueue();
+        String q = ch1.queueDeclare("", true, false, true, null).getQueue();
 
         try {
             ch2.queueDeclarePassive(q);

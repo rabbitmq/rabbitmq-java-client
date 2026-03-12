@@ -96,7 +96,9 @@ public class DeadLetterExchange extends BrokerTestCase {
     {
         declareQueue("inequivalent_dlx_name", "dlx_foo", null, null);
         try {
-            declareQueue("inequivalent_dlx_name", "dlx_bar", null, null);
+            Map<String, Object> args = new HashMap<>();
+            args.put(DLX_ARG, "dlx_bar");
+            channel.queueDeclare("inequivalent_dlx_name", true, false, false, args);
             fail("x-dead-letter-exchange must be a valid exchange name " +
                     "and must not change in subsequent declarations");
         } catch (IOException ex) {
@@ -118,7 +120,10 @@ public class DeadLetterExchange extends BrokerTestCase {
     {
         declareQueue("inequivalent_dlx_rk", "amq.direct", "dlx_rk", null);
         try {
-            declareQueue("inequivalent_dlx_rk", "amq.direct", "dlx_rk2", null);
+            Map<String, Object> args = new HashMap<>();
+            args.put(DLX_ARG, "amq.direct");
+            args.put(DLX_RK_ARG, "dlx_rk2");
+            channel.queueDeclare("inequivalent_dlx_rk", true, false, false, args);
             fail("x-dead-letter-routing-key must be a string and must not " +
                     "change in subsequent declarations");
         } catch (IOException ex) {
@@ -628,7 +633,8 @@ public class DeadLetterExchange extends BrokerTestCase {
         if (deadLetterRoutingKey != null) {
             args.put(DLX_RK_ARG, deadLetterRoutingKey);
         }
-        channel.queueDeclare(queue, false, false, false, args);
+        channel.queueDelete(queue);
+        channel.queueDeclare(queue, true, false, false, args);
     }
 
     private void publishN(int n) throws IOException {

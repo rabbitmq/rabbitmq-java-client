@@ -41,7 +41,8 @@ public abstract class AbstractJsonRpcTest {
         clientChannel = clientConnection.createChannel();
         serverConnection = TestUtils.connectionFactory().newConnection();
         serverChannel = serverConnection.createChannel();
-        serverChannel.queueDeclare(queue, false, false, false, null);
+        serverChannel.queueDelete(queue);
+        serverChannel.queueDeclare(queue, true, false, false, null);
         server = new JsonRpcServer(serverChannel, queue, RpcService.class, new DefaultRpcservice(), createMapper());
         new Thread(() -> {
             try {

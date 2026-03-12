@@ -110,7 +110,8 @@ public class CloseInMainLoop extends BrokerTestCase {
     SpecialConnection connection = new SpecialConnection();
     Channel channel = connection.createChannel();
     channel.exchangeDeclare(x, "direct");
-    channel.queueDeclare(q, false, false, false, null);
+    channel.queueDelete(q);
+    channel.queueDeclare(q, true, false, false, null);
     channel.queueBind(q, x, "k");
 
     channel.basicConsume(
@@ -128,5 +129,10 @@ public class CloseInMainLoop extends BrokerTestCase {
 
     assertTrue(closeLatch.await(1000, TimeUnit.MILLISECONDS));
     assertTrue(connection.hadValidShutdown());
+
+    Channel cleanupCh = this.connection.createChannel();
+    cleanupCh.queueDelete(q);
+    cleanupCh.exchangeDelete(x);
+    cleanupCh.close();
   }
 }

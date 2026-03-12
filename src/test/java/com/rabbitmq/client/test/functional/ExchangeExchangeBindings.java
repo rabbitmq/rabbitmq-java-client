@@ -50,7 +50,8 @@ public class ExchangeExchangeBindings extends BrokerTestCase {
     @Override
     protected void createResources() throws IOException {
         for (String q : queues) {
-            channel.queueDeclare(q, false, false, false, null);
+            channel.queueDelete(q);
+            channel.queueDeclare(q, true, false, false, null);
         }
         for (String e : exchanges) {
             channel.exchangeDeclare(e, "fanout");

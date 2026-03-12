@@ -59,7 +59,7 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
         String prefix = "topology-recovery-retry-" + System.currentTimeMillis();
         for (int i = 0; i < nbQueues; i++) {
             String queue = prefix + i;
-            channel.queueDeclare(queue, false, false, true, new HashMap<>());
+            channel.queueDeclare(queue, true, false, true, new HashMap<>());
             channel.queueBind(queue, "amq.direct", queue);
             channel.queueBind(queue, "amq.direct", queue + "2");
             channel.basicConsume(queue, true, new DefaultConsumer(channel));
@@ -73,7 +73,7 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
     @Test
     public void topologyRecoveryBindingFailure() throws Exception {
         final String queue = "topology-recovery-retry-binding-failure" + System.currentTimeMillis();
-        channel.queueDeclare(queue, false, false, true, new HashMap<>());
+        channel.queueDeclare(queue, true, false, true, new HashMap<>());
         channel.queueBind(queue, "amq.topic", "topic1");
         channel.queueBind(queue, "amq.topic", "topic2");
         final CountDownLatch messagesReceivedLatch = new CountDownLatch(2);
@@ -135,7 +135,7 @@ public class TopologyRecoveryRetry extends BrokerTestCase {
     @Test
     public void topologyRecoveryConsumerFailure() throws Exception {
         final String queue = "topology-recovery-retry-consumer-failure" + System.currentTimeMillis();
-        channel.queueDeclare(queue, false, false, true, new HashMap<>());
+        channel.queueDeclare(queue, true, false, true, new HashMap<>());
         channel.queueBind(queue, "amq.topic", "topic1");
         channel.queueBind(queue, "amq.topic", "topic2");
         final CountDownLatch messagesReceivedLatch = new CountDownLatch(2);

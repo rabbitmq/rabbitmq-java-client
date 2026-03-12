@@ -248,7 +248,8 @@ public class QosTests extends BrokerTestCase
         channel.basicQos(1, true);
         QueueingConsumer c = new QueueingConsumer(channel);
         String queue = "qosTest";
-        channel.queueDeclare(queue, false, false, false, null);
+        channel.queueDelete(queue);
+        channel.queueDeclare(queue, true, false, false, null);
         channel.queueBind(queue, "amq.fanout", "");
         fill(3);
         String tag;

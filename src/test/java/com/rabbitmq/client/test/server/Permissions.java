@@ -96,7 +96,8 @@ public class Permissions extends BrokerTestCase
         withNames(new WithName() {
                 public void with(String name) throws IOException {
                     adminCh.exchangeDeclare(name, "direct");
-                    adminCh.queueDeclare(name, false, false, false, null);
+                    adminCh.queueDelete(name);
+                    adminCh.queueDeclare(name, true, false, false, null);
                 }});
     }
 
@@ -153,7 +154,8 @@ public class Permissions extends BrokerTestCase
     {
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
-                    channel.queueDeclare(name, false, false, false, null);
+                    channel.queueDelete(name);
+                    channel.queueDeclare(name, true, false, false, null);
                 }});
         runConfigureTest(new WithName() {
                 public void with(String name) throws IOException {
@@ -264,7 +266,7 @@ public class Permissions extends BrokerTestCase
 
         assertAccessRefused(new WithName() {
             public void with(String _e) throws IOException {
-                channel.queueDeclare("justaqueue", false, false, true, null);
+                channel.queueDeclare("justaqueue", true, false, true, null);
             }
         }
         );
@@ -338,7 +340,8 @@ public class Permissions extends BrokerTestCase
             public void with(String dlx) throws IOException {
                 Map<String, Object> args = new HashMap<String, Object>();
                 args.put("x-dead-letter-exchange", dlx);
-                channel.queueDeclare(queue, false, false, false, args);
+                channel.queueDelete(queue);
+                channel.queueDeclare(queue, true, false, false, args);
                 channel.queueDelete(queue);
             }};
     }
