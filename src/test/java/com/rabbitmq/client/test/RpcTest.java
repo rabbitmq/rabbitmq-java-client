@@ -55,7 +55,8 @@ public class RpcTest {
         clientChannel = clientConnection.createChannel();
         serverConnection = TestUtils.connectionFactory().newConnection();
         serverChannel = serverConnection.createChannel();
-        serverChannel.queueDeclare(queue, false, false, false, null);
+        serverChannel.queueDelete(queue);
+        serverChannel.queueDeclare(queue, true, false, false, null);
     }
 
     @AfterEach

@@ -37,7 +37,8 @@ public class Transactions extends BrokerTestCase
     protected long latestTag = 0L;
 
     protected void createResources() throws IOException {
-        channel.queueDeclare(Q, false, false, false, null);
+        channel.queueDelete(Q);
+        channel.queueDeclare(Q, true, false, false, null);
     }
 
     protected void releaseResources() throws IOException {

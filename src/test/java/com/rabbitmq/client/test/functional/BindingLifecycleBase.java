@@ -60,7 +60,8 @@ public class BindingLifecycleBase extends ClusteredTestBase {
 
   protected void createQueueAndBindToExchange(Binding binding, boolean durable) throws IOException {
     channel.exchangeDeclare(binding.x, "direct", durable);
-    channel.queueDeclare(binding.q, durable, false, false, null);
+    channel.queueDelete(binding.q);
+    channel.queueDeclare(binding.q, true, false, false, null);
     channel.queueBind(binding.q, binding.x, binding.k);
   }
 

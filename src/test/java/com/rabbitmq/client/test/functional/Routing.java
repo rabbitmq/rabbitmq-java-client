@@ -52,8 +52,10 @@ public class Routing extends BrokerTestCase
 
     protected void createResources() throws IOException {
         channel.exchangeDeclare(E, "direct");
-        channel.queueDeclare(Q1, false, false, false, null);
-        channel.queueDeclare(Q2, false, false, false, null);
+        channel.queueDelete(Q1);
+        channel.queueDeclare(Q1, true, false, false, null);
+        channel.queueDelete(Q2);
+        channel.queueDeclare(Q2, true, false, false, null);
     }
 
     protected void releaseResources() throws IOException {
@@ -341,7 +343,7 @@ public class Routing extends BrokerTestCase
             channel.queueDelete(Q1);
             channel.txCommit();
             checkReturn();
-            channel.queueDeclare(Q1, false, false, false, null);
+            channel.queueDeclare(Q1, true, false, false, null);
         }
     }
 

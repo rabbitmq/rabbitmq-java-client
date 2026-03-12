@@ -265,12 +265,14 @@ public class BrokerTestCase {
         channel.queueDeclare(q, true, false, false, null);
     }
 
-    protected void declareTransientQueue(String q) throws IOException {
-        channel.queueDeclare(q, false, false, false, null);
+    protected void deleteAndDeclareQueue(String q) throws IOException {
+        channel.queueDelete(q);
+        channel.queueDeclare(q, true, false, false, null);
     }
 
-    protected void declareTransientQueue(String q, Map<String, Object> args) throws IOException {
-        channel.queueDeclare(q, false, false, false, args);
+    protected void deleteAndDeclareQueue(String q, Map<String, Object> args) throws IOException {
+        channel.queueDelete(q);
+        channel.queueDeclare(q, true, false, false, args);
     }
 
     protected void declareDurableTopicExchange(String x) throws IOException {

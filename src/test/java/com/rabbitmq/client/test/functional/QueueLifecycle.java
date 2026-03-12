@@ -74,7 +74,8 @@ public class QueueLifecycle extends BrokerTestCase {
     void verifyNotEquivalent(boolean durable, boolean exclusive,
             boolean autoDelete) throws IOException {
         String q = "queue";
-        channel.queueDeclare(q, false, false, false, null);
+        channel.queueDelete(q);
+        channel.queueDeclare(q, true, false, false, null);
         try {
             verifyQueue(q, durable, exclusive, autoDelete, null);
         } catch (IOException ioe) {
@@ -96,29 +97,30 @@ public class QueueLifecycle extends BrokerTestCase {
      */
     @Test public void queueEquivalence() throws IOException {
         String q = "queue";
-        channel.queueDeclare(q, false, false, false, null);
+        channel.queueDelete(q);
+        channel.queueDeclare(q, true, false, false, null);
         // equivalent
-        verifyQueue(q, false, false, false, null);
+        verifyQueue(q, true, false, false, null);
 
         // the spec says that the arguments table is matched on
         // being semantically equivalent.
         HashMap<String, Object> args = new HashMap<String, Object>();
         args.put("assumed-to-be-semantically-void", "bar");
-        verifyQueue(q, false, false, false, args);
+        verifyQueue(q, true, false, false, args);
 
     }
 
     // not equivalent in various ways
     @Test public void queueNonEquivalenceDurable() throws IOException {
-        verifyNotEquivalent(true, false, false);
+        verifyNotEquivalent(false, false, false);
     }
 
     @Test public void queueNonEquivalenceExclusive() throws IOException {
-        verifyNotEquivalent(false, true, false);
+        verifyNotEquivalent(true, true, false);
     }
 
     @Test public void queueNonEquivalenceAutoDelete() throws IOException {
-        verifyNotEquivalent(false, false, true);
+        verifyNotEquivalent(true, false, true);
     }
 
     // Note that this assumes that auto-deletion is synchronous with
@@ -126,9 +128,10 @@ public class QueueLifecycle extends BrokerTestCase {
     // which is not actually in the spec. (If it isn't, there's a race here).
     @Test public void queueAutoDelete() throws IOException {
         String name = "tempqueue";
-        channel.queueDeclare(name, false, false, true, null);
+        channel.queueDelete(name);
+        channel.queueDeclare(name, true, false, true, null);
         // now it's there
-        verifyQueue(name, false, false, true, null);
+        verifyQueue(name, true, false, true, null);
         Consumer consumer = new DefaultConsumer(channel);
         String consumerTag = channel.basicConsume(name, consumer);
         channel.basicCancel(consumerTag);
@@ -177,7 +180,7 @@ public class QueueLifecycle extends BrokerTestCase {
     @Test public void queueNamesLongerThan255Characters() throws IOException {
         String q = new String(new byte[300]).replace('\u0000', 'x');
         try {
-            channel.queueDeclare(q, false, false, false, null);
+            channel.queueDeclare(q, true, false, false, null);
             fail("queueDeclare should have failed");
         } catch (IllegalArgumentException ignored) {
             // expected
@@ -185,24 +188,29 @@ public class QueueLifecycle extends BrokerTestCase {
     }
 
     @Test public void singleLineFeedStrippedFromQueueName() throws IOException {
-        channel.queueDeclare("que\nue_test", false, false, true, null);
-        verifyQueue(NAME_STRIPPED, false, false, true, null);
+        channel.queueDelete(NAME_STRIPPED);
+        channel.queueDeclare("que\nue_test", true, false, true, null);
+        verifyQueue(NAME_STRIPPED, true, false, true, null);
     }
 
     @Test public void multipleLineFeedsStrippedFromQueueName() throws IOException {
-        channel.queueDeclare("que\nue_\ntest\n", false, false, true, null);
-        verifyQueue(NAME_STRIPPED, false, false, true, null);
+        channel.queueDelete(NAME_STRIPPED);
+        channel.queueDeclare("que\nue_\ntest\n", true, false, true, null);
+        verifyQueue(NAME_STRIPPED, true, false, true, null);
     }
 
     @Test public void multipleLineFeedAndCarriageReturnsStrippedFromQueueName() throws IOException {
-        channel.queueDeclare("q\ru\ne\r\nue_\ntest\n\r", false, false, true, null);
-        verifyQueue(NAME_STRIPPED, false, false, true, null);
+        channel.queueDelete(NAME_STRIPPED);
+        channel.queueDeclare("q\ru\ne\r\nue_\ntest\n\r", true, false, true, null);
+        verifyQueue(NAME_STRIPPED, true, false, true, null);
     }
 
     static final String NAME_STRIPPED = "queue_test";
 
     @Override
     protected void releaseResources() throws IOException {
+        channel.queueDelete("queue");
+        channel.queueDelete("tempqueue");
         channel.queueDelete(NAME_STRIPPED);
     }
 }

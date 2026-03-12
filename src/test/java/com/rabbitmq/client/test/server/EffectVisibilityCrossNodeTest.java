@@ -36,7 +36,7 @@ public class EffectVisibilityCrossNodeTest extends ClusteredTestBase {
     @Override
     protected void createResources() throws IOException {
         for (int i = 0; i < queues.length ; i++) {
-            queues[i] = alternateChannel.queueDeclare("", false, false, true, null).getQueue();
+            queues[i] = alternateChannel.queueDeclare("", true, false, true, null).getQueue();
             alternateChannel.queueBind(queues[i], "amq.fanout", "");
         }
         executorService = Executors.newSingleThreadExecutor();

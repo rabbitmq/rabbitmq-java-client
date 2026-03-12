@@ -79,6 +79,7 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
     private AutorecoveringChannel consumingChannel;
 
     private CountDownLatch consumerOkLatch;
+    private String testQueue;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -121,16 +122,22 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
     }
 
     @AfterEach
-    public void tearDown() throws IOException {
+    public void tearDown() throws Exception {
         closeConnectionIfOpen(consumingConnection);
         closeConnectionIfOpen(producingConnection);
-
+        if (testQueue != null) {
+            ConnectionFactory cf = TestUtils.connectionFactory();
+            try (Connection c = cf.newConnection(); Channel ch = c.createChannel()) {
+                ch.queueDelete(testQueue);
+            }
+        }
         executorService.shutdownNow();
     }
 
     @Test
     public void failureAndRecovery() throws IOException, InterruptedException {
         final String queue = UUID.randomUUID().toString();
+        this.testQueue = queue;
 
         final CountDownLatch recoveryLatch = new CountDownLatch(1);
 
@@ -167,7 +174,8 @@ public class NoAutoRecoveryWhenTcpWindowIsFullTest {
 
     private void declareQueue(final Channel channel, final String queue) throws IOException {
         final Map<String, Object> queueArguments = new HashMap<String, Object>();
-        channel.queueDeclare(queue, false, false, false, queueArguments);
+        channel.queueDelete(queue);
+        channel.queueDeclare(queue, true, false, false, queueArguments);
     }
 
     private void produceMessagesInBackground(final Channel channel, final String queue) throws IOException {
