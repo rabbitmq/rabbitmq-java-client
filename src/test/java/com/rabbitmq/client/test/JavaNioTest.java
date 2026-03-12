@@ -201,7 +201,7 @@ public class JavaNioTest {
             throws IOException, TimeoutException {
         Connection connection = connectionFactory.newConnection();
         Channel channel = connection.createChannel();
-        channel.queueDeclare(queue, false, false, false, null);
+        channel.queueDeclare(queue, true, false, true, null);
         channel.queuePurge(queue);
 
         channel.basicPublish("", queue, null, new byte[20000]);
@@ -220,7 +220,7 @@ public class JavaNioTest {
     private boolean basicGetBasicConsume(Connection connection, String queue, final CountDownLatch latch, int msgSize)
             throws Exception {
         Channel channel = connection.createChannel();
-        channel.queueDeclare(queue, false, false, false, null);
+        channel.queueDeclare(queue, true, false, false, null);
         channel.queuePurge(queue);
 
         channel.basicPublish("", queue, null, new byte[msgSize]);
