@@ -67,7 +67,8 @@ public class MemoryAlarms extends BrokerTestCase {
 
     @Override
     protected void createResources() throws IOException {
-        channel.queueDeclare(Q, false, false, false, null);
+        channel.queueDelete(Q);
+        channel.queueDeclare(Q, true, false, false, null);
     }
 
     @Override

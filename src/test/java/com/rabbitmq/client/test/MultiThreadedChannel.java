@@ -15,6 +15,7 @@
 
 package com.rabbitmq.client.test;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,14 @@ public class MultiThreadedChannel extends BrokerTestCase {
 
     private static final String DUMMY_EXCHANGE_NAME = "dummy.exchange";
 
+    @Override
+    protected void releaseResources() throws IOException {
+        channel.queueDelete(DUMMY_QUEUE_NAME);
+        channel.exchangeDelete(DUMMY_EXCHANGE_NAME);
+    }
+
     @Test public void interleavedRpcs() throws Throwable {
+        channel.queueDelete(DUMMY_QUEUE_NAME);
 
         final AtomicReference<Throwable> throwableRef = new AtomicReference<Throwable>(null);
 
@@ -36,7 +44,7 @@ public class MultiThreadedChannel extends BrokerTestCase {
             public void run() {
                 try {
                     for (int x = 0; x < 100; x++) {
-                        channel.queueDeclare(DUMMY_QUEUE_NAME, false, false, true, null);
+                        channel.queueDeclare(DUMMY_QUEUE_NAME, true, false, true, null);
                     }
                 } catch (Throwable e) {
                     throwableRef.set(e);

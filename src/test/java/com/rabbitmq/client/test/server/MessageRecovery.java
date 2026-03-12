@@ -42,7 +42,7 @@ public class MessageRecovery extends ConfirmBase
                              "nop".getBytes());
         waitForConfirms();
 
-        channel.queueDeclare(Q2, false, false, false, null);
+        channel.queueDeclare(Q2, true, false, false, null);
 
         restart();
 

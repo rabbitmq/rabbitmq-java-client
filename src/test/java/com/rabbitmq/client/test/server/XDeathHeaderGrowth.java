@@ -89,18 +89,18 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
         declareTransientFanoutExchange(x3);
 
         final String q1 = "issues.rabbitmq-server-78.queue1";
-        declareTransientQueue(q1, argumentsForDeadLetteringTo(x1));
+        deleteAndDeclareQueue(q1, argumentsForDeadLetteringTo(x1));
 
         final String q2 = "issues.rabbitmq-server-78.queue2";
-        declareTransientQueue(q2, argumentsForDeadLetteringTo(x2));
+        deleteAndDeclareQueue(q2, argumentsForDeadLetteringTo(x2));
         this.channel.queueBind(q2, x1, "");
 
         final String q3 = "issues.rabbitmq-server-78.queue3";
-        declareTransientQueue(q3, argumentsForDeadLetteringTo(x3));
+        deleteAndDeclareQueue(q3, argumentsForDeadLetteringTo(x3));
         this.channel.queueBind(q3, x2, "");
 
         final String qz = "issues.rabbitmq-server-78.destination";
-        declareTransientQueue(qz, argumentsForDeadLetteringWithoutTtlTo(x3));
+        deleteAndDeclareQueue(qz, argumentsForDeadLetteringWithoutTtlTo(x3));
         this.channel.queueBind(qz, x3, "");
 
         CountDownLatch latch = new CountDownLatch(10);
@@ -148,14 +148,14 @@ public class XDeathHeaderGrowth extends BrokerTestCase {
         declareTransientFanoutExchange(x2);
 
         final String q1 = "issues.rabbitmq-server-152.queue1";
-        declareTransientQueue(q1, argumentsForDeadLetteringTo(x1));
+        deleteAndDeclareQueue(q1, argumentsForDeadLetteringTo(x1));
 
         final String q2 = "issues.rabbitmq-server-152.queue2";
-        declareTransientQueue(q2, argumentsForDeadLetteringTo(x2));
+        deleteAndDeclareQueue(q2, argumentsForDeadLetteringTo(x2));
         this.channel.queueBind(q2, x1, "");
 
         final String qz = "issues.rabbitmq-server-152.destination";
-        declareTransientQueue(qz, argumentsForDeadLetteringWithoutTtlTo(x2));
+        deleteAndDeclareQueue(qz, argumentsForDeadLetteringWithoutTtlTo(x2));
         this.channel.queueBind(qz, x2, "");
 
         CountDownLatch latch = new CountDownLatch(10);

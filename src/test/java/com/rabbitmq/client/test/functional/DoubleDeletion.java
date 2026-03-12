@@ -31,7 +31,7 @@ public class DoubleDeletion extends BrokerTestCase
         throws IOException
     {
         channel.queueDelete(Q);
-        channel.queueDeclare(Q, false, false, false, null);
+        channel.queueDeclare(Q, true, false, false, null);
         channel.queueDelete(Q);
         channel.queueDelete(Q);
     }

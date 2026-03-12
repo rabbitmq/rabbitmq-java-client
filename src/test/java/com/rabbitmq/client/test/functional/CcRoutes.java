@@ -62,7 +62,7 @@ public class CcRoutes extends BrokerTestCase  {
                 .collect(Collectors.toList())
                 .toArray(new String[]{});
         for (String q : queues) {
-            channel.queueDeclare(q, false, false, true, null);
+            channel.queueDeclare(q, true, false, true, null);
         }
         channel.exchangeDeclare(exDirect, "direct", false, true, null);
         channel.exchangeDeclare(exTopic, "topic", false, true, null);

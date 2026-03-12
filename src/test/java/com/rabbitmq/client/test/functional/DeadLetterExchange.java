@@ -628,7 +628,8 @@ public class DeadLetterExchange extends BrokerTestCase {
         if (deadLetterRoutingKey != null) {
             args.put(DLX_RK_ARG, deadLetterRoutingKey);
         }
-        channel.queueDeclare(queue, false, false, false, args);
+        channel.queueDelete(queue);
+        channel.queueDeclare(queue, true, false, false, args);
     }
 
     private void publishN(int n) throws IOException {

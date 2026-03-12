@@ -106,8 +106,10 @@ public class TopologyRecoveryFiltering extends BrokerTestCase {
         Channel ch = c.createChannel();
 
         ch.exchangeDeclare("topology.recovery.exchange", "direct");
-        ch.queueDeclare("topology.recovery.queue.1", false, false, false, null);
-        ch.queueDeclare("topology.recovery.queue.2", false, false, false, null);
+        ch.queueDelete("topology.recovery.queue.1");
+        ch.queueDeclare("topology.recovery.queue.1", true, false, false, null);
+        ch.queueDelete("topology.recovery.queue.2");
+        ch.queueDeclare("topology.recovery.queue.2", true, false, false, null);
         ch.queueBind("topology.recovery.queue.1", "topology.recovery.exchange", "recovered.binding");
         ch.queueBind("topology.recovery.queue.2", "topology.recovery.exchange", "filtered.binding");
 
@@ -130,8 +132,10 @@ public class TopologyRecoveryFiltering extends BrokerTestCase {
         Channel ch = c.createChannel();
 
         ch.exchangeDeclare("topology.recovery.exchange", "direct");
-        ch.queueDeclare("topology.recovery.queue.1", false, false, false, null);
-        ch.queueDeclare("topology.recovery.queue.2", false, false, false, null);
+        ch.queueDelete("topology.recovery.queue.1");
+        ch.queueDeclare("topology.recovery.queue.1", true, false, false, null);
+        ch.queueDelete("topology.recovery.queue.2");
+        ch.queueDeclare("topology.recovery.queue.2", true, false, false, null);
         ch.queueBind("topology.recovery.queue.1", "topology.recovery.exchange", "recovered.consumer");
         ch.queueBind("topology.recovery.queue.2", "topology.recovery.exchange", "filtered.consumer");
 
