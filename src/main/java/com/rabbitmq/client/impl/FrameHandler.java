@@ -15,6 +15,7 @@
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.WriteListener;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -74,10 +75,12 @@ public interface FrameHandler extends NetworkConnection {
     void writeFrame(Frame frame) throws IOException;
 
     /**
-     * Flush the underlying data connection.
+     * Flush the underlying data connection and notify the listener when the write completes.
+     * The default implementation flushes synchronously and calls the listener immediately.
+     * @param listener called when the flush completes, may be {@code null}
      * @throws IOException if there is a problem accessing the connection
      */
-    void flush() throws IOException;
+    void flush(WriteListener listener) throws IOException;
 
     /** Close the underlying data connection (complaint not permitted). */
     void close();
