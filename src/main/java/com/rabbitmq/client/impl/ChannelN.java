@@ -631,8 +631,8 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             // we wait for the reply. We ignore the result.
             // (It's NOT always close-ok.)
             notify = true;
-			      // do not wait indefinitely
-            k.getReply(10000);
+            int closeTimeout = _rpcTimeout == NO_RPC_TIMEOUT ? 10000 : _rpcTimeout;
+            k.getReply(closeTimeout);
         } catch (TimeoutException ise) {
             if (!abort)
                 throw ise;
