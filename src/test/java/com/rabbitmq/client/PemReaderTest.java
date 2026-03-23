@@ -17,6 +17,7 @@ package com.rabbitmq.client;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -104,7 +105,11 @@ class PemReaderTest {
   @Test
   void testRedosResilienceLongDashString() {
     String dosPayload =
-        "-----BEGIN " + "-".repeat(1000) + "-----\n" + "data\n" + "-----END CERTIFICATE-----";
+        "-----BEGIN "
+            + String.join("", Collections.nCopies(1000, "-"))
+            + "-----\n"
+            + "data\n"
+            + "-----END CERTIFICATE-----";
     long startTime = System.nanoTime();
     try {
       PemReader.readCertificateChain(dosPayload);
@@ -118,7 +123,7 @@ class PemReaderTest {
   void testRedosResilienceRepeatedPattern() {
     String dosPayload =
         "-----BEGIN "
-            + "CERTIFICATE ".repeat(100)
+            + String.join("", Collections.nCopies(100, "CERTIFICATE "))
             + "-----\ndata\n-----END CERTIFICATE-----";
     long startTime = System.nanoTime();
     try {
