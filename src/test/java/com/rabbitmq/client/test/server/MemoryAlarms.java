@@ -41,7 +41,10 @@ public class MemoryAlarms extends BrokerTestCase {
     @BeforeEach
     @Override
     public void setUp(TestInfo info) throws IOException, TimeoutException {
-        connectionFactory.setRequestedHeartbeat(1);
+        // only flowControl verifies that heartbeat timeouts do not kill a blocked connection
+        if (info.getTestMethod().map(m -> m.getName().equals("flowControl")).orElse(false)) {
+            connectionFactory.setRequestedHeartbeat(1);
+        }
         super.setUp(info);
         if (connection2 == null) {
             connection2 = connectionFactory.newConnection();
