@@ -41,10 +41,6 @@ public class MemoryAlarms extends BrokerTestCase {
     @BeforeEach
     @Override
     public void setUp(TestInfo info) throws IOException, TimeoutException {
-        // only flowControl verifies that heartbeat timeouts do not kill a blocked connection
-        if (info.getTestMethod().map(m -> m.getName().equals("flowControl")).orElse(false)) {
-            connectionFactory.setRequestedHeartbeat(1);
-        }
         super.setUp(info);
         if (connection2 == null) {
             connection2 = connectionFactory.newConnection();
@@ -65,7 +61,6 @@ public class MemoryAlarms extends BrokerTestCase {
             connection2 = null;
         }
         super.tearDown(info);
-        connectionFactory.setRequestedHeartbeat(0);
     }
 
     @Override
@@ -80,24 +75,33 @@ public class MemoryAlarms extends BrokerTestCase {
     }
 
     @Test public void flowControl() throws IOException, InterruptedException {
-        basicPublishVolatile(Q);
-        setResourceAlarm("memory");
-        // non-publish actions only after an alarm should be fine
-        assertNotNull(basicGet(Q));
-        QueueingConsumer c = new QueueingConsumer(channel);
-        String consumerTag = channel.basicConsume(Q, true, c);
-        // publishes after an alarm should not go through
-        basicPublishVolatile(Q);
-        // the publish is async, so this is racy. This also tests we don't die
-        // by heartbeat (3x heartbeat interval + epsilon)
-        assertNull(c.nextDelivery(3100));
-        // once the alarm has cleared the publishes should go through
-        clearResourceAlarm("memory");
-        assertNotNull(c.nextDelivery(3100));
-        // everything should be back to normal
-        channel.basicCancel(consumerTag);
-        basicPublishVolatile(Q);
-        assertNotNull(basicGet(Q));
+        connectionFactory.setRequestedHeartbeat(1);
+        closeChannel();
+        closeConnection();
+        openConnection();
+        openChannel();
+        try {
+            basicPublishVolatile(Q);
+            setResourceAlarm("memory");
+            // non-publish actions only after an alarm should be fine
+            assertNotNull(basicGet(Q));
+            QueueingConsumer c = new QueueingConsumer(channel);
+            String consumerTag = channel.basicConsume(Q, true, c);
+            // publishes after an alarm should not go through
+            basicPublishVolatile(Q);
+            // the publish is async, so this is racy. This also tests we don't die
+            // by heartbeat (3x heartbeat interval + epsilon)
+            assertNull(c.nextDelivery(3100));
+            // once the alarm has cleared the publishes should go through
+            clearResourceAlarm("memory");
+            assertNotNull(c.nextDelivery(3100));
+            // everything should be back to normal
+            channel.basicCancel(consumerTag);
+            basicPublishVolatile(Q);
+            assertNotNull(basicGet(Q));
+        } finally {
+            connectionFactory.setRequestedHeartbeat(0);
+        }
     }
 
 
