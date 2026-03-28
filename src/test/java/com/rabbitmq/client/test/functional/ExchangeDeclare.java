@@ -19,7 +19,9 @@ package com.rabbitmq.client.test.functional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -101,8 +103,13 @@ public class ExchangeDeclare extends ExchangeEquivalenceBase {
     }
 
     private void doTestExchangeDeclaredWithEnumerationEquivalent(Channel channel) throws IOException, InterruptedException {
-        assertEquals(4, BuiltinExchangeType.values().length, "There are 4 standard exchange types");
-        for (BuiltinExchangeType exchangeType : BuiltinExchangeType.values()) {
+        // Only test AMQP 0-9-1 standard types; plugin and newer core types
+        // (e.g. x-modulus-hash, x-local-random) may not be available on the test broker
+        List<BuiltinExchangeType> standardTypes = Arrays.asList(
+            BuiltinExchangeType.DIRECT, BuiltinExchangeType.FANOUT,
+            BuiltinExchangeType.TOPIC, BuiltinExchangeType.HEADERS
+        );
+        for (BuiltinExchangeType exchangeType : standardTypes) {
             channel.exchangeDeclare(NAME, exchangeType);
             verifyEquivalent(NAME, exchangeType.getType(), false, false, null);
             channel.exchangeDelete(NAME);
