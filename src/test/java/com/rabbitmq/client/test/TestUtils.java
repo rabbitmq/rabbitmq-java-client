@@ -205,6 +205,10 @@ public class TestUtils {
     return atLeastVersion("3.10.0", connection);
   }
 
+  public static boolean isVersion43orLater(Connection connection) {
+    return atLeastVersion("4.3.0", connection);
+  }
+
   private static boolean atLeastVersion(String expectedVersion, Connection connection) {
     return atLeastVersion(
         expectedVersion,

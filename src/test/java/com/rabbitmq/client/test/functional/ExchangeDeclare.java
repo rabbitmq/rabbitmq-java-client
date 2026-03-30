@@ -19,6 +19,7 @@ package com.rabbitmq.client.test.functional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -85,11 +86,11 @@ public class ExchangeDeclare extends ExchangeEquivalenceBase {
         verifyNotEquivalent(NAME, "direct", false, true, null);
     }
 
-    @Test public void exchangeDeclaredWithEnumerationEquivalentOnNonRecoverableConnection() throws IOException, InterruptedException {
+    @Test public void exchangeDeclaredWithEnumerationEquivalentOnNonRecoverableConnection() throws IOException {
         doTestExchangeDeclaredWithEnumerationEquivalent(channel);
     }
 
-    @Test public void exchangeDeclaredWithEnumerationEquivalentOnRecoverableConnection() throws IOException, TimeoutException, InterruptedException {
+    @Test public void exchangeDeclaredWithEnumerationEquivalentOnRecoverableConnection() throws IOException, TimeoutException {
         ConnectionFactory connectionFactory = TestUtils.connectionFactory();
         connectionFactory.setAutomaticRecoveryEnabled(true);
         connectionFactory.setTopologyRecoveryEnabled(false);
@@ -102,13 +103,17 @@ public class ExchangeDeclare extends ExchangeEquivalenceBase {
 
     }
 
-    private void doTestExchangeDeclaredWithEnumerationEquivalent(Channel channel) throws IOException, InterruptedException {
+    private void doTestExchangeDeclaredWithEnumerationEquivalent(Channel channel) throws IOException {
         // Only test AMQP 0-9-1 standard types; plugin and newer core types
         // (e.g. x-modulus-hash, x-local-random) may not be available on the test broker
         List<BuiltinExchangeType> standardTypes = Arrays.asList(
             BuiltinExchangeType.DIRECT, BuiltinExchangeType.FANOUT,
             BuiltinExchangeType.TOPIC, BuiltinExchangeType.HEADERS
         );
+        if (TestUtils.isVersion43orLater(channel.getConnection())) {
+           standardTypes = new ArrayList<>(standardTypes);
+           standardTypes.add(BuiltinExchangeType.MODULUS_HASH);
+        }
         for (BuiltinExchangeType exchangeType : standardTypes) {
             channel.exchangeDeclare(NAME, exchangeType);
             verifyEquivalent(NAME, exchangeType.getType(), false, false, null);
