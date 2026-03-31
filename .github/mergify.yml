@@ -1,0 +1,11 @@
+pull_request_rules:
+  - name: Automatically backport to v5.x
+    conditions:
+      - base=main
+      - label=backport-v5.x
+    actions:
+      backport:
+        branches:
+          - v5.x
+        assignees:
+          - "{{ author }}"
