@@ -5,7 +5,9 @@ package com.rabbitmq.client;
  */
 public enum BuiltinExchangeType {
 
-    DIRECT("direct"), FANOUT("fanout"), TOPIC("topic"), HEADERS("headers");
+    DIRECT("direct"), FANOUT("fanout"), TOPIC("topic"), HEADERS("headers"),
+    CONSISTENT_HASH("x-consistent-hash"), MODULUS_HASH("x-modulus-hash"),
+    LOCAL_RANDOM("x-local-random"), RANDOM("x-random");
 
     private final String type;
 
