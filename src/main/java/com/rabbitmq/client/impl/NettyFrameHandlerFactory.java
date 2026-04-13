@@ -469,10 +469,10 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         int type = m.readUnsignedByte();
         int channel = m.readUnsignedShort();
         int payloadSize = m.readInt();
-        if (payloadSize >= maxPayloadSize) {
-          throw new IllegalStateException(
+        if (payloadSize < 0 || payloadSize >= maxPayloadSize) {
+          throw new MalformedFrameException(
               format(
-                  "Frame body is too large (%d), maximum configured size is %d. "
+                  "Frame body size is invalid (%d), maximum configured size is %d. "
                       + "See ConnectionFactory#setMaxInboundMessageBodySize "
                       + "if you need to increase the limit.",
                   payloadSize, maxPayloadSize));
