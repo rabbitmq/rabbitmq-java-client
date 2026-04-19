@@ -25,14 +25,18 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.SocketConfigurator;
+import com.rabbitmq.client.WriteListener;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -51,6 +55,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -170,11 +175,20 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         new byte[] {
           'A', 'M', 'Q', 'P', 0, AMQP.PROTOCOL.MAJOR, AMQP.PROTOCOL.MINOR, AMQP.PROTOCOL.REVISION
         };
+
+    /**
+     * A shared, unreleasable buffer for the AMQP FRAME_END. Prevents allocation on every message
+     * and is safe to share across threads.
+     */
+    private static final ByteBuf FRAME_END_BUFFER =
+        Unpooled.unreleasableBuffer(Unpooled.directBuffer(1).writeByte(AMQP.FRAME_END));
+
     private final EventLoopGroup eventLoopGroup;
     private final Duration enqueuingTimeout;
     private final Channel channel;
     private final AmqpHandler handler;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final int zeroCopyThreshold = 1024;
 
     private NettyFrameHandler(
         int maxInboundMessageBodySize,
@@ -377,14 +391,72 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     }
 
     private void doWriteFrame(Frame frame) throws IOException {
-      ByteBuf bb = this.channel.alloc().buffer(frame.size());
-      frame.writeToByteBuf(bb);
-      this.channel.writeAndFlush(bb);
+      ByteBuffer bbPayload = frame.getByteBufferPayload();
+      if (bbPayload != null) {
+        int payloadSize = bbPayload.remaining();
+        if (bbPayload.isDirect() && payloadSize > this.zeroCopyThreshold) {
+          // zero-copy (Large Off-Heap Buffers)
+          ByteBuf header = this.channel.alloc().directBuffer(7);
+          CompositeByteBuf composite = null;
+          try {
+            header.writeByte(frame.getType());
+            header.writeShort(frame.getChannel());
+            header.writeInt(payloadSize);
+
+            composite = this.channel.alloc().compositeBuffer(3);
+            composite.addComponents(
+                true, header, Unpooled.wrappedBuffer(bbPayload), FRAME_END_BUFFER.duplicate());
+            this.channel.write(composite, this.channel.voidPromise());
+          } catch (Throwable t) {
+            // If composite exists, releasing it releases the header too.
+            // If it doesn't exist yet, we must release the header manually.
+            if (composite != null) {
+              composite.release();
+            } else {
+              header.release();
+            }
+            throw t;
+          }
+        } else {
+          // contiguous copy (Small or Heap Buffers)
+          int totalSize = 7 + payloadSize + 1;
+          ByteBuf bb = this.channel.alloc().directBuffer(totalSize);
+          try {
+            bb.writeByte(frame.getType());
+            bb.writeShort(frame.getChannel());
+            bb.writeInt(payloadSize);
+            bb.writeBytes(bbPayload); // uses memcpy
+            bb.writeByte(AMQP.FRAME_END);
+            this.channel.write(bb, this.channel.voidPromise());
+          } catch (Exception e) {
+            bb.release();
+            throw e;
+          }
+        }
+      } else {
+        ByteBuf bb = this.channel.alloc().buffer(frame.size());
+        try {
+          frame.writeToByteBuf(bb);
+          this.channel.write(bb);
+        } catch (RuntimeException | IOException e) {
+          bb.release();
+          throw e;
+        }
+      }
+      if (!this.channel.isWritable()) {
+        this.channel.flush();
+      }
     }
 
     @Override
-    public void flush() {
-      this.channel.flush();
+    public void flush(WriteListener listener) {
+      if (listener == null) {
+        this.channel.flush();
+      } else {
+        ChannelPromise promise = this.channel.newPromise();
+        promise.addListener(future -> listener.done(future.isSuccess(), future.cause()));
+        this.channel.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
+      }
     }
 
     @Override

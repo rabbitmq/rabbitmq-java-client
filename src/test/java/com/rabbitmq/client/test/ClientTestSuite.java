@@ -74,7 +74,9 @@ import org.junit.platform.suite.api.Suite;
     BlockedConnectionTest.class,
     NettyTest.class,
     IoDeadlockOnConnectionClosing.class,
-    ProtocolVersionMismatch.class
+    ProtocolVersionMismatch.class,
+    ByteBufferPublishTest.class,
+    PublishWithByteBufferTest.class
 })
 public class ClientTestSuite {
 

@@ -21,6 +21,7 @@ import io.micrometer.common.KeyValues;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +59,7 @@ class MicrometerObservationCollector implements ObservationCollector {
       PublishCall call,
       AMQP.Basic.Publish publish,
       AMQP.BasicProperties properties,
-      byte[] body,
+      ByteBuffer body,
       ConnectionInfo connectionInfo)
       throws IOException {
     Map<String, Object> headers;
@@ -67,13 +68,10 @@ class MicrometerObservationCollector implements ObservationCollector {
     } else {
       headers = new HashMap<>(properties.getHeaders());
     }
+    int bodySize = body == null ? 0 : body.remaining();
     PublishContext micrometerPublishContext =
         new PublishContext(
-            publish.getExchange(),
-            publish.getRoutingKey(),
-            headers,
-            body == null ? 0 : body.length,
-            connectionInfo);
+            publish.getExchange(), publish.getRoutingKey(), headers, bodySize, connectionInfo);
     AMQP.BasicProperties.Builder builder = properties.builder();
     builder.headers(headers);
     Observation observation =
