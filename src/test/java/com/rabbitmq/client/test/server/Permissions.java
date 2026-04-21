@@ -15,6 +15,9 @@
 // info@rabbitmq.com.
 package com.rabbitmq.client.test.server;
 
+import static com.rabbitmq.tools.Host.rabbitmqctl;
+import static com.rabbitmq.tools.Host.rabbitmqctlIgnoreErrors;
+import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.rabbitmq.client.*;
@@ -22,7 +25,6 @@ import com.rabbitmq.client.impl.AMQChannel;
 import com.rabbitmq.client.impl.recovery.AutorecoveringChannel;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
-import com.rabbitmq.tools.Host;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,13 +40,26 @@ public class Permissions extends BrokerTestCase {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Permissions.class);
 
+  // User and vhost constants
+  private static final String TEST_USER = "test";
+  private static final String TEST_ADMIN_USER = "testadmin";
+  private static final String TEST_PASSWORD = "test";
+  private static final String TEST_VHOST = "/test";
+
+  // Permission constants
+  private static final String CONFIGURE_PERMISSION = "configure";
+  private static final String WRITE_PERMISSION = "write";
+  private static final String READ_PERMISSION = "read";
+  private static final String FULL_PERMISSIONS = "\".*\"";
+  private static final String NO_PERMISSIONS = "\"\"";
+
   private Channel adminCh;
 
   public Permissions() {
     ConnectionFactory factory = TestUtils.connectionFactory();
-    factory.setUsername("test");
-    factory.setPassword("test");
-    factory.setVirtualHost("/test");
+    factory.setUsername(TEST_USER);
+    factory.setPassword(TEST_PASSWORD);
+    factory.setVirtualHost(TEST_VHOST);
     connectionFactory = factory;
   }
 
@@ -64,61 +79,63 @@ public class Permissions extends BrokerTestCase {
   }
 
   protected void addRestrictedAccount() throws IOException {
-    Host.rabbitmqctl("add_user test test");
-    Host.rabbitmqctl("add_user testadmin test");
-    Host.rabbitmqctl("add_vhost /test");
-    Host.rabbitmqctl("set_permissions -p /test test configure write read");
-    Host.rabbitmqctl("set_permissions -p /test testadmin \".*\" \".*\" \".*\"");
+    rabbitmqctl(format("add_user %s %s", TEST_USER, TEST_PASSWORD));
+    rabbitmqctl(format("add_user %s %s", TEST_ADMIN_USER, TEST_PASSWORD));
+    rabbitmqctl(format("add_vhost %s", TEST_VHOST));
+    rabbitmqctl(
+        format(
+            "set_permissions -p %s %s %s %s %s",
+            TEST_VHOST, TEST_USER, CONFIGURE_PERMISSION, WRITE_PERMISSION, READ_PERMISSION));
+    rabbitmqctl(
+        format(
+            "set_permissions -p %s %s %s %s %s",
+            TEST_VHOST, TEST_ADMIN_USER, FULL_PERMISSIONS, FULL_PERMISSIONS, FULL_PERMISSIONS));
   }
 
   protected void deleteRestrictedAccount() throws IOException {
-    Host.rabbitmqctlIgnoreErrors("clear_permissions -p /test testadmin");
-    Host.rabbitmqctlIgnoreErrors("clear_permissions -p /test test");
-    Host.rabbitmqctlIgnoreErrors("delete_vhost /test");
-    Host.rabbitmqctlIgnoreErrors("delete_user testadmin");
-    Host.rabbitmqctlIgnoreErrors("delete_user test");
+    rabbitmqctlIgnoreErrors(format("clear_permissions -p %s %s", TEST_VHOST, TEST_ADMIN_USER));
+    rabbitmqctlIgnoreErrors(format("clear_permissions -p %s %s", TEST_VHOST, TEST_USER));
+    rabbitmqctlIgnoreErrors(format("delete_vhost %s", TEST_VHOST));
+    rabbitmqctlIgnoreErrors(format("delete_user %s", TEST_ADMIN_USER));
+    rabbitmqctlIgnoreErrors(format("delete_user %s", TEST_USER));
   }
 
   protected void createResources() throws IOException, TimeoutException {
     ConnectionFactory factory = TestUtils.connectionFactory();
-    factory.setUsername("testadmin");
-    factory.setPassword("test");
-    factory.setVirtualHost("/test");
+    factory.setUsername(TEST_ADMIN_USER);
+    factory.setPassword(TEST_PASSWORD);
+    factory.setVirtualHost(TEST_VHOST);
     Connection connection = factory.newConnection();
     adminCh = connection.createChannel();
     withNames(
-        new WithName() {
-          public void with(String name) throws IOException {
-            adminCh.exchangeDeclare(name, "direct");
-            adminCh.queueDelete(name);
-            adminCh.queueDeclare(name, true, false, false, null);
-          }
+        name -> {
+          adminCh.exchangeDeclare(name, "direct");
+          adminCh.queueDelete(name);
+          adminCh.queueDeclare(name, true, false, false, null);
         });
   }
 
   protected void releaseResources() throws IOException {
     withNames(
-        new WithName() {
-          public void with(String name) throws IOException {
-            adminCh.queueDelete(name);
-            adminCh.exchangeDelete(name);
-          }
+        name -> {
+          adminCh.queueDelete(name);
+          adminCh.exchangeDelete(name);
         });
     adminCh.getConnection().abort(10_000);
   }
 
-  protected void withNames(WithName action) throws IOException {
-    action.with("configure");
-    action.with("write");
-    action.with("read");
+  private void withNames(WithName action) throws IOException {
+    action.with(CONFIGURE_PERMISSION);
+    action.with(WRITE_PERMISSION);
+    action.with(READ_PERMISSION);
     action.with("none");
   }
 
   @Test
   public void auth() throws TimeoutException {
     ConnectionFactory unAuthFactory = TestUtils.connectionFactory();
-    unAuthFactory.setUsername("test");
-    unAuthFactory.setPassword("tset"); // wrong password
+    unAuthFactory.setUsername(TEST_USER);
+    unAuthFactory.setPassword(TEST_PASSWORD + "wrong");
 
     try {
       unAuthFactory.newConnection();
@@ -132,60 +149,25 @@ public class Permissions extends BrokerTestCase {
 
   @Test
   public void exchangeConfiguration() throws IOException {
-    runConfigureTest(
-        new WithName() {
-          public void with(String name) throws IOException {
-            channel.exchangeDeclare(name, "direct");
-          }
-        });
-    runConfigureTest(
-        new WithName() {
-          public void with(String name) throws IOException {
-            channel.exchangeDelete(name);
-          }
-        });
+    runConfigureTest(name -> channel.exchangeDeclare(name, "direct"));
+    runConfigureTest(name -> channel.exchangeDelete(name));
   }
 
   @Test
   public void queueConfiguration() throws IOException {
     runConfigureTest(
-        new WithName() {
-          public void with(String name) throws IOException {
-            channel.queueDelete(name);
-            channel.queueDeclare(name, true, false, false, null);
-          }
+        name -> {
+          channel.queueDelete(name);
+          channel.queueDeclare(name, true, false, false, null);
         });
-    runConfigureTest(
-        new WithName() {
-          public void with(String name) throws IOException {
-            channel.queueDelete(name);
-          }
-        });
+    runConfigureTest(name -> channel.queueDelete(name));
   }
 
   @Test
   public void passiveDeclaration(TestInfo info) throws IOException {
     if (TestUtils.isVersion426orLater(connection)) {
-      runTest(
-          true,
-          false,
-          false,
-          false,
-          new WithName() {
-            public void with(String name) throws IOException {
-              channel.exchangeDeclarePassive(name);
-            }
-          });
-      runTest(
-          true,
-          false,
-          false,
-          false,
-          new WithName() {
-            public void with(String name) throws IOException {
-              channel.queueDeclarePassive(name);
-            }
-          });
+      runTest(true, false, false, false, name -> channel.exchangeDeclarePassive(name));
+      runTest(true, false, false, false, name -> channel.queueDeclarePassive(name));
     } else {
       LOGGER.info(
           "Skipping {}.{} test",
@@ -196,26 +178,8 @@ public class Permissions extends BrokerTestCase {
 
   @Test
   public void binding() throws IOException {
-    runTest(
-        false,
-        true,
-        false,
-        false,
-        new WithName() {
-          public void with(String name) throws IOException {
-            channel.queueBind(name, "read", "");
-          }
-        });
-    runTest(
-        false,
-        false,
-        true,
-        false,
-        new WithName() {
-          public void with(String name) throws IOException {
-            channel.queueBind("write", name, "");
-          }
-        });
+    runTest(false, true, false, false, name -> channel.queueBind(name, READ_PERMISSION, ""));
+    runTest(false, false, true, false, name -> channel.queueBind(WRITE_PERMISSION, name, ""));
   }
 
   @Test
@@ -225,28 +189,17 @@ public class Permissions extends BrokerTestCase {
         true,
         false,
         false,
-        new WithName() {
-          public void with(String name) throws IOException {
-            channel.basicPublish(name, "", null, "foo".getBytes());
-            // followed by a dummy synchronous command in order
-            // to catch any errors
-            channel.basicQos(0);
-          }
+        name -> {
+          channel.basicPublish(name, "", null, "foo".getBytes());
+          // followed by a dummy synchronous command in order
+          // to catch any errors
+          channel.basicQos(0);
         });
   }
 
   @Test
   public void get() throws IOException {
-    runTest(
-        false,
-        false,
-        true,
-        false,
-        new WithName() {
-          public void with(String name) throws IOException {
-            channel.basicGet(name, true);
-          }
-        });
+    runTest(false, false, true, false, name -> channel.basicGet(name, true));
   }
 
   @Test
@@ -256,11 +209,7 @@ public class Permissions extends BrokerTestCase {
         false,
         true,
         false,
-        new WithName() {
-          public void with(String name) throws IOException {
-            channel.basicConsume(name, new QueueingConsumer(channel));
-          }
-        });
+        name -> channel.basicConsume(name, new QueueingConsumer(channel)));
   }
 
   @Test
@@ -270,12 +219,9 @@ public class Permissions extends BrokerTestCase {
         false,
         true,
         false,
-        new WithName() {
-          public void with(String name) throws IOException {
-            AMQChannel channelDelegate =
-                (AMQChannel) ((AutorecoveringChannel) channel).getDelegate();
-            channelDelegate.exnWrappingRpc(new AMQP.Queue.Purge.Builder().queue(name).build());
-          }
+        name -> {
+          AMQChannel channelDelegate = (AMQChannel) ((AutorecoveringChannel) channel).getDelegate();
+          channelDelegate.exnWrappingRpc(new AMQP.Queue.Purge.Builder().queue(name).build());
         });
   }
 
@@ -295,117 +241,69 @@ public class Permissions extends BrokerTestCase {
 
   @Test
   public void noAccess() throws IOException, InterruptedException {
-    Host.rabbitmqctl("set_permissions -p /test test \"\" \"\" \"\"");
+    rabbitmqctl(
+        format(
+            "set_permissions -p %s %s %s %s %s",
+            TEST_VHOST, TEST_USER, NO_PERMISSIONS, NO_PERMISSIONS, NO_PERMISSIONS));
     Thread.sleep(2000);
 
+    assertAccessRefused(_e -> channel.queueDeclare());
+    assertAccessRefused(_e -> channel.queueDeclare("justaqueue", true, false, true, null));
+    assertAccessRefused(_e -> channel.queueDelete(CONFIGURE_PERMISSION));
     assertAccessRefused(
-        new WithName() {
-          public void with(String _e) throws IOException {
-            channel.queueDeclare();
-          }
-        });
-
+        _e -> channel.queueBind(WRITE_PERMISSION, WRITE_PERMISSION, WRITE_PERMISSION));
+    assertAccessRefused(_e -> channel.queuePurge(READ_PERMISSION));
+    assertAccessRefused(_e -> channel.exchangeDeclare("justanexchange", "direct"));
+    assertAccessRefused(_e -> channel.exchangeDeclare(CONFIGURE_PERMISSION, "direct"));
     assertAccessRefused(
-        new WithName() {
-          public void with(String _e) throws IOException {
-            channel.queueDeclare("justaqueue", true, false, true, null);
-          }
+        _e -> {
+          channel.basicPublish(WRITE_PERMISSION, "", null, "foo".getBytes());
+          channel.basicQos(0);
         });
-    assertAccessRefused(
-        new WithName() {
-          public void with(String _e) throws IOException {
-            channel.queueDelete("configure");
-          }
-        });
-    assertAccessRefused(
-        new WithName() {
-          public void with(String _e) throws IOException {
-            channel.queueBind("write", "write", "write");
-          }
-        });
-    assertAccessRefused(
-        new WithName() {
-          public void with(String _e) throws IOException {
-            channel.queuePurge("read");
-          }
-        });
-    assertAccessRefused(
-        new WithName() {
-          public void with(String _e) throws IOException {
-            channel.exchangeDeclare("justanexchange", "direct");
-          }
-        });
-    assertAccessRefused(
-        new WithName() {
-          public void with(String _e) throws IOException {
-            channel.exchangeDeclare("configure", "direct");
-          }
-        });
-    assertAccessRefused(
-        new WithName() {
-          public void with(String _e) throws IOException {
-            channel.basicPublish("write", "", null, "foo".getBytes());
-            channel.basicQos(0);
-          }
-        });
-    assertAccessRefused(
-        new WithName() {
-          public void with(String _e) throws IOException {
-            channel.basicGet("read", false);
-          }
-        });
-    assertAccessRefused(
-        new WithName() {
-          public void with(String _e) throws IOException {
-            channel.basicConsume("read", null);
-          }
-        });
+    assertAccessRefused(_e -> channel.basicGet(READ_PERMISSION, false));
+    assertAccessRefused(_e -> channel.basicConsume(READ_PERMISSION, null));
   }
 
-  protected WithName createAltExchConfigTest(final String exchange) throws IOException {
-    return new WithName() {
-      public void with(String ae) throws IOException {
-        Map<String, Object> args = new HashMap<String, Object>();
-        args.put("alternate-exchange", ae);
-        channel.exchangeDeclare(exchange, "direct", false, false, args);
-        channel.exchangeDelete(exchange);
-      }
+  private WithName createAltExchConfigTest(final String exchange) {
+    return ae -> {
+      Map<String, Object> args = new HashMap<>();
+      args.put("alternate-exchange", ae);
+      channel.exchangeDeclare(exchange, "direct", false, false, args);
+      channel.exchangeDelete(exchange);
     };
   }
 
-  protected WithName createDLXConfigTest(final String queue) throws IOException {
-    return new WithName() {
-      public void with(String dlx) throws IOException {
-        Map<String, Object> args = new HashMap<String, Object>();
-        args.put("x-dead-letter-exchange", dlx);
-        channel.queueDelete(queue);
-        channel.queueDeclare(queue, true, false, false, args);
-        channel.queueDelete(queue);
-      }
+  private WithName createDLXConfigTest(final String queue) {
+    return dlx -> {
+      Map<String, Object> args = new HashMap<>();
+      args.put("x-dead-letter-exchange", dlx);
+      channel.queueDelete(queue);
+      channel.queueDeclare(queue, true, false, false, args);
+      channel.queueDelete(queue);
     };
   }
 
-  protected void runConfigureTest(WithName test) throws IOException {
+  private void runConfigureTest(WithName test) throws IOException {
     runTest(true, "configure-me", test);
     runTest(false, "write-me", test);
     runTest(false, "read-me", test);
     runTest(false, "none", test);
   }
 
-  protected void runTest(boolean expC, boolean expW, boolean expR, boolean expN, WithName test)
+  private void runTest(boolean expC, boolean expW, boolean expR, boolean expN, WithName test)
       throws IOException {
-    runTest(expC, "configure", test);
-    runTest(expW, "write", test);
-    runTest(expR, "read", test);
+    runTest(expC, CONFIGURE_PERMISSION, test);
+    runTest(expW, WRITE_PERMISSION, test);
+    runTest(expR, READ_PERMISSION, test);
     runTest(expN, "none", test);
   }
 
-  protected void assertAccessRefused(WithName test) throws IOException {
+  private void assertAccessRefused(WithName test) throws IOException {
     runTest(false, "", test);
   }
 
-  protected void runTest(boolean shouldPass, String resourceName, WithName test) throws IOException {
-    String msg = "'" + resourceName + "' -> " + shouldPass;
+  private void runTest(boolean shouldPass, String resourceName, WithName test) throws IOException {
+    String msg = format("'%s' -> %s", resourceName, shouldPass);
     try {
       test.with(resourceName);
       assertTrue(shouldPass, msg);
