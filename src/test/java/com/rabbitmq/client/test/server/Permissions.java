@@ -118,13 +118,13 @@ public class Permissions extends BrokerTestCase {
   public void auth() throws TimeoutException {
     ConnectionFactory unAuthFactory = TestUtils.connectionFactory();
     unAuthFactory.setUsername("test");
-    unAuthFactory.setPassword("tset");
+    unAuthFactory.setPassword("tset"); // wrong password
 
     try {
       unAuthFactory.newConnection();
       fail("Exception expected if password is wrong");
     } catch (IOException e) {
-      assertTrue(e instanceof AuthenticationFailureException);
+      assertInstanceOf(AuthenticationFailureException.class, e);
       String msg = e.getMessage();
       assertTrue(msg.toLowerCase().contains("auth"), "Exception message should contain 'auth'");
     }
@@ -404,23 +404,24 @@ public class Permissions extends BrokerTestCase {
     runTest(false, "", test);
   }
 
-  protected void runTest(boolean exp, String name, WithName test) throws IOException {
-    String msg = "'" + name + "' -> " + exp;
+  protected void runTest(boolean shouldPass, String resourceName, WithName test) throws IOException {
+    String msg = "'" + resourceName + "' -> " + shouldPass;
     try {
-      test.with(name);
-      assertTrue(exp, msg);
+      test.with(resourceName);
+      assertTrue(shouldPass, msg);
     } catch (IOException e) {
-      assertFalse(exp, msg);
+      assertFalse(shouldPass, msg);
       checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
       openChannel();
     } catch (AlreadyClosedException e) {
-      assertFalse(exp, msg);
+      assertFalse(shouldPass, msg);
       checkShutdownSignal(AMQP.ACCESS_REFUSED, e);
       openChannel();
     }
   }
 
-  private interface WithName {
-    public void with(String name) throws IOException;
+  @FunctionalInterface
+  interface WithName {
+    void with(String resourceName) throws IOException;
   }
 }
