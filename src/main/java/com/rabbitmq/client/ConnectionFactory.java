@@ -376,7 +376,8 @@ public class ConnectionFactory implements Cloneable {
     if (userInfo != null) {
       String userPass[] = userInfo.split(":");
       if (userPass.length > 2) {
-        throw new IllegalArgumentException("Bad user info in AMQP URI: user info contains more than one colon");
+        throw new IllegalArgumentException(
+            "Bad user info in AMQP URI: user info contains more than one colon");
       }
 
       setUsername(uriDecode(userPass[0]));
