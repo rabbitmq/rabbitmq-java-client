@@ -61,6 +61,7 @@ public class TestUtils {
 
   public static ConnectionFactory connectionFactory() {
     ConnectionFactory connectionFactory = new ConnectionFactory();
+    connectionFactory.setChannelRpcTimeout((int) Duration.ofSeconds(10).toMillis());
     setIoLayer(connectionFactory);
     return connectionFactory;
   }
