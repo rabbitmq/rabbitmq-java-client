@@ -115,7 +115,7 @@ final class CommandAssembler {
     }
 
     private void consumeMethodFrame(Frame f) throws IOException {
-        if (f.type == AMQP.FRAME_METHOD) {
+        if (f.getType() == AMQP.FRAME_METHOD) {
             this.method = AMQImpl.readMethodFrom(f.getInputStream());
             this.state = this.method.hasContent() ? CAState.EXPECTING_CONTENT_HEADER : CAState.COMPLETE;
         } else {
@@ -124,7 +124,7 @@ final class CommandAssembler {
     }
 
     private void consumeHeaderFrame(Frame f) throws IOException {
-        if (f.type == AMQP.FRAME_HEADER) {
+        if (f.getType() == AMQP.FRAME_HEADER) {
             this.contentHeader = AMQImpl.readContentHeaderFrom(f.getInputStream());
             long bodySize = this.contentHeader.getBodySize();
             if (bodySize >= this.maxBodyLength) {
@@ -143,7 +143,7 @@ final class CommandAssembler {
     }
 
     private void consumeBodyFrame(Frame f) {
-        if (f.type == AMQP.FRAME_BODY) {
+        if (f.getType() == AMQP.FRAME_BODY) {
             byte[] fragment = f.getPayload();
             this.remainingBodyBytes -= fragment.length;
             updateContentBodyState();

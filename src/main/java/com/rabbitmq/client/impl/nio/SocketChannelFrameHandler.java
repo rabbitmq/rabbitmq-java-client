@@ -15,6 +15,7 @@
 
 package com.rabbitmq.client.impl.nio;
 
+import com.rabbitmq.client.WriteListener;
 import com.rabbitmq.client.impl.AMQConnection;
 import com.rabbitmq.client.impl.Frame;
 import com.rabbitmq.client.impl.FrameHandler;
@@ -93,8 +94,10 @@ public class SocketChannelFrameHandler implements FrameHandler {
     }
 
     @Override
-    public void flush() throws IOException {
-
+    public void flush(WriteListener listener) throws IOException {
+        if (listener != null) {
+            listener.done(true, null);
+        }
     }
 
     @Override

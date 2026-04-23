@@ -62,8 +62,8 @@ public class FrameBuilderTest {
         builder = new FrameBuilder(channel, buffer, Integer.MAX_VALUE);
         Frame frame = builder.readFrame();
         assertThat(frame).isNotNull();
-        assertThat(frame.type).isEqualTo(1);
-        assertThat(frame.channel).isEqualTo(0);
+        assertThat(frame.getType()).isEqualTo(1);
+        assertThat(frame.getChannel()).isEqualTo(0);
         assertThat(frame.getPayload()).hasSize(3);
     }
 
@@ -83,8 +83,8 @@ public class FrameBuilderTest {
         Frame frame;
         while ((frame = builder.readFrame()) != null) {
             assertThat(frame).isNotNull();
-            assertThat(frame.type).isEqualTo(1);
-            assertThat(frame.channel).isEqualTo(0);
+            assertThat(frame.getType()).isEqualTo(1);
+            assertThat(frame.getChannel()).isEqualTo(0);
             assertThat(frame.getPayload()).hasSize(3);
             frameCount++;
         }
@@ -104,8 +104,8 @@ public class FrameBuilderTest {
 
         frame = builder.readFrame();
         assertThat(frame).isNotNull();
-        assertThat(frame.type).isEqualTo(1);
-        assertThat(frame.channel).isEqualTo(0);
+        assertThat(frame.getType()).isEqualTo(1);
+        assertThat(frame.getChannel()).isEqualTo(0);
         assertThat(frame.getPayload()).hasSize(3);
     }
 

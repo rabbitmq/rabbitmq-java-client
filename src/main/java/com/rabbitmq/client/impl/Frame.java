@@ -16,6 +16,7 @@
 package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.MalformedFrameException;
 import io.netty.buffer.ByteBuf;
@@ -35,10 +36,10 @@ import static java.lang.String.format;
  */
 public class Frame {
     /** Frame type code */
-    public final int type;
+    private final int type;
 
     /** Frame channel number, 0-65535 */
-    public final int channel;
+    private final int channel;
 
     /** Frame payload bytes (for inbound frames) */
     private final byte[] payload;
@@ -426,5 +427,13 @@ public class Frame {
         throws UnsupportedEncodingException
     {
         return str.getBytes("utf-8").length + 1;
+    }
+
+    public int getType() {
+        return this.type;
+    }
+
+    public int getChannel() {
+        return this.channel;
     }
 }
