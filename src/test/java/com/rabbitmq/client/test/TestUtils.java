@@ -206,8 +206,8 @@ public class TestUtils {
     return atLeastVersion("3.10.0", connection);
   }
 
-  public static boolean isVersion426orLater(Connection connection) {
-    return atLeastVersion(BrokerVersion.RABBITMQ_4_2_6.version(), connection);
+  public static boolean isVersion431orLater(Connection connection) {
+    return atLeastVersion(BrokerVersion.RABBITMQ_4_3_1.version(), connection);
   }
 
   public static boolean isVersion43orLater(Connection connection) {
@@ -614,7 +614,7 @@ public class TestUtils {
     RABBITMQ_3_10("3.10.0"),
     RABBITMQ_4_0("4.0.0"),
     RABBITMQ_4_2("4.2.0"),
-    RABBITMQ_4_2_6("4.2.6");
+    RABBITMQ_4_3_1("4.3.1");
 
     final String value;
 
