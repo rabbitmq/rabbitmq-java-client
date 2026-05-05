@@ -655,9 +655,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
                             Map<String, Object> arguments) throws IOException;
 
     /**
-     * Declare a queue passively; i.e., check if it exists.  In AMQP
-     * 0-9-1, all arguments aside from nowait are ignored; and sending
-     * nowait makes this method a no-op, so we default it to false.
+     * Declare a queue passively; i.e., check if it exists.
      * @see com.rabbitmq.client.AMQP.Queue.Declare
      * @see com.rabbitmq.client.AMQP.Queue.DeclareOk
      * @param queue the name of the queue
