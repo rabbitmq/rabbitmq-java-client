@@ -165,9 +165,12 @@ public class Permissions extends BrokerTestCase {
 
   @Test
   public void passiveDeclaration(TestInfo info) throws IOException {
-    if (TestUtils.isVersion426orLater(connection)) {
-      runTest(true, false, false, false, name -> channel.exchangeDeclarePassive(name));
-      runTest(true, false, false, false, name -> channel.queueDeclarePassive(name));
+    if (TestUtils.isVersion431orLater(connection)) {
+      // any permission works for passive declaration (Rmq 4.2.7+, 4.3.1+)
+      // but at least one permission required
+      // see https://github.com/rabbitmq/rabbitmq-server/pull/16272
+      runTest(true, true, true, false, name -> channel.exchangeDeclarePassive(name));
+      runTest(true, true, true, false, name -> channel.queueDeclarePassive(name));
     } else {
       LOGGER.info(
           "Skipping {}.{} test",
@@ -290,12 +293,17 @@ public class Permissions extends BrokerTestCase {
     runTest(false, "none", test);
   }
 
-  private void runTest(boolean expC, boolean expW, boolean expR, boolean expN, WithName test)
+  private void runTest(
+      boolean shouldPassC,
+      boolean shouldPassW,
+      boolean shouldPassR,
+      boolean shouldPassNone,
+      WithName test)
       throws IOException {
-    runTest(expC, CONFIGURE_PERMISSION, test);
-    runTest(expW, WRITE_PERMISSION, test);
-    runTest(expR, READ_PERMISSION, test);
-    runTest(expN, "none", test);
+    runTest(shouldPassC, CONFIGURE_PERMISSION, test);
+    runTest(shouldPassW, WRITE_PERMISSION, test);
+    runTest(shouldPassR, READ_PERMISSION, test);
+    runTest(shouldPassNone, "none", test);
   }
 
   private void assertAccessRefused(WithName test) throws IOException {
