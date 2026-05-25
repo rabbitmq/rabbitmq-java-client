@@ -252,7 +252,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
 
         this.credentialsRefreshService = params.getCredentialsRefreshService();
 
-
+        this.maxInboundMessageBodySize = params.getMaxInboundMessageBodySize();
         this._channel0 = createChannel0();
 
         this._channelManager = null;
@@ -267,7 +267,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         this.errorOnWriteListener = params.getErrorOnWriteListener() != null ? params.getErrorOnWriteListener() :
             (connection, exception) -> { throw exception; }; // we just propagate the exception for non-recoverable connections
         this.workPoolTimeout = params.getWorkPoolTimeout();
-        this.maxInboundMessageBodySize = params.getMaxInboundMessageBodySize();
     }
 
     AMQChannel createChannel0() {

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.MalformedFrameException;
 import com.rabbitmq.client.UnexpectedFrameError;
 import static java.lang.String.format;
 
@@ -142,14 +143,16 @@ final class CommandAssembler {
         }
     }
 
-    private void consumeBodyFrame(Frame f) {
+    private void consumeBodyFrame(Frame f) throws MalformedFrameException {
         if (f.getType() == AMQP.FRAME_BODY) {
             byte[] fragment = f.getPayload();
+            if (fragment.length > this.remainingBodyBytes) {
+                throw new MalformedFrameException(format(
+                    "Body frame payload (%d bytes) exceeds remaining expected body size (%d bytes)",
+                    fragment.length, this.remainingBodyBytes));
+            }
             this.remainingBodyBytes -= fragment.length;
             updateContentBodyState();
-            if (this.remainingBodyBytes < 0) {
-                throw new UnsupportedOperationException("%%%%%% FIXME unimplemented");
-            }
             appendBodyFragment(fragment);
         } else {
             throw new UnexpectedFrameError(f, AMQP.FRAME_BODY);
