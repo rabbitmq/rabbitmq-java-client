@@ -389,7 +389,12 @@ public class ConnectionFactory implements Cloneable {
         throw new IllegalArgumentException("Multiple segments in " + "path of AMQP URI: " + path);
       }
 
-      setVirtualHost(uriDecode(uri.getPath().substring(1)));
+      String pathDecoded = uriDecode(uri.getPath().substring(1));
+      if (pathDecoded.isEmpty()) {
+        setVirtualHost(virtualHost);
+      } else {
+        setVirtualHost(pathDecoded);
+      }
     }
 
     String rawQuery = uri.getRawQuery();
