@@ -28,6 +28,8 @@ import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntSupplier;
+
 import static java.lang.String.format;
 
 /**
@@ -106,7 +108,7 @@ public class Frame {
      *
      * @return a new Frame if we read a frame successfully, otherwise null
      */
-    public static Frame readFrom(DataInputStream is, int maxPayloadSize) throws IOException {
+    public static Frame readFrom(DataInputStream is, IntSupplier payloadLimit) throws IOException {
         int type;
         int channel;
 
@@ -130,16 +132,9 @@ public class Frame {
         }
 
         channel = is.readUnsignedShort();
-        int payloadSize = is.readInt();
-        if (payloadSize < 0 || payloadSize >= maxPayloadSize) {
-            throw new MalformedFrameException(format(
-                "Frame body size is invalid (%d), maximum configured size is %d. " +
-                    "See ConnectionFactory#setMaxInboundMessageBodySize " +
-                    "if you need to increase the limit.",
-                payloadSize, maxPayloadSize
-            ));
-        }
-        byte[] payload = new byte[payloadSize];
+        int frameSize = is.readInt();
+        Utils.enforceFrameMax(frameSize, payloadLimit.getAsInt());
+        byte[] payload = new byte[frameSize];
         is.readFully(payload);
 
         int frameEndMarker = is.readUnsignedByte();

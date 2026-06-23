@@ -25,13 +25,13 @@ public abstract class AbstractFrameHandlerFactory implements FrameHandlerFactory
     protected final int connectionTimeout;
     protected final SocketConfigurator configurator;
     protected final boolean ssl;
-    protected final int maxInboundMessageBodySize;
+    protected final int frameMax;
 
     protected AbstractFrameHandlerFactory(int connectionTimeout, SocketConfigurator configurator,
-                                          boolean ssl, int maxInboundMessageBodySize) {
+                                          boolean ssl, int frameMax) {
         this.connectionTimeout = connectionTimeout;
         this.configurator = configurator;
         this.ssl = ssl;
-        this.maxInboundMessageBodySize = maxInboundMessageBodySize;
+        this.frameMax = frameMax;
     }
 }

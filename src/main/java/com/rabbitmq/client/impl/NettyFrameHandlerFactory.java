@@ -15,7 +15,6 @@
 // info@rabbitmq.com.
 package com.rabbitmq.client.impl;
 
-import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -32,6 +31,7 @@ import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -89,10 +89,10 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       Duration enqueuingTimeout,
       int connectionTimeout,
       SocketConfigurator configurator,
-      int maxInboundMessageBodySize,
+      int frameMax,
       boolean automaticRecovery,
       Predicate<ShutdownSignalException> recoveryCondition) {
-    super(connectionTimeout, configurator, sslContextFactory != null, maxInboundMessageBodySize);
+    super(connectionTimeout, configurator, sslContextFactory != null, frameMax);
     this.eventLoopGroup = eventLoopGroup;
     this.sslContextFactory = sslContextFactory == null ? connName -> null : sslContextFactory;
     this.channelCustomizer = channelCustomizer == null ? Utils.noOpConsumer() : channelCustomizer;
@@ -151,7 +151,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
   public FrameHandler create(Address addr, String connectionName) throws IOException {
     SslContext sslContext = this.sslContextFactory.apply(connectionName);
     return new NettyFrameHandler(
-        this.maxInboundMessageBodySize,
+        this.frameMax,
         addr,
         sslContext,
         this.eventLoopGroup,
@@ -191,7 +191,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     private final int zeroCopyThreshold = 1024;
 
     private NettyFrameHandler(
-        int maxInboundMessageBodySize,
+        int frameMax,
         Address addr,
         SslContext sslContext,
         EventLoopGroup elg,
@@ -232,13 +232,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         b.option(ChannelOption.ALLOCATOR, Utils.byteBufAllocator());
       }
 
-      // type + channel + payload size + payload + frame end marker
-      int maxFrameLength = 1 + 2 + 4 + maxInboundMessageBodySize + 1;
-      int lengthFieldOffset = 3;
-      int lengthFieldLength = 4;
-      int lengthAdjustement = 1;
-      AmqpHandler amqpHandler =
-          new AmqpHandler(maxInboundMessageBodySize, this::close, willRecover);
+      AmqpHandler amqpHandler = new AmqpHandler(frameMax, this::close, willRecover);
       int port = ConnectionFactory.portOrDefault(addr.getPort(), sslContext != null);
       b.handler(
           new ChannelInitializer<SocketChannel>() {
@@ -251,15 +245,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
                           FlushConsolidationHandler.DEFAULT_EXPLICIT_FLUSH_AFTER_FLUSHES, true));
               ch.pipeline()
                   .addLast(HANDLER_PROTOCOL_VERSION_MISMATCH, new ProtocolVersionMismatchHandler());
-              ch.pipeline()
-                  .addLast(
-                      HANDLER_FRAME_DECODER,
-                      new LengthFieldBasedFrameDecoder(
-                          maxFrameLength,
-                          lengthFieldOffset,
-                          lengthFieldLength,
-                          lengthAdjustement,
-                          0));
+              ch.pipeline().addLast(HANDLER_FRAME_DECODER, createFrameDecoder(frameMax));
               ch.pipeline().addLast(AmqpHandler.class.getSimpleName(), amqpHandler);
               if (sslContext != null) {
                 SslHandler sslHandler = sslContext.newHandler(ch.alloc(), addr.getHost(), port);
@@ -352,8 +338,11 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     }
 
     @Override
-    public void setMaxInboundFramePayloadSize(int maxPayloadSize) {
-      this.handler.maxPayloadSize = maxPayloadSize;
+    public void setFrameMax(int frameMax) {
+      this.channel
+          .pipeline()
+          .replace(HANDLER_FRAME_DECODER, HANDLER_FRAME_DECODER, createFrameDecoder(frameMax));
+      this.handler.setFrameMax(frameMax);
     }
 
     @Override
@@ -507,11 +496,19 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         return null;
       }
     }
+
+    private ChannelHandler createFrameDecoder(int frameMax) {
+      int lengthFieldOffset = 3;
+      int lengthFieldLength = 4;
+      int lengthAdjustement = 1; // frame-end byte
+      return new LengthFieldBasedFrameDecoder(
+          frameMax, lengthFieldOffset, lengthFieldLength, lengthAdjustement, 0);
+    }
   }
 
   private static class AmqpHandler extends ChannelInboundHandlerAdapter {
 
-    private volatile int maxPayloadSize;
+    private volatile int framePayloadLimit;
     private final Runnable closeSequence;
     private final Predicate<ShutdownSignalException> willRecover;
     private volatile AMQConnection connection;
@@ -524,13 +521,18 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     private final String id;
 
     private AmqpHandler(
-        int maxPayloadSize,
-        Runnable closeSequence,
-        Predicate<ShutdownSignalException> willRecover) {
-      this.maxPayloadSize = maxPayloadSize;
+        int frameMax, Runnable closeSequence, Predicate<ShutdownSignalException> willRecover) {
+      this.setFrameMax(frameMax);
       this.closeSequence = closeSequence;
       this.willRecover = willRecover;
       this.id = "amqp-handler-" + SEQUENCE.getAndIncrement();
+    }
+
+    private void setFrameMax(int frameMax) {
+      if (frameMax > 0 && frameMax < AMQP.FRAME_MIN_SIZE) {
+        frameMax = AMQP.FRAME_MIN_SIZE;
+      }
+      this.framePayloadLimit = Utils.framePayloadLimit(frameMax);
     }
 
     @Override
@@ -545,17 +547,10 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       try {
         int type = m.readUnsignedByte();
         int channel = m.readUnsignedShort();
-        int payloadSize = m.readInt();
-        if (payloadSize < 0 || payloadSize >= maxPayloadSize) {
-          throw new MalformedFrameException(
-              format(
-                  "Frame body size is invalid (%d), maximum configured size is %d. "
-                      + "See ConnectionFactory#setMaxInboundMessageBodySize "
-                      + "if you need to increase the limit.",
-                  payloadSize, maxPayloadSize));
-        }
+        int frameSize = m.readInt();
+        Utils.enforceFrameMax(frameSize, this.framePayloadLimit);
 
-        byte[] payload = new byte[payloadSize];
+        byte[] payload = new byte[frameSize];
         m.readBytes(payload);
 
         int frameEndMarker = m.readUnsignedByte();
