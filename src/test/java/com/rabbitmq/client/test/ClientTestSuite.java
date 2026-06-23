@@ -76,7 +76,8 @@ import org.junit.platform.suite.api.Suite;
     IoDeadlockOnConnectionClosing.class,
     ProtocolVersionMismatch.class,
     ByteBufferPublishTest.class,
-    PublishWithByteBufferTest.class
+    PublishWithByteBufferTest.class,
+    InboundFrameMax.class,
 })
 public class ClientTestSuite {
 

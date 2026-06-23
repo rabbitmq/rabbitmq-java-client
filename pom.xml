@@ -801,6 +801,7 @@
               <include>src/test/java/com/rabbitmq/client/test/server/Permissions.java</include>
               <include>src/test/java/com/rabbitmq/client/test/PublishWithByteBufferTest.java</include>
               <include>src/test/java/com/rabbitmq/client/test/ByteBufferPublishTest.java</include>
+              <include>src/test/java/com/rabbitmq/client/test/InboundFrameMax.java</include>
             </includes>
             <googleJavaFormat>
               <version>${google-java-format.version}</version>
