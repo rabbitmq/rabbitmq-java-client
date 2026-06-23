@@ -433,6 +433,14 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
                                    connTune.getFrameMax());
             this._frameMax = frameMax;
 
+            // Bound inbound frames to the negotiated frame_max. EMPTY_FRAME_SIZE is
+            // the per-frame overhead; +1 because the reader rejects payloads >= the limit.
+            if (frameMax > 0) {
+                _frameHandler.setMaxInboundFramePayloadSize(
+                    Math.min(this.maxInboundMessageBodySize,
+                             frameMax - AMQCommand.EMPTY_FRAME_SIZE + 1));
+            }
+
             int negotiatedHeartbeat =
                 negotiatedMaxValue(this.requestedHeartbeat,
                                    connTune.getHeartbeat());

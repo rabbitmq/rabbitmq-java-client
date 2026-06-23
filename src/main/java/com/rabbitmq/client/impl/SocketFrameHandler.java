@@ -57,7 +57,7 @@ public class SocketFrameHandler implements FrameHandler {
     private final DataOutputStream _outputStream;
     private final Lock _outputStreamLock = new ReentrantLock();
 
-    private final int maxInboundMessageBodySize;
+    private volatile int maxInboundMessageBodySize;
 
     /** Time to linger before closing the socket forcefully. */
     public static final int SOCKET_CLOSING_TIMEOUT = 1;
@@ -191,6 +191,11 @@ public class SocketFrameHandler implements FrameHandler {
     @Override
     public void initialize(AMQConnection connection) {
         connection.startMainLoop();
+    }
+
+    @Override
+    public void setMaxInboundFramePayloadSize(int maxPayloadSize) {
+        this.maxInboundMessageBodySize = maxPayloadSize;
     }
 
     @Override

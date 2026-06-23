@@ -352,6 +352,11 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     }
 
     @Override
+    public void setMaxInboundFramePayloadSize(int maxPayloadSize) {
+      this.handler.maxPayloadSize = maxPayloadSize;
+    }
+
+    @Override
     public Frame readFrame() {
       throw new UnsupportedOperationException();
     }
@@ -506,7 +511,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
   private static class AmqpHandler extends ChannelInboundHandlerAdapter {
 
-    private final int maxPayloadSize;
+    private volatile int maxPayloadSize;
     private final Runnable closeSequence;
     private final Predicate<ShutdownSignalException> willRecover;
     private volatile AMQConnection connection;
