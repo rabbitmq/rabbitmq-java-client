@@ -59,6 +59,11 @@ public interface FrameHandler extends NetworkConnection {
 
     }
 
+    /** Cap inbound frame payloads, applied once frame_max is negotiated. */
+    default void setMaxInboundFramePayloadSize(int maxPayloadSize) {
+
+    }
+
     /**
      * Read a {@link Frame} from the underlying data connection.
      * @return an incoming Frame, or null if there is none
