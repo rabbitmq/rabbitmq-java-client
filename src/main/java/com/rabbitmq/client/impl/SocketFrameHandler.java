@@ -32,6 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.IntSupplier;
 
 /**
  * A socket-based frame handler.
@@ -57,7 +58,8 @@ public class SocketFrameHandler implements FrameHandler {
     private final DataOutputStream _outputStream;
     private final Lock _outputStreamLock = new ReentrantLock();
 
-    private volatile int maxInboundMessageBodySize;
+    private volatile int framePayloadLimit;
+    private final IntSupplier payloadLimitSupplier;
 
     /** Time to linger before closing the socket forcefully. */
     public static final int SOCKET_CLOSING_TIMEOUT = 1;
@@ -73,13 +75,14 @@ public class SocketFrameHandler implements FrameHandler {
      * @param socket the socket to use
      */
     public SocketFrameHandler(Socket socket, ExecutorService shutdownExecutor,
-                              int maxInboundMessageBodySize) throws IOException {
+                              int frameMax) throws IOException {
         _socket = socket;
         _shutdownExecutor = shutdownExecutor;
-        this.maxInboundMessageBodySize = maxInboundMessageBodySize;
+        this.setFrameMax(frameMax);
 
         _inputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         _outputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+        this.payloadLimitSupplier = () -> this.framePayloadLimit;
     }
 
     @Override
@@ -194,15 +197,19 @@ public class SocketFrameHandler implements FrameHandler {
     }
 
     @Override
-    public void setMaxInboundFramePayloadSize(int maxPayloadSize) {
-        this.maxInboundMessageBodySize = maxPayloadSize;
+    public void setFrameMax(int frameMax) {
+        this.framePayloadLimit = Utils.framePayloadLimit(frameMax);
     }
 
     @Override
     public Frame readFrame() throws IOException {
         _inputStreamLock.lock();
         try {
-            return Frame.readFrom(_inputStream, this.maxInboundMessageBodySize);
+            // we need to check frameMax against the latest value, hence the supplier
+            // otherwise we can start waiting for a new frame with the current limit
+            // and the frameMax is changed while we wait, so the next frame is checked against
+            // a stale value
+            return Frame.readFrom(_inputStream, this.payloadLimitSupplier);
         } finally {
             _inputStreamLock.unlock();
         }

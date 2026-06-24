@@ -81,7 +81,7 @@ public class SocketFrameHandlerFactory extends AbstractFrameHandlerFactory {
 
     public FrameHandler create(Socket sock) throws IOException
     {
-        return new SocketFrameHandler(sock, this.shutdownExecutor, this.maxInboundMessageBodySize);
+        return new SocketFrameHandler(sock, this.shutdownExecutor, this.frameMax);
     }
 
     private static void quietTrySocketClose(Socket socket) {

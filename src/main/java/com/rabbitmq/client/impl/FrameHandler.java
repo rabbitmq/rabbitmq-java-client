@@ -60,7 +60,7 @@ public interface FrameHandler extends NetworkConnection {
     }
 
     /** Cap inbound frame payloads, applied once frame_max is negotiated. */
-    default void setMaxInboundFramePayloadSize(int maxPayloadSize) {
+    default void setFrameMax(int frameMax) {
 
     }
 

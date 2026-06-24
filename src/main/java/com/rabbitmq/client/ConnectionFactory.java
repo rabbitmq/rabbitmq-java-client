@@ -1084,7 +1084,7 @@ public class ConnectionFactory implements Cloneable {
                 this.nettyConf.enqueuingTimeout,
                 connectionTimeout,
                 socketConf,
-                maxInboundMessageBodySize,
+                AMQP.FRAME_MIN_SIZE,
                 this.automaticRecovery,
                 recoveryCondition);
       }
@@ -1097,7 +1097,7 @@ public class ConnectionFactory implements Cloneable {
           isSSL(),
           this.shutdownExecutor,
           sslContextFactory,
-          this.maxInboundMessageBodySize);
+          AMQP.FRAME_MIN_SIZE);
     }
   }
 

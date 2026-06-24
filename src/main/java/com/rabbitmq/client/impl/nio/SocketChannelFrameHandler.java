@@ -84,6 +84,11 @@ public class SocketChannelFrameHandler implements FrameHandler {
     }
 
     @Override
+    public void setFrameMax(int frameMax) {
+        this.state.setFrameMax(frameMax);
+    }
+
+    @Override
     public Frame readFrame() throws IOException {
         throw new UnsupportedOperationException();
     }

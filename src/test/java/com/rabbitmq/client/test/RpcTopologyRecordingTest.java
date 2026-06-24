@@ -49,7 +49,7 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
   @Override
   protected ConnectionFactory newConnectionFactory() {
     ConnectionFactory connectionFactory = super.newConnectionFactory();
-    connectionFactory.setNetworkRecoveryInterval(2);
+    connectionFactory.setNetworkRecoveryInterval(5);
     connectionFactory.setTopologyRecoveryRetryHandler(
         TopologyRecoveryRetryHandlerBuilder.builder()
             .queueRecoveryRetryCondition(

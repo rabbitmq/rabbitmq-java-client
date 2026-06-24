@@ -69,7 +69,7 @@ public class NegotiatedFrameMaxInboundTest {
       out.flush();
 
       SocketFrameHandler handler = new SocketFrameHandler(client);
-      handler.setMaxInboundFramePayloadSize(INBOUND_PAYLOAD_LIMIT);
+      handler.setFrameMax(INBOUND_PAYLOAD_LIMIT);
       return handler.readFrame();
     }
   }
