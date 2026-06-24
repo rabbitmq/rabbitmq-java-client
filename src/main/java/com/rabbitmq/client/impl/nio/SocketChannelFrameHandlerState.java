@@ -74,7 +74,7 @@ public class SocketChannelFrameHandlerState {
 
     public SocketChannelFrameHandlerState(SocketChannel channel, NioLoopContext nioLoopsState,
                                           NioParams nioParams, SSLEngine sslEngine,
-                                          int maxFramePayloadSize) {
+                                          int frameMax) {
         this.channel = channel;
         this.readSelectorState = nioLoopsState.readSelectorState;
         this.writeSelectorState = nioLoopsState.writeSelectorState;
@@ -97,7 +97,7 @@ public class SocketChannelFrameHandlerState {
                 new ByteBufferOutputStream(channel, plainOut)
             );
 
-            this.frameBuilder = new FrameBuilder(channel, plainIn, maxFramePayloadSize);
+            this.frameBuilder = new FrameBuilder(channel, plainIn, frameMax);
 
         } else {
             this.ssl = true;
@@ -110,7 +110,7 @@ public class SocketChannelFrameHandlerState {
                 new SslEngineByteBufferOutputStream(sslEngine, plainOut, cipherOut, channel)
             );
             this.frameBuilder = new SslEngineFrameBuilder(sslEngine, plainIn,
-                cipherIn, channel, maxFramePayloadSize);
+                cipherIn, channel, frameMax);
         }
 
     }
@@ -245,5 +245,9 @@ public class SocketChannelFrameHandlerState {
             channel.socket().setSoLinger(true, SOCKET_CLOSING_TIMEOUT);
             channel.close();
         }
+    }
+
+    void setFrameMax(int frameMax) {
+        this.frameBuilder.setFrameMax(frameMax);
     }
 }

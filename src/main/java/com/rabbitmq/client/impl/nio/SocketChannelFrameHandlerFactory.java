@@ -137,7 +137,7 @@ public class SocketChannelFrameHandlerFactory extends AbstractFrameHandlerFactor
                     nioLoopContext,
                     nioParams,
                     sslEngine,
-                    this.maxInboundMessageBodySize
+                    this.frameMax
                 );
                 state.startReading();
                 SocketChannelFrameHandler frameHandler = new SocketChannelFrameHandler(state);

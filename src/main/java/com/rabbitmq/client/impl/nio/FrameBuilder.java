@@ -44,7 +44,7 @@ public class FrameBuilder {
     protected final ReadableByteChannel channel;
 
     protected final ByteBuffer applicationBuffer;
-    private final int maxPayloadSize;
+    private volatile int framePayloadLimit;
     // to store the bytes of the outstanding data
     // 3 byte-long because the longest we read is an unsigned int
     // (not need to store the latest byte)
@@ -54,10 +54,10 @@ public class FrameBuilder {
     private byte[] framePayload;
     private int bytesRead = 0;
 
-    public FrameBuilder(ReadableByteChannel channel, ByteBuffer buffer, int maxPayloadSize) {
+    public FrameBuilder(ReadableByteChannel channel, ByteBuffer buffer, int frameMax) {
         this.channel = channel;
         this.applicationBuffer = buffer;
-        this.maxPayloadSize = maxPayloadSize;
+        this.framePayloadLimit = NioUtils.framePayloadLimit(frameMax);
     }
 
     /**
@@ -96,14 +96,7 @@ public class FrameBuilder {
             } else if (bytesRead == 6) {
                 // payload size 4/4
                 int framePayloadSize = (frameBuffer[0] << 24) + (frameBuffer[1] << 16) + (frameBuffer[2] << 8) + readFromBuffer();
-                if (framePayloadSize < 0 || framePayloadSize >= maxPayloadSize) {
-                    throw new MalformedFrameException(format(
-                        "Frame body size is invalid (%d), maximum configured size is %d. " +
-                            "See ConnectionFactory#setMaxInboundMessageBodySize " +
-                            "if you need to increase the limit.",
-                        framePayloadSize, maxPayloadSize
-                    ));
-                }
+                NioUtils.enforceFrameMax(framePayloadSize, this.framePayloadLimit);
                 framePayload = new byte[framePayloadSize];
             } else if (bytesRead >= PAYLOAD_OFFSET && bytesRead < framePayload.length + PAYLOAD_OFFSET) {
                 framePayload[bytesRead - PAYLOAD_OFFSET] = (byte) readFromBuffer();
@@ -215,5 +208,9 @@ public class FrameBuilder {
     //Indicates ssl underflow state - means that cipherBuffer should aggregate next chunks of bytes
     public boolean isUnderflowHandlingEnabled() {
         return false;
+    }
+
+    void setFrameMax(int frameMax) {
+        this.framePayloadLimit = NioUtils.framePayloadLimit(frameMax);
     }
 }

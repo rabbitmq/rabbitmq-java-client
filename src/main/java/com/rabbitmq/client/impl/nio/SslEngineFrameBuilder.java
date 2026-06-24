@@ -37,8 +37,8 @@ public class SslEngineFrameBuilder extends FrameBuilder {
 
     public SslEngineFrameBuilder(SSLEngine sslEngine, ByteBuffer plainIn,
                                  ByteBuffer cipherIn, ReadableByteChannel channel,
-                                 int maxPayloadSize) {
-        super(channel, plainIn, maxPayloadSize);
+                                 int frameMax) {
+        super(channel, plainIn, frameMax);
         this.sslEngine = sslEngine;
         this.cipherBuffer = cipherIn;
     }
