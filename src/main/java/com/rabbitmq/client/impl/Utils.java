@@ -16,12 +16,16 @@
 
 package com.rabbitmq.client.impl;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.MalformedFrameException;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 
 import java.util.function.Consumer;
+
+import static java.lang.String.format;
 
 final class Utils {
 
@@ -68,5 +72,30 @@ final class Utils {
   @SuppressWarnings("unchecked")
   static <T> Consumer<T> noOpConsumer() {
     return (Consumer<T>) NO_OP_CONSUMER;
+  }
+
+  static int framePayloadLimit(int frameMax) {
+    if (frameMax <= 0) {
+      return Integer.MAX_VALUE;
+    } else if (frameMax < AMQP.FRAME_MIN_SIZE) {
+      return AMQP.FRAME_MIN_SIZE - AMQCommand.EMPTY_FRAME_SIZE;
+    } else {
+      return frameMax - AMQCommand.EMPTY_FRAME_SIZE;
+    }
+  }
+
+  static void enforceFrameMax(int framePayloadSize, int framePayloadLimit) throws MalformedFrameException {
+    if (framePayloadSize < 0 || framePayloadSize > framePayloadLimit) {
+      throw new MalformedFrameException(
+          format(
+              "Frame size is invalid (%d), maximum configured size is %d. "
+                  + "See ConnectionFactory#setMaxInboundMessageBodySize "
+                  + "if you need to increase the limit.",
+              frameSizeFromPayloadSize(framePayloadSize), frameSizeFromPayloadSize(framePayloadLimit)));
+    }
+  }
+
+  private static int frameSizeFromPayloadSize(int limit) {
+    return limit + AMQCommand.EMPTY_FRAME_SIZE;
   }
 }
