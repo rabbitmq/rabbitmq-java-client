@@ -17,8 +17,6 @@ package com.rabbitmq.client.test.ssl;
 
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.test.BrokerTestCase;
-import com.rabbitmq.client.test.TestUtils;
-import io.netty.handler.ssl.SslContextBuilder;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
@@ -36,8 +34,8 @@ public class UnverifiedConnection extends BrokerTestCase {
     public void openConnection()
             throws IOException, TimeoutException {
         try {
-            connectionFactory.useSslProtocol();
-            TlsTestUtils.maybeConfigureNetty(connectionFactory, TlsTestUtils.ALWAYS_TRUST_MANAGER);
+            connectionFactory.useTlsWithNoVerification();
+            TlsTestUtils.maybeConfigureNettyWithNoVerification(connectionFactory);
         } catch (Exception ex) {
             throw new IOException(ex);
         }

@@ -234,7 +234,6 @@ public class ConnectionFactoryTest {
                 .setClientProperties(clientProperties)
                 .setSaslConfig(saslConfig)
                 .setSocketFactory(socketFactory)
-                .setSocketConfigurator(socketConfigurator)
                 .setSharedExecutor(executorService)
                 .setShutdownExecutor(executorService)
                 .setHeartbeatExecutor(scheduledExecutorService)
@@ -250,6 +249,7 @@ public class ConnectionFactoryTest {
                 .useBlockingIo()
                 .setChannelRpcTimeout(8)
                 .setSslContextFactory(sslContextFactory)
+                .setSocketConfigurator(socketConfigurator) // overrides the one set with the SslContextFactory
                 .setChannelShouldCheckRpcResponseType(true)
                 .setWorkPoolTimeout(9)
                 .setTopologyRecoveryFilter(topologyRecoveryFilter)

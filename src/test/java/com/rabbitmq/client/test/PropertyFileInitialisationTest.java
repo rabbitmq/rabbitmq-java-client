@@ -19,8 +19,11 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.ConnectionFactoryConfigurator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -36,6 +39,7 @@ import java.util.stream.Stream;
 import static com.rabbitmq.client.impl.AMQConnection.defaultClientProperties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
@@ -270,7 +274,14 @@ public class PropertyFileInitialisationTest {
         configuration.put(ConnectionFactoryConfigurator.SSL_VALIDATE_SERVER_CERTIFICATE, "false");
         ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
         ConnectionFactoryConfigurator.load(connectionFactory, configuration, "");
-        verify(connectionFactory, times(1)).useSslProtocol(algorithm);
+        ArgumentCaptor<String> protocolCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<TrustManager> trustManagerCaptor = ArgumentCaptor.forClass(TrustManager.class);
+        verify(connectionFactory).useSslProtocol(protocolCaptor.capture(), trustManagerCaptor.capture());
+
+        assertThat(protocolCaptor.getValue()).isEqualTo(algorithm);
+        TrustManager tm = trustManagerCaptor.getValue();
+        assertThat(tm).isInstanceOf(X509TrustManager.class);
+        assertThatCode(() -> ((X509TrustManager) tm).checkServerTrusted(null, null)).doesNotThrowAnyException();
     }
 
     @Test

@@ -25,7 +25,6 @@ import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
@@ -78,10 +77,9 @@ class TlsTestUtils {
         false);
   }
 
-  static void maybeConfigureNetty(ConnectionFactory cf, TrustManager trustManager)
-      throws Exception {
+  static void maybeConfigureNettyWithNoVerification(ConnectionFactory cf) throws Exception {
     if (TestUtils.isNetty()) {
-      cf.netty().sslContext(SslContextBuilder.forClient().trustManager(trustManager).build());
+      cf.netty().useTlsWithNoVerification();
     }
   }
 
