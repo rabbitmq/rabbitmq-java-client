@@ -27,8 +27,12 @@ import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -54,6 +58,11 @@ import java.util.concurrent.TimeoutException;
  * <p>
  * {@link JsonRpcClient} delegates JSON parsing and generating to
  * a {@link JsonRpcMapper}.
+ * <p>
+ * By default only a safe set of return types is accepted from the remote
+ * service description (primitives, {@link String}, {@link Map}, {@link List},
+ * and common boxed types). Services that return custom types must pass an
+ * explicit allowlist via the constructors that accept {@code allowedReturnTypes}.
  *
  * @see #call(String, Object[])
  * @see JsonRpcMapper
@@ -62,54 +71,113 @@ import java.util.concurrent.TimeoutException;
 public class JsonRpcClient extends RpcClient implements InvocationHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcClient.class);
+
+    // Types that are safe to deserialize into without an explicit allowlist.
+    private static final Set<String> SAFE_RETURN_TYPES;
+
+    static {
+        Set<String> types = new HashSet<>();
+        types.add("void");
+        types.add("boolean");
+        types.add("int");
+        types.add("long");
+        types.add("double");
+        types.add("float");
+        types.add("short");
+        types.add("byte");
+        types.add("char");
+        types.add(String.class.getName());
+        types.add(Boolean.class.getName());
+        types.add(Integer.class.getName());
+        types.add(Long.class.getName());
+        types.add(Double.class.getName());
+        types.add(Float.class.getName());
+        types.add(Short.class.getName());
+        types.add(Byte.class.getName());
+        types.add(Number.class.getName());
+        types.add(Map.class.getName());
+        types.add(List.class.getName());
+        types.add(Object.class.getName());
+        SAFE_RETURN_TYPES = Collections.unmodifiableSet(types);
+    }
+
     private final JsonRpcMapper mapper;
+    private final Set<String> allowedReturnTypes;
     /**
      * Holds the JSON-RPC service description for this client.
      */
     private ServiceDescription serviceDescription;
 
     /**
-     * Construct a new {@link JsonRpcClient}, passing the {@link RpcClientParams} through {@link RpcClient}'s constructor.
+     * Construct a new {@link JsonRpcClient} that only accepts return types from the built-in
+     * safe set (primitives, {@link String}, {@link Map}, {@link List}, common boxed types).
      * <p>
-     * The service description record is
-     * retrieved from the server during construction.
+     * Services that declare custom return types will cause construction to fail with an
+     * {@link IllegalStateException}. Use
+     * {@link #JsonRpcClient(RpcClientParams, JsonRpcMapper, Set)} to allow additional types.
      *
-     * @param rpcClientParams
-     * @param mapper
-     * @throws IOException
-     * @throws JsonRpcException
-     * @throws TimeoutException
+     * @throws IllegalStateException if the service description contains a return type not in
+     *         the allowlist
      */
     public JsonRpcClient(RpcClientParams rpcClientParams, JsonRpcMapper mapper)
             throws IOException, JsonRpcException, TimeoutException {
-        super(rpcClientParams);
-        this.mapper = mapper;
-        retrieveServiceDescription();
+        this(rpcClientParams, mapper, Collections.emptySet());
     }
 
     /**
-     * Construct a new JsonRpcClient, passing the parameters through
-     * to RpcClient's constructor. The service description record is
-     * retrieved from the server during construction.
+     * Construct a new {@link JsonRpcClient} with an explicit allowlist of permitted return types.
+     * <p>
+     * The provided types are merged with the built-in safe set, so common types ({@link String},
+     * {@link Map}, primitives, etc.) do not need to be listed explicitly.
+     *
+     * @param allowedReturnTypes additional return types to accept from the remote service
+     *        description, on top of the built-in safe set
+     * @throws IllegalStateException if the service description contains a return type not in
+     *         the allowlist
+     */
+    public JsonRpcClient(RpcClientParams rpcClientParams, JsonRpcMapper mapper, Set<Class<?>> allowedReturnTypes)
+            throws IOException, JsonRpcException, TimeoutException {
+        super(rpcClientParams);
+        this.mapper = mapper;
+        this.allowedReturnTypes = buildAllowedReturnTypes(allowedReturnTypes);
+        retrieveServiceDescription();
+        validateReturnTypes();
+    }
+
+    /**
+     * Construct a new JsonRpcClient using the safe default return-type allowlist.
      *
      * @throws TimeoutException if a response is not received within the timeout specified, if any
+     * @throws IllegalStateException if the service description contains a return type not in
+     *         the allowlist
      */
     public JsonRpcClient(Channel channel, String exchange, String routingKey, int timeout, JsonRpcMapper mapper)
         throws IOException, JsonRpcException, TimeoutException {
-        super(new RpcClientParams()
-                .channel(channel)
-                .exchange(exchange)
-                .routingKey(routingKey)
-                .timeout(timeout)
-        );
-        this.mapper = mapper;
-        retrieveServiceDescription();
+        this(
+            new RpcClientParams().channel(channel).exchange(exchange).routingKey(routingKey).timeout(timeout),
+            mapper);
     }
 
     /**
-     * Construct a new JsonRpcClient, passing the parameters through
-     * to RpcClient's constructor. The service description record is
-     * retrieved from the server during construction.
+     * Construct a new JsonRpcClient with an explicit allowlist of permitted return types.
+     *
+     * @param allowedReturnTypes additional return types to accept from the remote service
+     *        description, on top of the built-in safe set
+     * @throws TimeoutException if a response is not received within the timeout specified, if any
+     * @throws IllegalStateException if the service description contains a return type not in
+     *         the allowlist
+     */
+    public JsonRpcClient(Channel channel, String exchange, String routingKey, int timeout, JsonRpcMapper mapper,
+        Set<Class<?>> allowedReturnTypes)
+        throws IOException, JsonRpcException, TimeoutException {
+        this(
+            new RpcClientParams().channel(channel).exchange(exchange).routingKey(routingKey).timeout(timeout),
+            mapper,
+            allowedReturnTypes);
+    }
+
+    /**
+     * Construct a new JsonRpcClient using the safe default return-type allowlist.
      *
      * @throws TimeoutException if a response is not received within the timeout specified, if any
      */
@@ -121,6 +189,29 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
     public JsonRpcClient(Channel channel, String exchange, String routingKey)
         throws IOException, JsonRpcException, TimeoutException {
         this(channel, exchange, routingKey, RpcClient.NO_TIMEOUT);
+    }
+
+    private static Set<String> buildAllowedReturnTypes(Set<Class<?>> extraTypes) {
+        if (extraTypes == null || extraTypes.isEmpty()) {
+            return SAFE_RETURN_TYPES;
+        }
+        Set<String> types = new HashSet<>(SAFE_RETURN_TYPES);
+        for (Class<?> c : extraTypes) {
+            types.add(c.getName());
+        }
+        return Collections.unmodifiableSet(types);
+    }
+
+    private void validateReturnTypes() {
+        for (ProcedureDescription proc : serviceDescription.getProcs()) {
+            String javaReturnType = proc.getJavaReturnType();
+            if (javaReturnType != null && !allowedReturnTypes.contains(javaReturnType)) {
+                throw new IllegalStateException(
+                    "Return type not in allowlist: '"
+                        + javaReturnType
+                        + "'. Pass it via the allowedReturnTypes constructor parameter.");
+            }
+        }
     }
 
     /**
@@ -229,6 +320,7 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
             this);
     }
 
+<<<<<<< HEAD
     /**
      * Public API - as {@link #call(String, Object[])}, but takes the
      * method name from the first entry in <code>args</code>, and the
@@ -268,6 +360,8 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         return call(method, actuals);
     }
 
+=======
+>>>>>>> f85d038d (Add allowlist in JsonRpcClient)
     /**
      * Public API - gets the service description record that this
      * service loaded from the server itself at construction time.
