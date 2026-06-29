@@ -22,9 +22,16 @@ import com.rabbitmq.tools.jsonrpc.JsonRpcServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class AbstractJsonRpcTest {
+
+    private static final Set<Class<?>> ALLOWED_RETURN_TYPES = new HashSet<>(Arrays.asList(
+        Date.class, Pojo.class
+    ));
 
     Connection clientConnection, serverConnection;
     Channel clientChannel, serverChannel;
@@ -51,10 +58,15 @@ public abstract class AbstractJsonRpcTest {
                 // safe to ignore when loops ends/server is canceled
             }
         }).start();
-        client = new JsonRpcClient(
-                    new RpcClientParams().channel(clientChannel).exchange("").routingKey(queue).timeout(1000),
-                    createMapper()
-        );
+    client =
+        new JsonRpcClient(
+            new RpcClientParams()
+                .channel(clientChannel)
+                .exchange("")
+                .routingKey(queue)
+                .timeout(1000),
+            createMapper(),
+            ALLOWED_RETURN_TYPES);
         service = client.createProxy(RpcService.class);
     }
 

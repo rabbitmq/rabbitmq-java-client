@@ -119,7 +119,7 @@ public class ProcedureDescription {
             } else if ("void".equals(javaReturnType)) {
                 return Void.TYPE;
             } else {
-                return Class.forName(javaReturnType);
+                return Class.forName(javaReturnType, false, Thread.currentThread().getContextClassLoader());
             }
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("Unable to load class: " + javaReturnType, e);
