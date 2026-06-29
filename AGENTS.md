@@ -54,7 +54,7 @@ Under `src/main/java/com/rabbitmq/client`:
 
  * `ConnectionFactory.java`: entry point for creating connections
  * `Connection.java`, `Channel.java`: key connection and channel interfaces
- * `impl/AMQConnection.java`, `impl/ChannelN.java`: connection and channelimplementations
+ * `impl/AMQConnection.java`, `impl/ChannelN.java`: connection and channel implementations
  * `impl/recovery/AutorecoveringConnection.java`: a `Connection` implementation that supports automatic recovery
 
 ## Code Style
