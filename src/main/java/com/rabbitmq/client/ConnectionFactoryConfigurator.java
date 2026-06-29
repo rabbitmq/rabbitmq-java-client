@@ -396,9 +396,10 @@ public class ConnectionFactoryConfigurator {
             useDefaultTrustStore(cf, sslAlgorithm, verifyHostname);
         } else {
             if (sslAlgorithm == null) {
-                cf.useSslProtocol();
+                cf.useTlsWithNoVerification();
             } else {
-                cf.useSslProtocol(sslAlgorithm);
+                ConnectionFactory.logTlsNoVerificationWarning();
+                cf.useSslProtocol(sslAlgorithm, new TrustEverythingTrustManager());
             }
         }
     }
