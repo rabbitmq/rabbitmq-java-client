@@ -320,7 +320,6 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
             this);
     }
 
-<<<<<<< HEAD
     /**
      * Public API - as {@link #call(String, Object[])}, but takes the
      * method name from the first entry in <code>args</code>, and the
@@ -360,8 +359,6 @@ public class JsonRpcClient extends RpcClient implements InvocationHandler {
         return call(method, actuals);
     }
 
-=======
->>>>>>> f85d038d (Add allowlist in JsonRpcClient)
     /**
      * Public API - gets the service description record that this
      * service loaded from the server itself at construction time.
