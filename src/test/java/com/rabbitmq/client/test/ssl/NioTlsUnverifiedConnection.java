@@ -22,13 +22,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.TrustEverythingTrustManager;
 import com.rabbitmq.client.impl.nio.NioParams;
 import com.rabbitmq.client.test.BrokerTestCase;
 import com.rabbitmq.client.test.TestUtils;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +42,8 @@ import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
 import org.junit.jupiter.api.Test;
 import org.netcrusher.core.reactor.NioReactor;
 import org.netcrusher.tcp.TcpCrusher;
@@ -101,7 +103,22 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
            .collect(Collectors.toList());
         for (String protocol : protocols) {
             SSLContext sslContext = SSLContext.getInstance(protocol);
-            sslContext.init(null, new TrustManager[] {new TrustEverythingTrustManager()}, null);
+            sslContext.init(null, new TrustManager[] {new X509TrustManager() {
+              @Override
+              public void checkClientTrusted(X509Certificate[] chain, String authType) {
+
+              }
+
+              @Override
+              public void checkServerTrusted(X509Certificate[] chain, String authType) {
+
+              }
+
+              @Override
+              public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+              }
+            }}, null);
             ConnectionFactory cf = TestUtils.connectionFactory();
             cf.useSslProtocol(sslContext);
             cf.useNio();
