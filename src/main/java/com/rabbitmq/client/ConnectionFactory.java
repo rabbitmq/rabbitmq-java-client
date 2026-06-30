@@ -725,6 +725,13 @@ public class ConnectionFactory implements Cloneable {
    * Set the socket configurator. This gets a chance to "configure" a socket before it has been
    * opened. The default socket configurator disables Nagle's algorithm.
    *
+   * <p>Avoid setting the socket configurator directly with this method, as it can replace an
+   * existing socket configurator that performs important work (like disabling Nagle's algorithm or
+   * using hostname verification with TLS).
+   *
+   * <p>Prefer <em>adding</em> some behavior by using {@link #getSocketConfigurator()} and calling
+   * {@link com.rabbitmq.client.SocketConfigurator#andThen(SocketConfigurator)}.
+   *
    * @param socketConfigurator the configurator to use
    */
   public ConnectionFactory setSocketConfigurator(SocketConfigurator socketConfigurator) {
