@@ -325,10 +325,16 @@ public class NioParams {
     }
 
     /**
-     * Set the {@link java.nio.channels.SocketChannel} configurator.
-     * This gets a chance to "configure" a socket channel
-     * before it has been opened. The default implementation disables
-     * Nagle's algorithm.
+     * Set the {@link java.nio.channels.SocketChannel} configurator. This gets a chance to "configure"
+     * a socket channel before it has been opened. The default implementation disables Nagle's
+     * algorithm.
+     *
+     * <p>Avoid setting the socket channel configurator directly with this method, as it can replace
+     * an existing configurator that performs important work (like disabling Nagle's algorithm).
+     *
+     * <p>Prefer <em>adding</em> some behavior by using {@link #getSocketChannelConfigurator()} and
+     * calling {@link
+     * com.rabbitmq.client.SocketChannelConfigurator#andThen(com.rabbitmq.client.SocketChannelConfigurator)}.
      *
      * @param configurator the configurator to use
      */
@@ -341,11 +347,16 @@ public class NioParams {
     }
 
     /**
-     * Set the {@link SSLEngine} configurator.
-     * This gets a change to "configure" the SSL engine
-     * before the connection has been opened. This can be
-     * used e.g. to set {@link javax.net.ssl.SSLParameters}.
-     * The default implementation doesn't do anything.
+     * Set the {@link SSLEngine} configurator. This gets a change to "configure" the SSL engine before
+     * the connection has been opened. This can be used e.g. to set {@link
+     * javax.net.ssl.SSLParameters}. The default implementation doesn't do anything.
+     *
+     * <p>Avoid setting the SSL engine configurator directly with this method, as it can replace an
+     * existing configurator that performs important work (like enabling hostname verification).
+     *
+     * <p>Prefer <em>adding</em> some behavior by using {@link #getSslEngineConfigurator()} and
+     * calling {@link
+     * com.rabbitmq.client.SslEngineConfigurator#andThen(com.rabbitmq.client.SslEngineConfigurator)}.
      *
      * @param configurator the configurator to use
      */
