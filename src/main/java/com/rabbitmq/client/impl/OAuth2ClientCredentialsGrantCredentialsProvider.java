@@ -16,9 +16,10 @@
 package com.rabbitmq.client.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rabbitmq.client.TrustEverythingTrustManager;
+import org.slf4j.LoggerFactory;
 
 import java.net.*;
+import java.security.cert.X509Certificate;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import javax.net.ssl.*;
@@ -558,11 +559,16 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
          * @return a TLS configuration that trusts all servers
          */
         public TlsConfiguration dev() {
+            logTlsNoVerificationWarning();
             try {
                 SSLContext sslContext = SSLContext.getInstance(computeDefaultTlsProtocol(
                         SSLContext.getDefault().getSupportedSSLParameters().getProtocols()
                 ));
-                sslContext.init(null, new TrustManager[]{new TrustEverythingTrustManager()}, null);
+                sslContext.init(null, new TrustManager[]{new X509TrustManager() {
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+                    public java.security.cert.X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                }}, null);
                 this.sslContext = sslContext;
             } catch (NoSuchAlgorithmException | KeyManagementException e) {
                 throw new OAuthTokenManagementException("Error while creating TLS context for development configuration", e);
@@ -605,5 +611,14 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
                 throw new OAuthTokenManagementException("Error while parsing OAuth 2 token", e);
             }
         }
+    }
+
+    private static void logTlsNoVerificationWarning() {
+        LoggerFactory.getLogger("com.rabbitmq.client.security").warn(
+            "SECURITY ALERT: this mode trusts every certificate, effectively disabling peer verification, " +
+                "and disables hostname verification. " +
+                "This is convenient for local development but offers no protection against man-in-the-middle attacks. " +
+                "Please see https://www.rabbitmq.com/ssl.html to learn more about peer certificate verification."
+        );
     }
 }

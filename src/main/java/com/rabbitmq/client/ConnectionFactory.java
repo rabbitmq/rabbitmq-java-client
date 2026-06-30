@@ -29,11 +29,16 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.*;
@@ -47,8 +52,7 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
  * Convenience factory class to facilitate opening a {@link Connection} to a RabbitMQ node.
@@ -348,8 +352,7 @@ public class ConnectionFactory implements Cloneable {
    *
    * @param uri is the AMQP URI containing the data
    */
-  public void setUri(URI uri)
-      throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
+  public void setUri(URI uri) throws NoSuchAlgorithmException, KeyManagementException {
     if ("amqp".equals(uri.getScheme().toLowerCase())) {
       setPort(DEFAULT_AMQP_PORT);
     } else if ("amqps".equals(uri.getScheme().toLowerCase())) {
@@ -807,12 +810,11 @@ public class ConnectionFactory implements Cloneable {
   }
 
   /**
-   * Convenience method for configuring TLS using the default set of TLS protocols and a trusting
-   * TrustManager. This setup is <strong>only suitable for development and QA environments</strong>.
-   * The trust manager will <strong>trust every server certificate presented</strong> to it, this is
-   * convenient for local development but <strong>not recommended to use in production</strong> as
-   * it provides no protection against man-in-the-middle attacks. Prefer {@link
-   * #useSslProtocol(SSLContext)}.
+   * Convenience method for configuring TLS using the JVM default trust store and with hostname
+   * verification enabled. This is the recommended method for enabling TLS in production
+   * environments.
+   *
+   * <p>Use {@link #useSslProtocol(SSLContext)} for more control over the {@link SSLContext}.
    *
    * <p>Note this method has NO effect when using Netty, use {@link
    * com.rabbitmq.client.ConnectionFactory.NettyConfiguration#sslContext(io.netty.handler.ssl.SslContext)}
@@ -822,19 +824,16 @@ public class ConnectionFactory implements Cloneable {
     useSslProtocol(
         computeDefaultTlsProtocol(
             SSLContext.getDefault().getSupportedSSLParameters().getProtocols()));
+    useSslProtocol(SSLContext.getDefault());
   }
 
   /**
-   * Convenience method for configuring TLS using the supplied protocol and a very trusting
-   * TrustManager. This setup is <strong>only suitable for development and QA environments</strong>.
-   * The trust manager <strong>will trust every server certificate presented</strong> to it, this is
-   * convenient for local development but not recommended to use in production as it
-   * <strong>provides no protection against man-in-the-middle attacks</strong>.
+   * Convenience method for configuring TLS using the supplied protocol, the JVM default trust
+   * store, and with hostname verification enabled.
    *
-   * <p>Use {@link #useSslProtocol(SSLContext)} in production environments. The produced {@link
-   * SSLContext} instance will be shared by all the connections created by this connection factory.
-   *
-   * <p>Use {@link #setSslContextFactory(SslContextFactory)} for more flexibility.
+   * <p>The produced {@link SSLContext} instance will be shared by all the connections created by
+   * this connection factory. Use {@link #setSslContextFactory(SslContextFactory)} for more
+   * flexibility.
    *
    * <p>Note this method has NO effect when using Netty, use {@link
    * com.rabbitmq.client.ConnectionFactory.NettyConfiguration#sslContext(io.netty.handler.ssl.SslContext)}
@@ -844,7 +843,16 @@ public class ConnectionFactory implements Cloneable {
    */
   public void useSslProtocol(String protocol)
       throws NoSuchAlgorithmException, KeyManagementException {
-    useSslProtocol(protocol, new TrustEverythingTrustManager());
+    try {
+      TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      tmf.init((KeyStore) null);
+      SSLContext c = SSLContext.getInstance(protocol);
+      c.init(null, tmf.getTrustManagers(), null);
+      this.useSslProtocol(c);
+    } catch (KeyStoreException e) {
+      throw new KeyManagementException("Failed to initialize default trust manager", e);
+    }
   }
 
   /**
@@ -889,6 +897,26 @@ public class ConnectionFactory implements Cloneable {
   public void useSslProtocol(SSLContext context) {
     this.sslContextFactory = name -> context;
     setSocketFactory(context.getSocketFactory());
+    this.enableHostnameVerification();
+  }
+
+  /**
+   * Configure TLS without any certificate or hostname verification.
+   *
+   * <p><strong>DO NOT USE IN PRODUCTION.</strong> This disables all server authentication and
+   * provides no protection against man-in-the-middle attacks. Use only in local development or CI
+   * environments where the broker identity is not sensitive.
+   *
+   * <p>Note this method has NO effect when using Netty, use {@link
+   * com.rabbitmq.client.ConnectionFactory.NettyConfiguration#useTlsWithNoVerification()} instead.
+   */
+  public void useTlsWithNoVerification()
+      throws NoSuchAlgorithmException, KeyManagementException {
+    logTlsNoVerificationWarning();
+    this.useSslProtocol(
+        computeDefaultTlsProtocol(
+            SSLContext.getDefault().getSupportedSSLParameters().getProtocols()),
+        new TrustEverythingTrustManager());
   }
 
   /**
@@ -1569,6 +1597,22 @@ public class ConnectionFactory implements Cloneable {
       return this.cf;
     }
 
+    /**
+     * Configure TLS without any certificate or hostname verification.
+     *
+     * <p><strong>DO NOT USE IN PRODUCTION.</strong> This disables all server authentication and
+     * provides no protection against man-in-the-middle attacks. Use only in local development or CI
+     * environments where the broker identity is not sensitive.
+     */
+    public NettyConfiguration useTlsWithNoVerification() throws Exception {
+      logTlsNoVerificationWarning();
+      return sslContext(
+          SslContextBuilder.forClient()
+              .trustManager(new TrustEverythingTrustManager())
+              .endpointIdentificationAlgorithm(null)
+              .build());
+    }
+
     private boolean isTls() {
       return this.sslContextFactory != null;
     }
@@ -1874,6 +1918,7 @@ public class ConnectionFactory implements Cloneable {
    */
   public void setSslContextFactory(SslContextFactory sslContextFactory) {
     this.sslContextFactory = sslContextFactory;
+    this.enableHostnameVerification();
   }
 
   /**
@@ -1985,5 +2030,14 @@ public class ConnectionFactory implements Cloneable {
     } else {
       return value;
     }
+  }
+
+  static void logTlsNoVerificationWarning() {
+    LoggerFactory.getLogger("com.rabbitmq.client.security").warn(
+        "SECURITY ALERT: this mode trusts every certificate, effectively disabling peer verification, " +
+        "and disables hostname verification. " +
+        "This is convenient for local development but offers no protection against man-in-the-middle attacks. " +
+        "Please see https://www.rabbitmq.com/ssl.html to learn more about peer certificate verification."
+    );
   }
 }
