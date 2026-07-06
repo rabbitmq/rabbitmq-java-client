@@ -71,6 +71,7 @@ import org.junit.platform.suite.api.Suite;
     RefreshCredentialsTest.class,
     AMQConnectionRefreshCredentialsTest.class,
     ValueWriterTest.class,
+    ValueReaderTest.class,
     BlockedConnectionTest.class,
     NettyTest.class,
     IoDeadlockOnConnectionClosing.class,
