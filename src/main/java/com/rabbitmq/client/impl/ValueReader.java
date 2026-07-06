@@ -21,6 +21,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,6 +38,9 @@ import com.rabbitmq.client.MalformedFrameException;
 public class ValueReader
 {
     private static final long INT_MASK = 0xffffffffL;
+
+    /** Maximum depth of nested tables/arrays a field value can contain. */
+    static final int MAX_FIELD_VALUE_NESTING_DEPTH = 32;
 
     /**
      * Protected API - Cast an int to a long without extending the
@@ -67,7 +71,7 @@ public class ValueReader
     {
         byte [] b = new byte[in.readUnsignedByte()];
         in.readFully(b);
-        return new String(b, "utf-8");
+        return new String(b, StandardCharsets.UTF_8);
     }
 
     /** Public API - reads a short string. */
@@ -84,14 +88,15 @@ public class ValueReader
         throws IOException
     {
         final long contentLength = unsignedExtend(in.readInt());
-        if(contentLength < Integer.MAX_VALUE) {
-            final byte [] buffer = new byte[(int)contentLength];
-            in.readFully(buffer);
-            return buffer;
-        } else {
-            throw new UnsupportedOperationException
-                ("Very long byte vectors and strings not currently supported");
+        final int available = in.available();
+        // make sure the content length is consistent with the frame size
+        if (contentLength > available) {
+            throw new MalformedFrameException
+                ("Claimed length " + contentLength + " exceeds available data (" + available + " bytes)");
         }
+        final byte [] buffer = new byte[(int)contentLength];
+        in.readFully(buffer);
+        return buffer;
     }
 
     /** Convenience method - reads a long string argument
@@ -136,18 +141,22 @@ public class ValueReader
      * Reads a table argument from a given stream. Also
      * called by {@link ContentHeaderPropertyReader}.
      */
-    private static Map<String, Object> readTable(DataInputStream in)
+    private static Map<String, Object> readTable(DataInputStream in, int depth)
         throws IOException
     {
+        if (depth > MAX_FIELD_VALUE_NESTING_DEPTH) {
+            throw new MalformedFrameException
+                ("Too many levels of nested tables/arrays (max " + MAX_FIELD_VALUE_NESTING_DEPTH + ")");
+        }
         long tableLength = unsignedExtend(in.readInt());
         if (tableLength == 0) return Collections.emptyMap();
-        
+
         Map<String, Object> table = new HashMap<String, Object>();
         DataInputStream tableIn = new DataInputStream
             (new TruncatedInputStream(in, tableLength));
         while(tableIn.available() > 0) {
             String name = readShortstr(tableIn);
-            Object value = readFieldValue(tableIn);
+            Object value = readFieldValue(tableIn, depth + 1);
             if(!table.containsKey(name))
                 table.put(name, value);
         }
@@ -156,6 +165,11 @@ public class ValueReader
 
     // package protected for testing
     static Object readFieldValue(DataInputStream in)
+        throws IOException {
+        return readFieldValue(in, 0);
+    }
+
+    private static Object readFieldValue(DataInputStream in, int depth)
         throws IOException {
         Object value = null;
         switch(in.readUnsignedByte()) {
@@ -178,10 +192,10 @@ public class ValueReader
               value = readTimestamp(in);
               break;
           case 'F':
-              value = readTable(in);
+              value = readTable(in, depth);
               break;
           case 'A':
-              value = readArray(in);
+              value = readArray(in, depth);
               break;
           case 'b':
               value = in.readByte();
@@ -234,15 +248,19 @@ public class ValueReader
     }
 
     /** Read a field-array */
-    private static List<Object> readArray(DataInputStream in)
+    private static List<Object> readArray(DataInputStream in, int depth)
         throws IOException
     {
+        if (depth > MAX_FIELD_VALUE_NESTING_DEPTH) {
+            throw new MalformedFrameException
+                ("Too many levels of nested tables/arrays (max " + MAX_FIELD_VALUE_NESTING_DEPTH + ")");
+        }
         long length = unsignedExtend(in.readInt());
         DataInputStream arrayIn = new DataInputStream
             (new TruncatedInputStream(in, length));
-        List<Object> array = new ArrayList<Object>();
+        List<Object> array = new ArrayList<>();
         while(arrayIn.available() > 0) {
-            Object value = readFieldValue(arrayIn);
+            Object value = readFieldValue(arrayIn, depth + 1);
             array.add(value);
         }
         return array;
@@ -252,7 +270,7 @@ public class ValueReader
     public final Map<String, Object> readTable()
         throws IOException
     {
-        return readTable(this.in);
+        return readTable(this.in, 0);
     }
 
     /** Public API - reads an octet. */
