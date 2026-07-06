@@ -21,6 +21,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -67,7 +68,7 @@ public class ValueReader
     {
         byte [] b = new byte[in.readUnsignedByte()];
         in.readFully(b);
-        return new String(b, "utf-8");
+        return new String(b, StandardCharsets.UTF_8);
     }
 
     /** Public API - reads a short string. */
@@ -84,14 +85,14 @@ public class ValueReader
         throws IOException
     {
         final long contentLength = unsignedExtend(in.readInt());
-        if(contentLength < Integer.MAX_VALUE) {
-            final byte [] buffer = new byte[(int)contentLength];
-            in.readFully(buffer);
-            return buffer;
-        } else {
-            throw new UnsupportedOperationException
-                ("Very long byte vectors and strings not currently supported");
+        final int available = in.available();
+        if (contentLength > available) {
+            throw new MalformedFrameException
+                ("Claimed length " + contentLength + " exceeds available data (" + available + " bytes)");
         }
+        final byte [] buffer = new byte[(int)contentLength];
+        in.readFully(buffer);
+        return buffer;
     }
 
     /** Convenience method - reads a long string argument
