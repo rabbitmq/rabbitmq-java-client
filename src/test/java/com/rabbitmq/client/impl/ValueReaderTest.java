@@ -20,6 +20,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.rabbitmq.client.MalformedFrameException;
 import java.io.*;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 public class ValueReaderTest {
@@ -85,5 +87,84 @@ public class ValueReaderTest {
     DataInputStream in = new DataInputStream(new ByteArrayInputStream(outputStream.toByteArray()));
     assertThatThrownBy(() -> ValueReader.readFieldValue(in))
         .isInstanceOf(MalformedFrameException.class);
+  }
+
+  @Test
+  public void readFieldValueWithModerateArrayNestingShouldSucceed() throws IOException {
+    DataInputStream in =
+        new DataInputStream(
+            new ByteArrayInputStream(nestedArray(ValueReader.MAX_FIELD_VALUE_NESTING_DEPTH)));
+    assertThat(ValueReader.readFieldValue(in)).isInstanceOf(List.class);
+  }
+
+  @Test
+  public void readFieldValueWithExcessiveArrayNestingShouldFailInsteadOfOverflowingTheStack()
+      throws IOException {
+    DataInputStream in =
+        new DataInputStream(
+            new ByteArrayInputStream(nestedArray(ValueReader.MAX_FIELD_VALUE_NESTING_DEPTH + 1)));
+    assertThatThrownBy(() -> ValueReader.readFieldValue(in))
+        .isInstanceOf(MalformedFrameException.class);
+  }
+
+  @Test
+  public void readFieldValueWithModerateTableNestingShouldSucceed() throws IOException {
+    DataInputStream in =
+        new DataInputStream(
+            new ByteArrayInputStream(nestedTable(ValueReader.MAX_FIELD_VALUE_NESTING_DEPTH)));
+    assertThat(ValueReader.readFieldValue(in)).isInstanceOf(Map.class);
+  }
+
+  @Test
+  public void readFieldValueWithExcessiveTableNestingShouldFailInsteadOfOverflowingTheStack()
+      throws IOException {
+    DataInputStream in =
+        new DataInputStream(
+            new ByteArrayInputStream(nestedTable(ValueReader.MAX_FIELD_VALUE_NESTING_DEPTH + 1)));
+    assertThatThrownBy(() -> ValueReader.readFieldValue(in))
+        .isInstanceOf(MalformedFrameException.class);
+  }
+
+  // builds the field-value encoding of an array nested `levels` levels deep,
+  // innermost being an empty array
+  private static byte[] nestedArray(int levels) throws IOException {
+    byte[] current = null;
+    for (int i = 0; i <= levels; i++) {
+      ByteArrayOutputStream layer = new ByteArrayOutputStream();
+      DataOutputStream layerOut = new DataOutputStream(layer);
+      layerOut.writeByte('A');
+      if (current == null) {
+        layerOut.writeInt(0);
+      } else {
+        layerOut.writeInt(current.length);
+        layerOut.write(current);
+      }
+      current = layer.toByteArray();
+    }
+    return current;
+  }
+
+  // builds the field-value encoding of a table nested `levels` levels deep,
+  // innermost being an empty table, each level using an empty field name
+  private static byte[] nestedTable(int levels) throws IOException {
+    byte[] current = null;
+    for (int i = 0; i <= levels; i++) {
+      ByteArrayOutputStream layer = new ByteArrayOutputStream();
+      DataOutputStream layerOut = new DataOutputStream(layer);
+      layerOut.writeByte('F');
+      if (current == null) {
+        layerOut.writeInt(0);
+      } else {
+        ByteArrayOutputStream content = new ByteArrayOutputStream();
+        DataOutputStream contentOut = new DataOutputStream(content);
+        contentOut.writeByte(0); // empty field name
+        contentOut.write(current);
+        byte[] contentBytes = content.toByteArray();
+        layerOut.writeInt(contentBytes.length);
+        layerOut.write(contentBytes);
+      }
+      current = layer.toByteArray();
+    }
+    return current;
   }
 }
