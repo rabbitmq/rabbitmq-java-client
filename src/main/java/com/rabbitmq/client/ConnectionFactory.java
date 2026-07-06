@@ -27,9 +27,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -51,6 +48,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import org.slf4j.LoggerFactory;
 
 /**
  * Convenience factory class to facilitate opening a {@link Connection} to a RabbitMQ node.
@@ -1995,11 +1993,11 @@ public class ConnectionFactory implements Cloneable {
   }
 
   static void logTlsNoVerificationWarning() {
-    LoggerFactory.getLogger("com.rabbitmq.client.security").warn(
-        "SECURITY ALERT: this mode trusts every certificate, effectively disabling peer verification, " +
-        "and disables hostname verification. " +
-        "This is convenient for local development but offers no protection against man-in-the-middle attacks. " +
-        "Please see https://www.rabbitmq.com/ssl.html to learn more about peer certificate verification."
-    );
+    LoggerFactory.getLogger("com.rabbitmq.client.security")
+        .warn(
+            "SECURITY ALERT: this mode trusts every certificate, effectively disabling peer verification, "
+                + "and disables hostname verification. "
+                + "This is convenient for local development but offers no protection against man-in-the-middle attacks. "
+                + "Please see https://www.rabbitmq.com/ssl.html to learn more about peer certificate verification.");
   }
 }
