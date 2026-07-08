@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -151,6 +152,68 @@ public class InboundFrameMax {
     assertThat(serverDone.await(5, TimeUnit.SECONDS)).isTrue();
     if (!shouldFail) {
       assertThat(serverError.get()).isNull();
+    }
+  }
+
+  // connection.tune's frame_max is parsed as a signed 32-bit value; a broker (or a
+  // misconfigured client requesting a nonzero frame max) can drive the negotiated value
+  // negative, which must be rejected rather than silently accepted as a bogus limit.
+  @Test
+  void negativeNegotiatedFrameMaxShouldBeRejected() throws Exception {
+    CountDownLatch serverDone = new CountDownLatch(1);
+    AtomicReference<Throwable> serverError = new AtomicReference<>();
+
+    try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
+      int port = server.getLocalPort();
+      Thread peer =
+          new Thread(
+              () -> runFakeBrokerWithNegativeFrameMax(server, serverDone, serverError),
+              "fake-amqp-broker");
+      peer.setDaemon(true);
+      peer.start();
+
+      ConnectionFactory factory = TestUtils.connectionFactory();
+      factory.setHost("127.0.0.1");
+      factory.setPort(port);
+      // a nonzero requested frame max is needed for negotiatedMaxValue to take the
+      // Math.min(positive, negative) branch, instead of laundering the broker's negative
+      // value into 0 ("no limit") the way it would if the client requested 0
+      factory.setRequestedFrameMax(131_072);
+      factory.setAutomaticRecoveryEnabled(false);
+      factory.setHandshakeTimeout(5000);
+      factory.setConnectionTimeout(5000);
+      factory.setRequestedHeartbeat(0);
+
+      // asserting on the message, not just the type, matters here: on the Netty transport,
+      // an unguarded negative frame max reaches Netty's frame decoder and trips its own
+      // IllegalArgumentException ("maxFrameLength ... expected: > 0") for an unrelated
+      // reason, which would otherwise make this test pass without the fix in place
+      assertThatThrownBy(() -> factory.newConnection())
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Negotiated frame max cannot be negative");
+    }
+    assertThat(serverDone.await(5, TimeUnit.SECONDS)).isTrue();
+    assertThat(serverError.get()).isNull();
+  }
+
+  private static void runFakeBrokerWithNegativeFrameMax(
+      ServerSocket server, CountDownLatch done, AtomicReference<Throwable> error) {
+    try (Socket socket = server.accept()) {
+      socket.setSoTimeout(5000);
+      DataInputStream in = new DataInputStream(socket.getInputStream());
+      DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+      byte[] header = new byte[8];
+      in.readFully(header);
+      writeMethodFrame(out, startPayload());
+      readFrame(in);
+      writeMethodFrame(out, tunePayload(-1));
+      // the client must reject the negotiated frame max before replying, so no further
+      // frames are expected
+    } catch (Throwable t) {
+      error.set(t);
+    } finally {
+      done.countDown();
     }
   }
 

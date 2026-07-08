@@ -428,6 +428,11 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             int frameMax =
                 negotiatedMaxValue(this.requestedFrameMax,
                                    connTune.getFrameMax());
+
+            if (frameMax < 0) {
+                throw new IllegalArgumentException("Negotiated frame max cannot be negative: " + frameMax);
+            }
+
             this._frameMax = frameMax;
 
             // Inbound payload limit: the smaller of frame_max (less framing
