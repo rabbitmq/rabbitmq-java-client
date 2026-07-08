@@ -32,6 +32,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
@@ -139,6 +141,52 @@ public class BrokenFramesTest {
         } catch (IOException e) {
             assertThat(e).hasRootCauseInstanceOf(MalformedFrameException.class);
             assertThat(exception.get()).isNotNull().isInstanceOf(MalformedFrameException.class);
+        } finally {
+            assertTrue(myFrameHandler.closeCalled, "The underlying FrameHandler (socket) should have been closed.");
+            if (connection != null) {
+                assertFalse(connection.isOpen(), "The AMQConnection should be marked as closed.");
+            }
+        }
+    }
+
+    @Test
+    public void negativeBodySizeTriggersConnectionClosure() throws Exception {
+        List<Frame> frames = new ArrayList<>();
+        int channelNumber = 0;
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+        factory.setExceptionHandler(
+            new DefaultExceptionHandler() {
+                @Override
+                public void handleUnexpectedConnectionDriverException(
+                    Connection conn, Throwable ex) {
+                    exception.set(ex);
+                }
+            });
+
+        // 1. Setup a valid method frame (Basic.Deliver expects content)
+        AMQImpl.Basic.Deliver method = new AMQImpl.Basic.Deliver("ctag", 1L, false, "", "rk");
+        frames.add(method.toFrame(channelNumber));
+
+        // 2. Forge a content header frame with a negative body size (class id 60 = basic,
+        // weight 0, body size -1, no property flags)
+        ByteArrayOutputStream headerPayload = new ByteArrayOutputStream();
+        DataOutputStream headerOut = new DataOutputStream(headerPayload);
+        headerOut.writeShort(60); // basic class id
+        headerOut.writeShort(0);  // weight
+        headerOut.writeLong(-1L); // forged negative body size
+        headerOut.writeShort(0);  // no properties
+        frames.add(new Frame(AMQP.FRAME_HEADER, channelNumber, headerPayload.toByteArray()));
+
+        myFrameHandler.setFrames(frames.iterator());
+
+        AMQConnection connection = null;
+        try {
+            connection = new AMQConnection(factory.params(Executors.newFixedThreadPool(1)), myFrameHandler);
+            connection.start();
+            fail("Expected an exception to be thrown due to negative body size, but none was.");
+        } catch (IOException e) {
+            assertThat(e).hasRootCauseInstanceOf(IllegalStateException.class);
+            assertThat(exception.get()).isNotNull().isInstanceOf(IllegalStateException.class);
         } finally {
             assertTrue(myFrameHandler.closeCalled, "The underlying FrameHandler (socket) should have been closed.");
             if (connection != null) {
