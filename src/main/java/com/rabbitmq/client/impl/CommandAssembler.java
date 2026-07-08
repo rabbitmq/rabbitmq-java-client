@@ -128,7 +128,7 @@ final class CommandAssembler {
         if (f.getType() == AMQP.FRAME_HEADER) {
             this.contentHeader = AMQImpl.readContentHeaderFrom(f.getInputStream());
             long bodySize = this.contentHeader.getBodySize();
-            if (bodySize >= this.maxBodyLength) {
+            if (bodySize < 0 || bodySize >= this.maxBodyLength) {
                 throw new IllegalStateException(format(
                     "Message body is too large (%d), maximum configured size is %d. " +
                         "See ConnectionFactory#setMaxInboundMessageBodySize " +
