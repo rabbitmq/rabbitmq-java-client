@@ -92,6 +92,68 @@ public class InboundFrameMax {
     }
   }
 
+  // A negotiated frame_max of 0 means "no limit" (client requests 0, the default, and the
+  // broker also declares 0). The configured message body cap must still be enforced in that
+  // case, instead of being silently discarded in favor of an effectively unbounded frame size.
+  @ParameterizedTest
+  @ValueSource(ints = {8192, 10_000})
+  void bodySizeCapShouldPassWhenEqualToLimitAndNegotiatedFrameMaxIsUnlimited(
+      int maxInboundMessageBodySize) throws Exception {
+    int openOkPayloadSize = maxInboundMessageBodySize - AMQCommand.EMPTY_FRAME_SIZE;
+    doEnforceInboundFrameMaxWithUnlimitedNegotiatedFrameMax(
+        maxInboundMessageBodySize, openOkPayloadSize, false);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {8192, 10_000})
+  void bodySizeCapShouldNotPassWhenAboveLimitAndNegotiatedFrameMaxIsUnlimited(
+      int maxInboundMessageBodySize) throws Exception {
+    int openOkPayloadSize = maxInboundMessageBodySize - AMQCommand.EMPTY_FRAME_SIZE + 1;
+    doEnforceInboundFrameMaxWithUnlimitedNegotiatedFrameMax(
+        maxInboundMessageBodySize, openOkPayloadSize, true);
+  }
+
+  private void doEnforceInboundFrameMaxWithUnlimitedNegotiatedFrameMax(
+      int maxInboundMessageBodySize, int openOkPayloadSize, boolean shouldFail) throws Exception {
+
+    CountDownLatch serverDone = new CountDownLatch(1);
+    AtomicReference<Throwable> serverError = new AtomicReference<>();
+
+    try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
+      int port = server.getLocalPort();
+      // frame_max of 0 in connection.tune means "no limit"
+      Thread peer =
+          new Thread(
+              () -> runFakeBroker(server, serverDone, serverError, 0, openOkPayloadSize),
+              "fake-amqp-broker");
+      peer.setDaemon(true);
+      peer.start();
+
+      ConnectionFactory factory = TestUtils.connectionFactory();
+      factory.setHost("127.0.0.1");
+      factory.setPort(port);
+      // requested frame max of 0 (the client default) is what allows the negotiated
+      // frame_max to come out to 0 when the broker also declares 0
+      factory.setRequestedFrameMax(0);
+      factory.setMaxInboundMessageBodySize(maxInboundMessageBodySize);
+      factory.setHandshakeTimeout(5000);
+      factory.setConnectionTimeout(5000);
+      factory.setRequestedHeartbeat(0);
+
+      if (shouldFail) {
+        assertThatThrownBy(() -> factory.newConnection()).isInstanceOf(IOException.class);
+      } else {
+        try (Connection connection = factory.newConnection()) {
+          assertThat(connection.getFrameMax()).isEqualTo(0);
+        }
+      }
+    }
+    assertThat(serverDone.await(5, TimeUnit.SECONDS)).isTrue();
+    if (!shouldFail) {
+      assertThat(serverError.get()).isNull();
+    }
+  }
+
   private static void runFakeBroker(
       ServerSocket server,
       CountDownLatch done,
