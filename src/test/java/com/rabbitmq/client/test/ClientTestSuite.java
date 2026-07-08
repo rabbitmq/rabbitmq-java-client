@@ -92,6 +92,7 @@ import org.junit.platform.suite.api.Suite;
     ByteBufferPublishTest.class,
     PublishWithByteBufferTest.class,
     InboundFrameMax.class,
+    UtilsTest.class,
 })
 public class ClientTestSuite {
 

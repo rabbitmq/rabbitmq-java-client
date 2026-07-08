@@ -436,7 +436,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             // Inbound payload limit: the smaller of frame_max (less framing
             // overhead) and the configured message body cap.
             _frameHandler.setFrameMax(
-                Math.min(this.maxInboundMessageBodySize, frameMax));
+                Utils.inboundFrameMax(this.maxInboundMessageBodySize, frameMax));
 
             int negotiatedHeartbeat =
                 negotiatedMaxValue(this.requestedHeartbeat,

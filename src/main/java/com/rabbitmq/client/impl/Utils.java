@@ -74,6 +74,17 @@ final class Utils {
     return (Consumer<T>) NO_OP_CONSUMER;
   }
 
+  /**
+   * Caps the inbound message body size to the smaller of {@code maxInboundMessageBodySize}
+   * and the negotiated {@code frameMax}, treating a {@code frameMax} of 0 as "no limit"
+   * (per the AMQP connection.tune negotiation) rather than a literal, smaller-than-everything
+   * value.
+   */
+  static int inboundFrameMax(int maxInboundMessageBodySize, int frameMax) {
+    int effectiveFrameMax = frameMax == 0 ? Integer.MAX_VALUE : frameMax;
+    return Math.min(maxInboundMessageBodySize, effectiveFrameMax);
+  }
+
   static int framePayloadLimit(int frameMax) {
     if (frameMax <= 0) {
       return Integer.MAX_VALUE;
