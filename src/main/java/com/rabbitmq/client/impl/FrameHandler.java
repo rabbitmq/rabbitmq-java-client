@@ -55,14 +55,22 @@ public interface FrameHandler extends NetworkConnection {
 
     void initialize(AMQConnection connection);
 
-    default void finishConnectionNegotiation() {
+    /**
+     * Start processing incoming frames, once the connection header has been sent.
+     * Frame handlers that already read asynchronously (e.g. Netty, NIO) can ignore this,
+     * as reading may already be under way by the time {@link #initialize(AMQConnection)} runs.
+     * Frame handlers with their own dedicated reader thread should wait for this call before
+     * starting it, so that thread does not race {@link #sendHeader()} over the TLS handshake.
+     */
+    void startProcessing();
 
-    }
+    /**
+     * Callback to signal the end of the negotiation phase.
+     */
+    void finishConnectionNegotiation();
 
     /** Cap inbound frame payloads, applied once frame_max is negotiated. */
-    default void setFrameMax(int frameMax) {
-
-    }
+    void setFrameMax(int frameMax);
 
     /**
      * Read a {@link Frame} from the underlying data connection.

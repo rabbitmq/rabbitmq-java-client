@@ -231,13 +231,28 @@ public class AMQConnectionTest {
             return null; // simulate a socket timeout
         }
 
-        public void sendHeader() throws IOException {
+        public void sendHeader() {
             _numHeadersSent++;
         }
 
         @Override
         public void initialize(AMQConnection connection) {
             connection.startMainLoop();
+        }
+
+        @Override
+        public void startProcessing() {
+
+        }
+
+        @Override
+        public void finishConnectionNegotiation() {
+
+        }
+
+        @Override
+        public void setFrameMax(int frameMax) {
+
         }
 
         public void setTimeout(int timeoutMs) throws SocketException {
