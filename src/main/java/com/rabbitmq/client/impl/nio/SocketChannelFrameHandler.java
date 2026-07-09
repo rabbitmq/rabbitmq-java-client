@@ -84,6 +84,16 @@ public class SocketChannelFrameHandler implements FrameHandler {
     }
 
     @Override
+    public void startProcessing() {
+        // no op
+    }
+
+    @Override
+    public void finishConnectionNegotiation() {
+        // no op
+    }
+
+    @Override
     public void setFrameMax(int frameMax) {
         this.state.setFrameMax(frameMax);
     }

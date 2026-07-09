@@ -226,6 +226,21 @@ public class BrokenFramesTest {
             connection.startMainLoop();
         }
 
+        @Override
+        public void startProcessing() {
+
+        }
+
+        @Override
+        public void finishConnectionNegotiation() {
+
+        }
+
+        @Override
+        public void setFrameMax(int frameMax) {
+
+        }
+
         public void setTimeout(int timeoutMs) {
             // no need to implement this: don't bother changing the timeout
         }
