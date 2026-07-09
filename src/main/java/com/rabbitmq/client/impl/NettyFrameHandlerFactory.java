@@ -333,6 +333,11 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
     }
 
     @Override
+    public void startProcessing() {
+      // no op
+    }
+
+    @Override
     public void finishConnectionNegotiation() {
       maybeRemoveHandler(HANDLER_PROTOCOL_VERSION_MISMATCH);
     }
