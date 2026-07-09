@@ -321,6 +321,10 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         // initiator) is to wait for a connection.start method to
         // arrive.
         _channel0.enqueueRpc(connStartBlocker);
+        // Must happen before the header is sent: sending it can make the broker reply
+        // immediately, and the I/O thread that reads that reply needs the connection
+        // reference to already be in place, or it hits a null reference.
+        this._frameHandler.initialize(this);
         try {
             // The following two lines are akin to AMQChannel's
             // transmit() method for this pseudo-RPC.
@@ -330,8 +334,6 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             _frameHandler.close();
             throw ioe;
         }
-
-        this._frameHandler.initialize(this);
 
         AMQP.Connection.Start connStart;
         AMQP.Connection.Tune connTune = null;
