@@ -61,6 +61,8 @@ public class SocketFrameHandler implements FrameHandler {
     private volatile int framePayloadLimit;
     private final IntSupplier payloadLimitSupplier;
 
+    private volatile AMQConnection connection;
+
     /** Time to linger before closing the socket forcefully. */
     public static final int SOCKET_CLOSING_TIMEOUT = 1;
 
@@ -193,7 +195,17 @@ public class SocketFrameHandler implements FrameHandler {
 
     @Override
     public void initialize(AMQConnection connection) {
-        connection.startMainLoop();
+        this.connection = connection;
+    }
+
+    @Override
+    public void startProcessing() {
+        this.connection.startMainLoop();
+    }
+
+    @Override
+    public void finishConnectionNegotiation() {
+      // no op
     }
 
     @Override

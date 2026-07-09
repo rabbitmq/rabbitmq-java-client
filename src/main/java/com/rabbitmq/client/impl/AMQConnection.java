@@ -334,6 +334,12 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
             _frameHandler.close();
             throw ioe;
         }
+        // Only start reading frames once the header has actually gone out: for
+        // frame handlers with their own dedicated I/O thread (e.g. blocking IO),
+        // starting it any earlier would race with sendHeader() over who drives
+        // the TLS handshake, and the loser gets a confusing generic SocketException
+        // instead of the real SSLHandshakeException.
+        this._frameHandler.startProcessing();
 
         AMQP.Connection.Start connStart;
         AMQP.Connection.Tune connTune = null;
