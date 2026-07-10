@@ -26,6 +26,7 @@ import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQImpl;
 import com.rabbitmq.client.impl.recovery.TopologyRecoveryRetryHandlerBuilder;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -49,7 +50,7 @@ public class RpcTopologyRecordingTest extends BrokerTestCase {
   @Override
   protected ConnectionFactory newConnectionFactory() {
     ConnectionFactory connectionFactory = super.newConnectionFactory();
-    connectionFactory.setNetworkRecoveryInterval(5);
+    connectionFactory.setNetworkRecoveryInterval(Duration.ofSeconds(2).toMillis());
     connectionFactory.setTopologyRecoveryRetryHandler(
         TopologyRecoveryRetryHandlerBuilder.builder()
             .queueRecoveryRetryCondition(
