@@ -55,10 +55,11 @@ import org.slf4j.LoggerFactory;
  */
 public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
-    public static final String QUEUE = "tls.nio.queue";
+    private String queue;
 
     public void openConnection()
         throws IOException, TimeoutException {
+        this.queue = generateQueueName();
         try {
             connectionFactory.useTlsWithNoVerification();
             connectionFactory.useNio();
@@ -84,13 +85,13 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
     @Override
     protected void releaseResources() throws IOException {
-        channel.queueDelete(QUEUE);
+        channel.queueDelete(this.queue);
     }
 
     @Test
     public void connectionGetConsume() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        basicGetBasicConsume(connection, QUEUE, latch, 100 * 1000);
+        basicGetBasicConsume(connection, this.queue, latch, 100 * 1000);
         boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
         assertTrue(messagesReceived, "Message has not been received");
     }
@@ -128,7 +129,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
             cf.setNioParams(nioParams);
             try (Connection c = cf.newConnection()) {
                 CountDownLatch latch = new CountDownLatch(1);
-                basicGetBasicConsume(c, QUEUE, latch, 100);
+                basicGetBasicConsume(c, this.queue, latch, 100);
                 boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
                 assertTrue(messagesReceived, "Message has not been received");
                 assertThat(engine.get()).isNotNull();
@@ -229,7 +230,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
 
     private void sendAndVerifyMessage(int size) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        boolean messageReceived = basicGetBasicConsume(connection, QUEUE, latch, size);
+        boolean messageReceived = basicGetBasicConsume(connection, this.queue, latch, size);
         assertTrue(messageReceived, "Message has not been received");
     }
 
