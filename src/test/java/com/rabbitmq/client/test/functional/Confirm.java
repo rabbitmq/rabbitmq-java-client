@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.ConfirmationChannel;
+import com.rabbitmq.client.ConfirmationPublisher;
 import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
@@ -35,10 +35,14 @@ import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.TestInfo;
 
@@ -320,268 +324,161 @@ public class Confirm extends BrokerTestCase
                              "nop".getBytes());
     }
 
-    /**
-     * Tests basic publisher confirmation tracking with context parameter.
-     * Verifies that futures complete successfully with their context values when messages are confirmed.
-     */
-    @Test public void testBasicPublishAsync() throws Exception {
-        Channel ch = connection.createChannel();
-        ConfirmationChannel confirmCh = ConfirmationChannel.create(ch, null);
-        String queue = confirmCh.queueDeclare().getQueue();
+    @Test public void publisherBasicConfirmation() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+        String queue = channel.queueDeclare().getQueue();
 
         int messageCount = 100;
-        java.util.List<java.util.concurrent.CompletableFuture<Integer>> futures = new java.util.ArrayList<>();
+        List<CompletableFuture<Integer>> futures = new ArrayList<CompletableFuture<Integer>>();
 
         for (int i = 0; i < messageCount; i++) {
-            futures.add(confirmCh.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), i));
+            futures.add(publisher.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), i));
         }
 
-        // Verify all futures complete with their context values
         for (int i = 0; i < messageCount; i++) {
             assertEquals(Integer.valueOf(i), futures.get(i).join());
         }
 
-        assertEquals(messageCount, confirmCh.messageCount(queue));
-        confirmCh.close();
+        assertEquals(messageCount, channel.messageCount(queue));
+        publisher.close();
     }
 
-    /**
-     * Tests that unroutable messages with mandatory flag cause futures to complete exceptionally.
-     * Verifies PublishException contains correct return information (isReturn=true, replyCode=NO_ROUTE).
-     */
-    @Test public void testBasicPublishAsyncWithReturn() throws Exception {
-        Channel ch = connection.createChannel();
-        ConfirmationChannel confirmCh = ConfirmationChannel.create(ch, null);
+    @Test public void publisherMandatoryReturn() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
 
-        java.util.concurrent.CompletableFuture<Void> future = confirmCh.basicPublishAsync(
-            "", "nonexistent-queue", true, null, "test".getBytes(), null
-        );
+        CompletableFuture<Void> future = publisher.basicPublishAsync(
+            "", "nonexistent-queue", true, null, "test".getBytes(), null);
 
         try {
             future.join();
             fail("Expected PublishException");
-        } catch (java.util.concurrent.CompletionException e) {
+        } catch (CompletionException e) {
             assertTrue(e.getCause() instanceof PublishException);
             PublishException pe = (PublishException) e.getCause();
             assertTrue(pe.isReturn());
-            assertEquals(AMQP.NO_ROUTE, pe.getReplyCode().intValue());
+            assertEquals(AMQP.NO_ROUTE, pe.getReturned().getReplyCode());
         }
 
-        confirmCh.close();
+        publisher.close();
     }
 
-    /**
-     * Tests rate limiting with ThrottlingRateLimiter.
-     * Verifies that messages are throttled to max 10 concurrent in-flight messages
-     * and all futures complete with correct context values.
-     */
-    @Test public void testMaxOutstandingConfirms() throws Exception {
-        com.rabbitmq.client.ThrottlingRateLimiter limiter =
-            new com.rabbitmq.client.ThrottlingRateLimiter(10, 50);
-        Channel ch = connection.createChannel();
-        ConfirmationChannel confirmCh = ConfirmationChannel.create(ch, limiter);
-        String queue = confirmCh.queueDeclare().getQueue();
+    @Test public void publisherMaxOutstanding() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection, 10);
+        String queue = channel.queueDeclare().getQueue();
 
-        java.util.concurrent.atomic.AtomicInteger completed = new java.util.concurrent.atomic.AtomicInteger(0);
-        java.util.List<java.util.concurrent.CompletableFuture<Integer>> futures = new java.util.ArrayList<>();
+        List<CompletableFuture<Integer>> futures = new ArrayList<CompletableFuture<Integer>>();
+        for (int i = 0; i < 50; i++) {
+            futures.add(publisher.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), i));
+        }
 
         for (int i = 0; i < 50; i++) {
-            final int msgNum = i;
-            java.util.concurrent.CompletableFuture<Integer> future = confirmCh.basicPublishAsync(
-                "", queue, null, ("msg" + i).getBytes(), i
-            );
-            future.thenAccept(ctx -> {
-                assertEquals(Integer.valueOf(msgNum), ctx);
-                completed.incrementAndGet();
-            });
-            futures.add(future);
+            assertEquals(Integer.valueOf(i), futures.get(i).join());
         }
 
-        java.util.concurrent.CompletableFuture.allOf(futures.toArray(new java.util.concurrent.CompletableFuture[0])).join();
-        assertEquals(50, completed.get());
-        confirmCh.close();
+        assertEquals(50, channel.messageCount(queue));
+        publisher.close();
     }
 
-    /**
-     * Tests that closing a channel with pending confirmations causes all futures to complete exceptionally.
-     * Verifies that AlreadyClosedException is thrown for in-flight messages when channel closes.
-     */
-    @Test public void testBasicPublishAsyncChannelClose() throws Exception {
-        Channel ch = connection.createChannel();
-        ConfirmationChannel confirmCh = ConfirmationChannel.create(ch, null);
-        String queue = confirmCh.queueDeclare().getQueue();
+    @Test public void publisherCloseFailsOutstanding() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+        String queue = channel.queueDeclare().getQueue();
 
-        java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
+        List<CompletableFuture<Void>> futures = new ArrayList<CompletableFuture<Void>>();
         for (int i = 0; i < 10; i++) {
-            futures.add(confirmCh.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), null));
+            futures.add(publisher.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), null));
         }
 
-        confirmCh.close();
+        publisher.close();
 
-        for (java.util.concurrent.CompletableFuture<Void> future : futures) {
+        // Every future must settle after close: a graceful close completes
+        // confirmations that already arrived normally, and fails the rest with
+        // a ShutdownSignalException. None may hang.
+        for (CompletableFuture<Void> future : futures) {
             try {
-                future.join();
-            } catch (java.util.concurrent.CompletionException e) {
-                assertTrue(e.getCause() instanceof AlreadyClosedException);
+                future.get(60, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (java.util.concurrent.ExecutionException e) {
+                assertTrue(e.getCause() instanceof ShutdownSignalException);
             }
         }
     }
 
-    /**
-     * Tests that rate limiting introduces delay and all messages complete with correct context.
-     * Verifies ThrottlingRateLimiter limits concurrent in-flight messages and elapsed time is non-zero.
-     */
-    @Test public void testBasicPublishAsyncWithThrottling() throws Exception {
-        com.rabbitmq.client.ThrottlingRateLimiter limiter =
-            new com.rabbitmq.client.ThrottlingRateLimiter(10, 50);
-        Channel ch = connection.createChannel();
-        ConfirmationChannel confirmCh = ConfirmationChannel.create(ch, limiter);
-        String queue = confirmCh.queueDeclare().getQueue();
+    @Test public void publisherContextCorrelation() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+        String queue = channel.queueDeclare().getQueue();
 
-        int messageCount = 50;
-        java.util.List<java.util.concurrent.CompletableFuture<String>> futures = new java.util.ArrayList<>();
+        int messageCount = 10;
+        List<CompletableFuture<String>> futures = new ArrayList<CompletableFuture<String>>();
 
-        long start = System.currentTimeMillis();
         for (int i = 0; i < messageCount; i++) {
-            String msgId = "msg-" + i;
-            futures.add(confirmCh.basicPublishAsync("", queue, null, ("message" + i).getBytes(), msgId));
+            String correlationId = "msg-" + i;
+            futures.add(publisher.basicPublishAsync("", queue, null,
+                ("message" + i).getBytes(), correlationId));
         }
 
-        // Verify all complete with correct context
         for (int i = 0; i < messageCount; i++) {
             assertEquals("msg-" + i, futures.get(i).join());
         }
 
-        long elapsed = System.currentTimeMillis() - start;
-
-        assertEquals(messageCount, confirmCh.messageCount(queue));
-        assertTrue(elapsed > 0, "Throttling should introduce some delay");
-        confirmCh.close();
+        assertEquals(messageCount, channel.messageCount(queue));
+        publisher.close();
     }
 
-    /**
-     * Tests performance comparison between throttled and unlimited channels.
-     * Verifies both complete successfully and throttling introduces measurable delay.
-     */
-    @Test public void testBasicPublishAsyncThrottlingVsUnlimited() throws Exception {
-        // Test with throttling (10 permits, 50% threshold)
-        com.rabbitmq.client.ThrottlingRateLimiter limiter =
-            new com.rabbitmq.client.ThrottlingRateLimiter(10, 50);
-        Channel throttlingCh = connection.createChannel();
-        ConfirmationChannel throttlingConfirmCh = ConfirmationChannel.create(throttlingCh, limiter);
-        String queue1 = throttlingConfirmCh.queueDeclare().getQueue();
-
-        int messageCount = 4096;
-        java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
-
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < messageCount; i++) {
-            futures.add(throttlingConfirmCh.basicPublishAsync("", queue1, null, ("msg" + i).getBytes(), null));
-        }
-        java.util.concurrent.CompletableFuture.allOf(futures.toArray(new java.util.concurrent.CompletableFuture[0])).join();
-        long throttlingElapsed = System.currentTimeMillis() - start;
-
-        assertEquals(messageCount, throttlingConfirmCh.messageCount(queue1));
-        throttlingConfirmCh.close();
-
-        // Test with unlimited (no rate limiter)
-        Channel unlimitedCh = connection.createChannel();
-        ConfirmationChannel unlimitedConfirmCh = ConfirmationChannel.create(unlimitedCh, null);
-        String queue2 = unlimitedConfirmCh.queueDeclare().getQueue();
-
-        futures.clear();
-        start = System.currentTimeMillis();
-        for (int i = 0; i < messageCount; i++) {
-            futures.add(unlimitedConfirmCh.basicPublishAsync("", queue2, null, ("msg" + i).getBytes(), null));
-        }
-        java.util.concurrent.CompletableFuture.allOf(futures.toArray(new java.util.concurrent.CompletableFuture[0])).join();
-        long unlimitedElapsed = System.currentTimeMillis() - start;
-
-        assertEquals(messageCount, unlimitedConfirmCh.messageCount(queue2));
-        unlimitedConfirmCh.close();
-
-        // Both should complete successfully
-        assertTrue(throttlingElapsed > 0);
-        assertTrue(unlimitedElapsed > 0);
-    }
-
-    /**
-     * Tests that ConfirmationChannel works correctly without a rate limiter.
-     * Verifies all messages are confirmed when rateLimiter is null (unlimited concurrency).
-     */
-    @Test public void testBasicPublishAsyncWithNullRateLimiter() throws Exception {
-        Channel ch = connection.createChannel();
-        ConfirmationChannel confirmCh = ConfirmationChannel.create(ch, null);
-        String queue = confirmCh.queueDeclare().getQueue();
-
-        int messageCount = 100;
-        java.util.List<java.util.concurrent.CompletableFuture<Void>> futures = new java.util.ArrayList<>();
-
-        for (int i = 0; i < messageCount; i++) {
-            futures.add(confirmCh.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), null));
-        }
-
-        java.util.concurrent.CompletableFuture.allOf(futures.toArray(new java.util.concurrent.CompletableFuture[0])).join();
-
-        assertEquals(messageCount, confirmCh.messageCount(queue));
-        confirmCh.close();
-    }
-
-    /**
-     * Tests context parameter correlation with String correlation IDs.
-     * Verifies that each future completes with its exact correlation ID for message tracking.
-     */
-    @Test public void testBasicPublishAsyncWithContext() throws Exception {
-        Channel ch = connection.createChannel();
-        ConfirmationChannel confirmCh = ConfirmationChannel.create(ch, null);
-        String queue = confirmCh.queueDeclare().getQueue();
-
-        int messageCount = 10;
-        java.util.Map<String, java.util.concurrent.CompletableFuture<String>> futuresByCorrelationId = new java.util.HashMap<>();
-
-        for (int i = 0; i < messageCount; i++) {
-            String correlationId = "msg-" + i;
-            java.util.concurrent.CompletableFuture<String> future = confirmCh.basicPublishAsync(
-                "", queue, null, ("message" + i).getBytes(), correlationId
-            );
-            futuresByCorrelationId.put(correlationId, future);
-        }
-
-        // Verify all futures complete with their correlation IDs
-        for (java.util.Map.Entry<String, java.util.concurrent.CompletableFuture<String>> entry : futuresByCorrelationId.entrySet()) {
-            String expectedId = entry.getKey();
-            String actualId = entry.getValue().join();
-            assertEquals(expectedId, actualId);
-        }
-
-        assertEquals(messageCount, confirmCh.messageCount(queue));
-        confirmCh.close();
-    }
-
-    /**
-     * Tests that context parameter is available in PublishException for failed publishes.
-     * Verifies context is preserved when message is returned as unroutable.
-     */
-    @Test public void testBasicPublishAsyncWithContextInException() throws Exception {
-        Channel ch = connection.createChannel();
-        ConfirmationChannel confirmCh = ConfirmationChannel.create(ch, null);
+    @Test public void publisherContextInException() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
 
         String messageId = "unroutable-msg-456";
-        java.util.concurrent.CompletableFuture<String> future = confirmCh.basicPublishAsync(
-            "", "nonexistent-queue", true, null, "test".getBytes(), messageId
-        );
+        CompletableFuture<String> future = publisher.basicPublishAsync(
+            "", "nonexistent-queue", true, null, "test".getBytes(), messageId);
 
         try {
             future.join();
             fail("Expected PublishException");
-        } catch (java.util.concurrent.CompletionException e) {
+        } catch (CompletionException e) {
             assertTrue(e.getCause() instanceof PublishException);
             PublishException pe = (PublishException) e.getCause();
             assertTrue(pe.isReturn());
-            assertEquals(AMQP.NO_ROUTE, pe.getReplyCode().intValue());
+            assertEquals(AMQP.NO_ROUTE, pe.getReturned().getReplyCode());
             assertEquals(messageId, pe.getContext());
         }
 
-        confirmCh.close();
+        publisher.close();
+    }
+
+    @Test public void publisherSurvivesConnectionRecovery() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+        String queue = channel.queueDeclare().getQueue();
+
+        for (int i = 0; i < 10; i++) {
+            publisher.basicPublishAsync("", queue, null, ("before" + i).getBytes(), i).join();
+        }
+
+        com.rabbitmq.client.test.TestUtils.closeAndWaitForRecovery(
+            (com.rabbitmq.client.RecoverableConnection) connection);
+
+        int confirmed = 0;
+        for (int i = 0; i < 10; i++) {
+            publisher.basicPublishAsync("", queue, null, ("after" + i).getBytes(), i).join();
+            confirmed++;
+        }
+
+        assertEquals(10, confirmed);
+        publisher.close();
+    }
+
+    @Test public void publisherUnlimited() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+        String queue = channel.queueDeclare().getQueue();
+
+        int messageCount = 1000;
+        List<CompletableFuture<Void>> futures = new ArrayList<CompletableFuture<Void>>();
+
+        for (int i = 0; i < messageCount; i++) {
+            futures.add(publisher.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), null));
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        assertEquals(messageCount, channel.messageCount(queue));
+        publisher.close();
     }
 }

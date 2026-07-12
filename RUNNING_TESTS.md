@@ -97,7 +97,7 @@ top-level directory of the source tree:
 * To run a specific test method within a test class:
 
 ```
-./mvnw verify -Dit.test=Confirm#testBasicPublishAsync
+./mvnw verify -Dit.test=Confirm#publisherBasicConfirmation
 ```
 
 Test reports can be found in `target/failsafe-reports`.
