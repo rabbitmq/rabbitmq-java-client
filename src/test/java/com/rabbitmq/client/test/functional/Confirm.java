@@ -465,6 +465,29 @@ public class Confirm extends BrokerTestCase
         publisher.close();
     }
 
+    @Test public void publisherCompletesWhenExecutorRejects() throws Exception {
+        // An executor that rejects every task: confirmations must still complete
+        // (inline, on the connection thread) rather than hang forever.
+        java.util.concurrent.Executor rejecting = command -> {
+            throw new java.util.concurrent.RejectedExecutionException("always rejects");
+        };
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection, 100, rejecting);
+        String queue = channel.queueDeclare().getQueue();
+
+        int messageCount = 20;
+        List<CompletableFuture<Integer>> futures = new ArrayList<CompletableFuture<Integer>>();
+        for (int i = 0; i < messageCount; i++) {
+            futures.add(publisher.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), i));
+        }
+
+        for (int i = 0; i < messageCount; i++) {
+            assertEquals(Integer.valueOf(i),
+                futures.get(i).get(60, java.util.concurrent.TimeUnit.SECONDS));
+        }
+
+        publisher.close();
+    }
+
     @Test public void publisherUnlimited() throws Exception {
         ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
         String queue = channel.queueDeclare().getQueue();
