@@ -1,358 +1,212 @@
-# ConfirmationChannel - Asynchronous Publisher Confirmations
-
-**Status:** Complete
-**Date:** 2025-12-10
+# ConfirmationPublisher - Asynchronous Publisher Confirmations
 
 ## Overview
 
-`ConfirmationChannel` provides asynchronous publisher confirmation tracking with a `CompletableFuture`-based API, optional rate limiting, and generic context parameter for message correlation. The implementation wraps existing `Channel` instances using listener-based integration, requiring no modifications to the core `ChannelN` class.
+`ConfirmationPublisher` provides asynchronous publisher confirmation tracking
+with a `CompletableFuture`-based API, optional bounded-outstanding backpressure,
+and a generic context parameter for message correlation. It owns a dedicated
+channel created from the supplied `Connection`, requiring no modifications to
+the existing `Channel` or `ChannelN` classes.
 
 ## Motivation
 
-Traditional publisher confirms in the Java client require manual tracking of sequence numbers and correlation of Basic.Return messages. This makes per-message error handling complex and provides no built-in async pattern, backpressure mechanism, or message correlation support.
+Traditional publisher confirms in the Java client require manual tracking of
+sequence numbers and correlation of `basic.return` messages. This makes
+per-message error handling complex and provides no built-in async pattern,
+backpressure mechanism, or message correlation support.
 
-`ConfirmationChannel` addresses these limitations by providing:
+`ConfirmationPublisher` addresses these limitations:
+
 - Automatic confirmation tracking via `CompletableFuture<T>` API
 - Generic context parameter for message correlation
-- Optional rate limiting for backpressure control
-- Clean separation from core `Channel` implementation
+- Optional bounded-outstanding-confirms backpressure (simple `Semaphore`)
+- Futures completed on a configurable executor, never on the I/O thread
+- Clean recovery semantics: outstanding futures fail, then publishing resumes
 
 ## Architecture
 
-### Interface Hierarchy
-
 ```
-Channel (existing interface)
-    ↑
+Connection
     |
-ConfirmationChannel (new interface)
-    ↑
-    |
-ConfirmationChannelN (new implementation)
+    +-- createChannel() (private to the publisher)
+            |
+            ConfirmationPublisher
+                - ConcurrentSkipListMap<seqNo, OutstandingConfirmation>
+                - publishLock (serializes seqNo read + publish)
+                - Semaphore (optional backpressure)
+                - Confirm/Return/Shutdown listeners
 ```
 
-### Key Components
-
-**ConfirmationChannel Interface**
-- Extends `Channel` interface
-- Adds `basicPublishAsync()` methods (with and without mandatory flag)
-- Generic `<T>` context parameter for correlation
-- Returns `CompletableFuture<T>`
-
-**ConfirmationChannelN Implementation**
-- Wraps an existing `Channel` instance (composition, not inheritance)
-- Maintains its own sequence number counter (`AtomicLong`)
-- Registers return and confirm listeners on the wrapped channel
-- Delegates all other `Channel` methods to the wrapped instance
-- Throws `UnsupportedOperationException` for `basicPublish()` methods
-
-### Sequence Number Management
-
-**Independent Sequence Space:**
-- `ConfirmationChannelN` maintains its own `AtomicLong nextSeqNo`
-- No coordination with `ChannelN`'s sequence numbers
-- Sequence numbers start at 1 and increment for each `basicPublishAsync()` call
-- Sequence number added to message headers as `x-seq-no`
-
-**Why Independent?**
-- `basicPublish()` is disallowed on `ConfirmationChannel`
-- No risk of sequence number conflicts
-- Simpler implementation - no need to access `ChannelN` internals
-- Clean separation of concerns
+The publisher keys its outstanding map by `channel.getNextPublishSeqNo()`,
+read atomically with the publish under a `ReentrantLock`. Because the channel
+is private, no external publish can desynchronize the counter. This guarantees
+that the map key is the broker's delivery tag and correlation is correct.
 
 ### Confirmation Tracking
 
-**State Management:**
-```java
-private final ConcurrentHashMap<Long, ConfirmationEntry<?>> confirmations;
-
-private static class ConfirmationEntry<T> {
-    final CompletableFuture<T> future;
-    final RateLimiter.Permit permit;
-    final T context;
-}
-```
-
 **Lifecycle:**
-1. `basicPublishAsync()` called
-2. Acquire rate limiter permit (if configured)
-3. Get next sequence number
-4. Create `CompletableFuture<T>` and `ConfirmationEntry<T>`
-5. Add `x-seq-no` header to message
-6. Store entry in `confirmations` map
-7. Call `delegate.basicPublish()`
-8. Return future to caller
 
-**Completion Paths:**
-- **Basic.Ack** → Complete future with context value, release permit
-- **Basic.Nack** → Complete exceptionally with `PublishException`, release permit
-- **Basic.Return** → Complete exceptionally with `PublishException`, release permit
-- **Channel close** → Complete all pending futures exceptionally, release all permits
+1. Acquire a semaphore permit (if bounded)
+2. Lock, read `channel.getNextPublishSeqNo()`, insert entry, publish, unlock
+3. If publish fails, remove entry, release permit, abort channel if tag-space
+   skewed
+4. Broker sends `basic.ack`/`basic.nack`/`basic.return`
+5. Entry claimed via `ConcurrentSkipListMap.remove()`, permit released via
+   `AtomicBoolean.compareAndSet`, future completed on the configured executor
 
-### Listener Integration
+**Multiple-ack handling:**
 
-**Return Listener:**
 ```java
-delegate.addReturnListener((replyCode, replyText, exchange, routingKey, props, body) -> {
-    long seqNo = extractSequenceNumber(props.getHeaders());
-    ConfirmationEntry<?> entry = confirmations.remove(seqNo);
-    if (entry != null) {
-        entry.future.completeExceptionally(
-            new PublishException(seqNo, true, exchange, routingKey, replyCode, replyText, entry.context)
-        );
-        entry.releasePermit();
-    }
-});
-```
-
-**Confirm Listeners:**
-```java
-delegate.addConfirmListener(
-    (seqNo, multiple) -> handleAck(seqNo, multiple),
-    (seqNo, multiple) -> handleNack(seqNo, multiple)
-);
-```
-
-**Multiple Acknowledgments:**
-When `multiple=true`, all sequence numbers ≤ `seqNo` are processed:
-```java
-for (Long seq : new ArrayList<>(confirmations.keySet())) {
-    if (seq <= seqNo) {
-        ConfirmationEntry<?> entry = confirmations.remove(seq);
-        // Complete future and release permit
-    }
+NavigableMap<Long, OutstandingConfirmation> confirmed =
+    outstanding.headMap(deliveryTag, true);
+for (Long seqNo : confirmed.keySet()) {
+    completeOne(seqNo, nack);
 }
 ```
 
-## API Design
+This is O(k log n) on the confirmed entries, matching `ChannelN`'s own
+`unconfirmedSet.headSet(seqNo + 1).clear()` pattern.
 
-### Constructor
+### Return Correlation
+
+A `basic.return` does not carry a delivery tag, so the publisher injects an
+`x-seq-no` header **only when `mandatory = true`** (returns are impossible
+otherwise). On the return path, the header is read back to find the
+corresponding entry. Non-mandatory publishes avoid the header and the
+`BasicProperties` copy entirely.
+
+The broker echoes this header on normal delivery as well as on return, so when
+a mandatory message is routable its consumers receive it with the `x-seq-no`
+header present; it cannot be stripped on the routable path. Applications that
+must not expose the header should publish such messages through their own
+channel rather than this publisher.
+
+The publisher rejects publishes where the caller already set an `x-seq-no`
+header to prevent silent clobbering.
+
+### Connection Recovery
+
+When the wrapped channel is an `AutorecoveringChannel`, connection loss
+triggers the shutdown listener, which fails all outstanding futures
+exceptionally (their outcome is unknown). After recovery the channel's
+`getNextPublishSeqNo()` returns the reset counter (verified experimentally),
+so new publishes key correctly with no reset hook needed.
+
+## API
+
+### Creating a Publisher
 
 ```java
-public ConfirmationChannelN(Channel delegate, RateLimiter rateLimiter)
+// Unlimited outstanding
+ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+
+// At most 100 unconfirmed messages; basicPublishAsync blocks at the limit
+ConfirmationPublisher publisher = ConfirmationPublisher.create(connection, 100);
+
+// Custom executor for future completion
+ConfirmationPublisher publisher = ConfirmationPublisher.create(connection, 100, myExecutor);
 ```
 
-**Parameters:**
-- `delegate` - The underlying `Channel` instance (typically `ChannelN`)
-- `rateLimiter` - Optional rate limiter for controlling publish concurrency (can be null)
-
-**Initialization:**
-- Calls `delegate.confirmSelect()` to enable publisher confirmations
-- Registers return and confirm listeners
-- Initializes confirmation tracking map
-
-### basicPublishAsync Methods
+### Publishing
 
 ```java
 <T> CompletableFuture<T> basicPublishAsync(String exchange, String routingKey,
-                                            AMQP.BasicProperties props, byte[] body, T context)
+    AMQP.BasicProperties props, byte[] body, T context)
 
 <T> CompletableFuture<T> basicPublishAsync(String exchange, String routingKey,
-                                            boolean mandatory,
-                                            AMQP.BasicProperties props, byte[] body, T context)
+    boolean mandatory, AMQP.BasicProperties props, byte[] body, T context)
 ```
 
-**Context Parameter:**
-- Generic type `<T>` allows any user-defined correlation object
-- Returned in the completed future on success
-- Available in `PublishException.getContext()` on failure
-- Can be null if correlation not needed
+The context parameter is returned in the completed future on success and
+available via `PublishException.getContext()` on failure.
 
-**Return Value:**
-- `CompletableFuture<T>` that completes when broker confirms/rejects
-- Completes successfully with context value on Basic.Ack
-- Completes exceptionally with `PublishException` on Basic.Nack or Basic.Return
-
-### basicPublish Methods (Disallowed)
-
-All `basicPublish()` method overloads throw `UnsupportedOperationException`:
+### Closing
 
 ```java
-@Override
-public void basicPublish(String exchange, String routingKey,
-                         AMQP.BasicProperties props, byte[] body) {
-    throw new UnsupportedOperationException(
-        "basicPublish() is not supported on ConfirmationChannel. Use basicPublishAsync() instead."
-    );
-}
+publisher.close();
 ```
 
-**Rationale:**
-- Prevents mixing synchronous and asynchronous publish patterns
-- Eliminates sequence number coordination complexity
-- Clear API contract - this channel is for async confirmations only
-
-### Delegated Methods
-
-All other `Channel` methods are delegated to the wrapped instance:
-- `basicConsume()`, `basicGet()`, `basicAck()`, etc.
-- `exchangeDeclare()`, `queueDeclare()`, etc.
-- `addReturnListener()`, `addConfirmListener()`, etc.
-- `close()`, `abort()`, etc.
-
-## Rate Limiting
-
-**Optional Feature:**
-- Pass `RateLimiter` to constructor to enable
-- Limits concurrent in-flight messages
-- Blocks in `basicPublishAsync()` until permit available
-- Permits released when confirmation received (ack/nack/return)
-
-**Integration:**
-```java
-RateLimiter.Permit permit = null;
-if (rateLimiter != null) {
-    permit = rateLimiter.acquire(); // May block
-}
-// ... publish message ...
-// Store permit in ConfirmationEntry for later release
-```
+Outstanding futures complete exceptionally with `ShutdownSignalException`.
 
 ## Error Handling
 
 ### PublishException
 
-Enhanced with context parameter:
 ```java
 public class PublishException extends IOException {
-    private final Object context; // User-provided correlation object
-
-    // Constructor for nacks (no routing details available)
-    public PublishException(long sequenceNumber, Object context)
-
-    // Constructor for returns (full routing details)
-    public PublishException(long sequenceNumber, boolean isReturn,
-                           String exchange, String routingKey,
-                           Integer replyCode, String replyText, Object context)
+    public long getSequenceNumber();
+    public boolean isReturn();
+    public Return getReturned();   // null for nacks
+    public Object getContext();
 }
 ```
 
-### Exception Scenarios
-
-**Basic.Nack:**
-- Broker rejected the message
-- `isReturn() == false`
-- Exchange, routingKey, replyCode, replyText are null
-- Only sequence number and context available
-
-**Basic.Return:**
-- Message unroutable (mandatory flag set)
-- `isReturn() == true`
-- Full routing details available
-- Reply code indicates reason (NO_ROUTE, NO_CONSUMERS, etc.)
-
-**Channel Closed:**
-- All pending futures completed with `AlreadyClosedException`
-- All rate limiter permits released
-- Confirmations map cleared
-
-**I/O Error:**
-- Future completed with the I/O exception
-- Rate limiter permit released
-- Entry removed from confirmations map
+- **basic.nack**: `isReturn() == false`, `getReturned() == null`
+- **basic.return**: `isReturn() == true`, `getReturned()` carries the full
+  `Return` (reply code, text, exchange, routing key, properties, body)
+- **Shutdown/close**: future completes with the `ShutdownSignalException`
 
 ## Usage Examples
 
-### Basic Usage
+### Basic
 
 ```java
 Connection connection = factory.newConnection();
-Channel channel = connection.createChannel();
-ConfirmationChannel confirmChannel = ConfirmationChannel.create(channel, null);
+ConfirmationPublisher publisher = ConfirmationPublisher.create(connection, 100);
 
-confirmChannel.basicPublishAsync("exchange", "routing.key", props, body, "msg-123")
+publisher.basicPublishAsync("exchange", "routing.key", props, body, "msg-123")
     .thenAccept(msgId -> System.out.println("Confirmed: " + msgId))
     .exceptionally(ex -> {
-        System.err.println("Failed: " + ex.getMessage());
+        System.err.println("Failed: " + ex.getCause().getMessage());
         return null;
     });
-```
-
-### With Rate Limiting
-
-```java
-RateLimiter rateLimiter = new ThrottlingRateLimiter(1000); // Max 1000 in-flight
-ConfirmationChannel confirmChannel = ConfirmationChannel.create(channel, rateLimiter);
-
-for (int i = 0; i < 10000; i++) {
-    String msgId = "msg-" + i;
-    confirmChannel.basicPublishAsync("exchange", "key", props, body, msgId)
-        .thenAccept(id -> System.out.println("Confirmed: " + id))
-        .exceptionally(ex -> {
-            if (ex.getCause() instanceof PublishException) {
-                PublishException pe = (PublishException) ex.getCause();
-                System.err.println("Failed: " + pe.getContext());
-            }
-            return null;
-        });
-}
 ```
 
 ### With Context Objects
 
 ```java
-class MessageContext {
+class OrderContext {
     final String orderId;
-    final Instant timestamp;
-
-    MessageContext(String orderId) {
+    final Instant sent;
+    OrderContext(String orderId) {
         this.orderId = orderId;
-        this.timestamp = Instant.now();
+        this.sent = Instant.now();
     }
 }
 
-MessageContext ctx = new MessageContext("order-12345");
-confirmChannel.basicPublishAsync("orders", "new", props, body, ctx)
-    .thenAccept(context -> {
-        Duration latency = Duration.between(context.timestamp, Instant.now());
-        System.out.println("Order " + context.orderId + " confirmed in " + latency.toMillis() + "ms");
+OrderContext ctx = new OrderContext("order-12345");
+publisher.basicPublishAsync("orders", "new", props, body, ctx)
+    .thenAccept(c -> {
+        Duration latency = Duration.between(c.sent, Instant.now());
+        System.out.println(c.orderId + " confirmed in " + latency.toMillis() + "ms");
     });
 ```
 
-## Test Results
+### Handling Returns
 
-- **Confirm tests:** 24/24 passing
-- **ThrottlingRateLimiterTest:** 9/9 passing
-- **Total:** 33/33 tests passing
+```java
+publisher.basicPublishAsync("exchange", "key", true, props, body, "msg-1")
+    .exceptionally(ex -> {
+        if (ex.getCause() instanceof PublishException) {
+            PublishException pe = (PublishException) ex.getCause();
+            if (pe.isReturn()) {
+                Return r = pe.getReturned();
+                System.err.println("Unroutable: " + r.getReplyText());
+            }
+        }
+        return null;
+    });
+```
 
-## Testing Strategy
+## Design Decisions
 
-### Unit Tests
-- Sequence number generation and tracking
-- Confirmation entry lifecycle
-- Rate limiter integration
-- Exception handling
-
-### Integration Tests (Existing)
-- All 25 tests in `Confirm.java` adapted to use `ConfirmationChannel`
-- Basic.Ack handling (single and multiple)
-- Basic.Nack handling (single and multiple)
-- Basic.Return handling
-- Context parameter correlation
-- Channel close cleanup
-
-### Rate Limiter Tests (Existing)
-- 9 tests in `ThrottlingRateLimiterTest.java`
-- No changes needed (rate limiter is independent)
-
-## Trade-offs
-
-**Pros:**
-- Clean architecture with clear boundaries
-- No risk of breaking existing functionality
-- Easy to understand and maintain
-- Can evolve independently of `ChannelN`
-
-**Cons:**
-- Requires wrapping a channel (extra object)
-- Two ways to do publisher confirmations (`waitForConfirms()` vs `basicPublishAsync()`)
-- Cannot mix `basicPublish()` and `basicPublishAsync()` on same channel
-- Slightly more verbose setup code
-
-## Future Enhancements
-
-1. **Factory method on Connection** - `connection.createConfirmationChannel(rateLimiter)`
-2. **Batch operations** - `basicPublishAsyncBatch()` for multiple messages
-3. **Metrics integration** - Add metrics for `basicPublishAsync()`
-4. **Observability** - Integration with observation collectors
-5. **Alternative rate limiters** - Token bucket, sliding window, etc.
+| Decision | Rationale |
+|----------|-----------|
+| Owns the channel | Prevents external publishes from skewing the tag space |
+| Keys by `getNextPublishSeqNo()` | Uses the channel's authoritative counter; no shadow counter to diverge |
+| `ReentrantLock` around seqNo + publish | Makes them atomic; contention negligible since `ChannelN` already serializes `transmit` |
+| `ConcurrentSkipListMap` | O(k log n) `headMap` for multiple-acks vs O(n) keyset scan |
+| `AtomicBoolean` on slot release | Prevents double-release race between ack and shutdown paths |
+| Completes futures on an executor | Never blocks the connection's frame-reader thread |
+| Header only on `mandatory=true` | Non-mandatory publishes avoid the wire overhead entirely |
+| Aborts channel on publish failure after tag consumed | Safe because the channel is private; guarantees tag-space consistency |
