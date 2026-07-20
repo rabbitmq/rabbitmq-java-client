@@ -103,6 +103,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
            .filter(p -> availableProtocols.contains(p))
            .collect(Collectors.toList());
         for (String protocol : protocols) {
+            String queueName = this.generateQueueName();
             SSLContext sslContext = SSLContext.getInstance(protocol);
             sslContext.init(null, new TrustManager[] {new X509TrustManager() {
               @Override
@@ -129,7 +130,7 @@ public class NioTlsUnverifiedConnection extends BrokerTestCase {
             cf.setNioParams(nioParams);
             try (Connection c = cf.newConnection()) {
                 CountDownLatch latch = new CountDownLatch(1);
-                basicGetBasicConsume(c, this.queue, latch, 100);
+                basicGetBasicConsume(c, queueName, latch, 100);
                 boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
                 assertTrue(messagesReceived, "Message has not been received");
                 assertThat(engine.get()).isNotNull();
