@@ -53,6 +53,7 @@ public class VerifiedConnection extends UnverifiedConnection {
             .filter(availableProtocols::contains)
             .collect(Collectors.toList());
         for (String protocol : protocols) {
+            String queueName = this.generateQueueName();
             SSLContext sslContextModel = SSLContext.getInstance(protocol);
             ConnectionFactory cf = TestUtils.connectionFactory();
             SSLContext sslContext = TlsTestUtils.verifiedSslContext(() -> sslContextModel);
@@ -75,7 +76,7 @@ public class VerifiedConnection extends UnverifiedConnection {
             }
             try (Connection c = cf.newConnection()) {
                 CountDownLatch latch = new CountDownLatch(1);
-                TestUtils.basicGetBasicConsume(c, VerifiedConnection.class.getName(), latch, 100);
+                TestUtils.basicGetBasicConsume(c, queueName, latch, 100);
                 boolean messagesReceived = latch.await(5, TimeUnit.SECONDS);
                 assertTrue(messagesReceived, "Message has not been received");
                 assertThat(protocolsSupplier.get()).isNotNull();
