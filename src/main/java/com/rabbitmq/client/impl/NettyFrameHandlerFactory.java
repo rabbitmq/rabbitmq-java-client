@@ -205,7 +205,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
       bootstrapCustomizer.accept(b);
       if (b.config().group() == null) {
         if (elg == null) {
-          elg = Utils.eventLoopGroup();
+          elg = NettyUtils.eventLoopGroup();
           this.eventLoopGroup = elg;
         } else {
           this.eventLoopGroup = null;
@@ -229,7 +229,7 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
         b.option(ChannelOption.SO_KEEPALIVE, true);
       }
       if (!b.config().options().containsKey(ChannelOption.ALLOCATOR)) {
-        b.option(ChannelOption.ALLOCATOR, Utils.byteBufAllocator());
+        b.option(ChannelOption.ALLOCATOR, NettyUtils.byteBufAllocator());
       }
 
       AmqpHandler amqpHandler = new AmqpHandler(frameMax, this::close, willRecover);

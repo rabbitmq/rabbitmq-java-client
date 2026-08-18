@@ -165,7 +165,9 @@ public class ConnectionFactory implements Cloneable {
   private boolean netty = false;
 
   private FrameHandlerFactory frameHandlerFactory;
-  private final NettyConfiguration nettyConf = new NettyConfiguration(this);
+
+  // lazily created, so the Netty classes it references are loaded only when Netty is activated
+  private NettyConfiguration nettyConf;
   private NioParams nioParams = new NioParams();
 
   private SslContextFactory sslContextFactory;
@@ -812,7 +814,7 @@ public class ConnectionFactory implements Cloneable {
   public boolean isSSL() {
     return getSocketFactory() instanceof SSLSocketFactory
         || sslContextFactory != null
-        || this.nettyConf.isTls();
+        || (this.nettyConf != null && this.nettyConf.isTls());
   }
 
   /**
@@ -1491,6 +1493,9 @@ public class ConnectionFactory implements Cloneable {
    */
   public NettyConfiguration netty() {
     useNetty();
+    if (this.nettyConf == null) {
+      this.nettyConf = new NettyConfiguration(this);
+    }
     return this.nettyConf;
   }
 
@@ -1594,15 +1599,6 @@ public class ConnectionFactory implements Cloneable {
     }
 
     /**
-     * Go back to the connection factory.
-     *
-     * @return the connection factory
-     */
-    public ConnectionFactory connectionFactory() {
-      return this.cf;
-    }
-
-    /**
      * Configure TLS without any certificate or hostname verification.
      *
      * <p><strong>DO NOT USE IN PRODUCTION.</strong> This disables all server authentication and
@@ -1616,6 +1612,15 @@ public class ConnectionFactory implements Cloneable {
               .trustManager(new TrustEverythingTrustManager())
               .endpointIdentificationAlgorithm(null)
               .build());
+    }
+
+    /**
+     * Go back to the connection factory.
+     *
+     * @return the connection factory
+     */
+    public ConnectionFactory connectionFactory() {
+      return this.cf;
     }
 
     private boolean isTls() {

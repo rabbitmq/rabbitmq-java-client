@@ -18,10 +18,6 @@ package com.rabbitmq.client.impl;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.MalformedFrameException;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.MultiThreadIoEventLoopGroup;
-import io.netty.channel.nio.NioIoHandler;
 
 import java.util.function.Consumer;
 
@@ -32,41 +28,16 @@ final class Utils {
   @SuppressWarnings("rawtypes")
   private static final Consumer NO_OP_CONSUMER = o -> {};
 
-  static final boolean IS_NETTY_4_2;
-
   private static final int AVAILABLE_PROCESSORS =
       Integer.parseInt(
           System.getProperty(
               "rabbitmq.amqp.client.availableProcessors",
               String.valueOf(Runtime.getRuntime().availableProcessors())));
 
-  static {
-    boolean netty4_2 = true;
-    try {
-      Class.forName("io.netty.channel.MultiThreadIoEventLoopGroup");
-    } catch (ClassNotFoundException e) {
-      netty4_2 = false;
-    }
-    IS_NETTY_4_2 = netty4_2;
-  }
-
   private Utils() {}
 
   static int availableProcessors() {
     return AVAILABLE_PROCESSORS;
-  }
-
-  @SuppressWarnings("deprecation")
-  static EventLoopGroup eventLoopGroup() {
-    if (IS_NETTY_4_2) {
-      return new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
-    } else {
-      return new io.netty.channel.nio.NioEventLoopGroup();
-    }
-  }
-
-  static ByteBufAllocator byteBufAllocator() {
-    return ByteBufAllocator.DEFAULT;
   }
 
   @SuppressWarnings("unchecked")
