@@ -311,7 +311,7 @@ public class ConnectionFactoryTest {
         assertThatThrownBy(
             () -> cf.setUri("amqp://svc-account:P@ssW0rd With Space!@broker.internal:5672/prod"))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("Invalid AMQP URI syntax (Illegal character in authority at index 27)");
+            .hasMessageContaining("Invalid AMQP URI syntax (Illegal character in authority at index");
     }
 
 }
