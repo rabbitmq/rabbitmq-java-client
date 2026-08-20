@@ -29,6 +29,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
@@ -136,6 +137,17 @@ public class ConnectionFactoryConfigurator {
         load(cf, (Map) properties, prefix);
     }
 
+    // the URI has already been parsed successfully once by the caller, so re-parsing it here is safe
+    private static String redactCredentials(String uriString) {
+        try {
+            URI uri = new URI(uriString);
+            return new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(),
+                    uri.getPath(), uri.getQuery(), uri.getFragment()).toString();
+        } catch (URISyntaxException e) {
+            return "<redacted>";
+        }
+    }
+
     private static InputStream loadResource(String location) throws FileNotFoundException {
         if (location.startsWith("classpath:")) {
             return ConnectionFactoryConfigurator.class.getResourceAsStream(
@@ -153,11 +165,13 @@ public class ConnectionFactoryConfigurator {
             try {
                 cf.setUri(uri);
             } catch (URISyntaxException e) {
-                throw new IllegalArgumentException("Error while setting AMQP URI: " + uri, e);
-            } catch (NoSuchAlgorithmException e) {
-                throw new IllegalArgumentException("Error while setting AMQP URI: " + uri, e);
-            } catch (KeyManagementException e) {
-                throw new IllegalArgumentException("Error while setting AMQP URI: " + uri, e);
+                // the URI is invalid, so it cannot be reliably stripped of credentials;
+                // do not include it or chain the cause, as its message contains the raw input
+                throw new IllegalArgumentException(
+                        "Error while setting AMQP URI: invalid syntax ("
+                                + e.getReason() + " at index " + e.getIndex() + ")");
+            } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                throw new IllegalArgumentException("Error while setting AMQP URI: " + redactCredentials(uri), e);
             }
         }
         String username = lookUp(USERNAME, properties, prefix);
