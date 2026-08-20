@@ -157,12 +157,6 @@ public class ConnectionFactoryConfigurator {
         if (uri != null) {
             try {
                 cf.setUri(uri);
-            } catch (URISyntaxException e) {
-                // the URI is invalid, so it cannot be reliably stripped of credentials;
-                // do not include it or chain the cause, as its message contains the raw input
-                throw new IllegalArgumentException(
-                        "Error while setting AMQP URI: invalid syntax ("
-                                + e.getReason() + " at index " + e.getIndex() + ")");
             } catch (NoSuchAlgorithmException | KeyManagementException e) {
                 throw new IllegalArgumentException("Error while setting AMQP URI: " + redactCredentials(uri), e);
             }
