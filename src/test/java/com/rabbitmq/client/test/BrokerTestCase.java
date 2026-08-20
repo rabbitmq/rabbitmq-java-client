@@ -326,6 +326,11 @@ public class BrokerTestCase {
         clearResourceAlarm("disk");
     }
 
+    protected String generateName(String prefix) {
+        return name(prefix, this.testInfo.getTestClass().get(),
+            this.testInfo.getTestMethod().get().getName());
+    }
+
     protected String generateQueueName() {
         return name("queue", this.testInfo.getTestClass().get(),
             this.testInfo.getTestMethod().get().getName());

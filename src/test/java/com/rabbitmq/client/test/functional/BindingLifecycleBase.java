@@ -54,10 +54,6 @@ public class BindingLifecycleBase extends ClusteredTestBase {
     this.k = "K-" + System.currentTimeMillis();
   }
 
-  protected static String randomString() {
-    return "-" + System.nanoTime();
-  }
-
   protected void createQueueAndBindToExchange(Binding binding, boolean durable) throws IOException {
     channel.exchangeDeclare(binding.x, "direct", durable);
     channel.queueDelete(binding.q);
@@ -76,14 +72,14 @@ public class BindingLifecycleBase extends ClusteredTestBase {
 
   protected void doAutoDelete(boolean durable, int queues) throws IOException, TimeoutException {
     List<String> queueNames = new ArrayList<>();
-    Binding binding = Binding.randomBinding();
+    Binding binding = randomBinding();
     channel.exchangeDeclare(binding.x, "direct", durable, true, null);
     channel.queueDeclare(binding.q, durable, !durable, true, null);
     channel.queueBind(binding.q, binding.x, binding.k);
     if (queues > 1) {
       int j = queues - 1;
       for (int i = 0; i < j; i++) {
-        queueNames.add(randomString());
+        queueNames.add(generateQueueName());
         channel.queueDeclare(queueNames.get(i), durable, !durable, false, null);
         channel.queueBind(queueNames.get(i), binding.x, binding.k);
         channel.basicConsume(queueNames.get(i), true, new QueueingConsumer(channel));
@@ -155,7 +151,7 @@ public class BindingLifecycleBase extends ClusteredTestBase {
   }
 
   protected Binding setupExchangeBindings(boolean durable) throws IOException {
-    Binding binding = Binding.randomBinding();
+    Binding binding = randomBinding();
     createQueueAndBindToExchange(binding, durable);
     return binding;
   }
@@ -166,15 +162,15 @@ public class BindingLifecycleBase extends ClusteredTestBase {
     channel.basicCancel(tag);
   }
 
+  Binding randomBinding() {
+    return new Binding(generateQueueName(), generateExchangeName(), generateName("k"));
+  }
+
   protected static class Binding {
 
     final String q;
     final String x;
     final String k;
-
-    static Binding randomBinding() {
-      return new Binding(randomString(), randomString(), randomString());
-    }
 
     protected Binding(String q, String x, String k) {
       this.q = q;
