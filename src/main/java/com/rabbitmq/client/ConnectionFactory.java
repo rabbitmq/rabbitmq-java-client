@@ -412,9 +412,15 @@ public class ConnectionFactory implements Cloneable {
    *
    * @param uriString is the AMQP URI containing the data
    */
-  public ConnectionFactory setUri(String uriString)
-      throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
-    setUri(new URI(uriString));
+  public ConnectionFactory setUri(String uriString) throws NoSuchAlgorithmException, KeyManagementException {
+    URI uri;
+    try {
+      uri = new URI(uriString);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(
+          "Invalid AMQP URI syntax (" + e.getReason() + " at index " + e.getIndex() + ")");
+    }
+    setUri(uri);
     return this;
   }
 
