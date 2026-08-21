@@ -1,5 +1,5 @@
-:client-stable: 5.34.0
-:client-snapshot: 5.35.0-SNAPSHOT
+:client-stable: 5.35.0
+:client-snapshot: 5.36.0-SNAPSHOT
 
 = RabbitMQ Java Client
 
