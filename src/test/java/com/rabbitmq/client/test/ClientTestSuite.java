@@ -30,6 +30,7 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @SelectClasses({
     TableTest.class,
+    ShortstrRoundTripTest.class,
     LongStringTest.class,
     BlockingCellTest.class,
     TruncatedInputStreamTest.class,
