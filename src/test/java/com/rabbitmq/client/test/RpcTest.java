@@ -330,6 +330,100 @@ public class RpcTest {
         client.close();
     }
 
+    @Test
+    public void serverKeepsRunningWhenHandlerFails() throws Exception {
+        rpcServer = new FailingRpcServer(serverChannel, queue);
+        Thread serverThread = new Thread(() -> {
+            try {
+                rpcServer.mainloop();
+            } catch (Exception e) {
+            }
+        });
+        serverThread.start();
+        RpcClient client = new RpcClient(new RpcClientParams()
+                .channel(clientChannel).exchange("").routingKey(queue).timeout(1000));
+
+        try {
+            client.doCall(null, "boom".getBytes());
+            fail("The handler failed, the call should have timed out");
+        } catch (TimeoutException e) {
+        }
+
+        RpcClient.Response response = client.doCall(null, "hello".getBytes());
+        assertEquals("*** hello ***", new String(response.getBody()));
+        assertTrue(serverThread.isAlive());
+
+        client.close();
+    }
+
+    @Test
+    public void requestThatCannotBeProcessedIsNotRequeued() throws Exception {
+        rpcServer = new FailingRpcServer(serverChannel, queue);
+        Thread serverThread = new Thread(() -> {
+            try {
+                rpcServer.mainloop();
+            } catch (Exception e) {
+            }
+        });
+        serverThread.start();
+        RpcClient client = new RpcClient(new RpcClientParams()
+                .channel(clientChannel).exchange("").routingKey(queue).timeout(1000));
+
+        try {
+            client.doCall(null, "boom".getBytes());
+            fail("The handler failed, the call should have timed out");
+        } catch (TimeoutException e) {
+        }
+
+        waitAtMost(Duration.ofSeconds(5), () -> clientChannel.messageCount(queue) == 0);
+        assertTrue(serverThread.isAlive());
+
+        client.close();
+    }
+
+    @Test
+    public void serverKeepsRunningWhenSeveralHandlerCallsFail() throws Exception {
+        rpcServer = new FailingRpcServer(serverChannel, queue);
+        Thread serverThread = new Thread(() -> {
+            try {
+                rpcServer.mainloop();
+            } catch (Exception e) {
+            }
+        });
+        serverThread.start();
+        RpcClient client = new RpcClient(new RpcClientParams()
+                .channel(clientChannel).exchange("").routingKey(queue).timeout(1000));
+
+        for (int i = 0; i < 5; i++) {
+            try {
+                client.doCall(null, "boom".getBytes());
+                fail("The handler failed, the call should have timed out");
+            } catch (TimeoutException e) {
+            }
+        }
+
+        RpcClient.Response response = client.doCall(null, "hello".getBytes());
+        assertEquals("*** hello ***", new String(response.getBody()));
+        assertTrue(serverThread.isAlive());
+
+        client.close();
+    }
+
+    private static class FailingRpcServer extends TestRpcServer {
+
+        public FailingRpcServer(Channel channel, String queueName) throws IOException {
+            super(channel, queueName);
+        }
+
+        @Override
+        public byte[] handleCall(Delivery request, AMQP.BasicProperties replyProperties) {
+            if ("boom".equals(new String(request.getBody()))) {
+                throw new IllegalArgumentException("cannot handle this request");
+            }
+            return super.handleCall(request, replyProperties);
+        }
+    }
+
     private static class TestRpcServer extends RpcServer {
 
         public TestRpcServer(Channel channel, String queueName) throws IOException {

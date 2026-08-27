@@ -52,6 +52,9 @@ public class ValueReader
         return extended & INT_MASK;
     }
 
+    /** Maximum length, in bytes, of a shortstr on the wire. */
+    private static final int MAX_SHORTSTR_LENGTH = 255;
+
     /** The stream we are reading from. */
     private final DataInputStream in;
 
@@ -71,7 +74,25 @@ public class ValueReader
     {
         byte [] b = new byte[in.readUnsignedByte()];
         in.readFully(b);
-        return new String(b, StandardCharsets.UTF_8);
+        return truncateToMaxUtf8Length(new String(b, StandardCharsets.UTF_8), MAX_SHORTSTR_LENGTH);
+    }
+
+    private static String truncateToMaxUtf8Length(String s, int maxBytes) {
+        if (s.length() <= maxBytes / 3 || s.indexOf('\uFFFD') < 0) {
+            return s;
+        }
+        int bytes = 0;
+        int i = 0;
+        while (i < s.length()) {
+            int codePoint = s.codePointAt(i);
+            int width = codePoint < 0x80 ? 1 : codePoint < 0x800 ? 2 : codePoint < 0x10000 ? 3 : 4;
+            if (bytes + width > maxBytes) {
+                return s.substring(0, i);
+            }
+            bytes += width;
+            i += Character.charCount(codePoint);
+        }
+        return s;
     }
 
     /** Public API - reads a short string. */
