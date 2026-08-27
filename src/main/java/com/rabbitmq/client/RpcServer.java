@@ -17,6 +17,8 @@
 package com.rabbitmq.client;
 
 import com.rabbitmq.utility.Utility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
@@ -27,6 +29,9 @@ import java.util.concurrent.LinkedBlockingQueue;
  * The class is agnostic about the format of RPC arguments / return values.
 */
 public class RpcServer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RpcServer.class);
+
     /** Channel we are communicating on */
     private final Channel _channel;
     /** Queue to receive requests from */
@@ -119,8 +124,15 @@ public class RpcServer {
                     _mainloopRunning = false;
                     continue;
                 }
-                processRequest(request);
-                _channel.basicAck(request.getEnvelope().getDeliveryTag(), false);
+                try {
+                    processRequest(request);
+                    _channel.basicAck(request.getEnvelope().getDeliveryTag(), false);
+                } catch (ShutdownSignalException sse) {
+                    throw sse;
+                } catch (RuntimeException e) {
+                    LOGGER.warn("Discarding request that could not be processed", e);
+                    _channel.basicReject(request.getEnvelope().getDeliveryTag(), false);
+                }
             }
             return null;
         } catch (ShutdownSignalException sse) {
