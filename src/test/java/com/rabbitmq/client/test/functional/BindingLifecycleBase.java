@@ -16,6 +16,7 @@
 
 package com.rabbitmq.client.test.functional;
 
+import static com.rabbitmq.client.test.TestUtils.queueExists;
 import static com.rabbitmq.client.test.TestUtils.waitAtMost;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -91,14 +92,14 @@ public class BindingLifecycleBase extends ClusteredTestBase {
     }
     if (queues > 1) {
       for (String q : queueNames) {
+        waitAtMost(() -> queueExists(q, connection));
         channel.basicConsume(q, true, new QueueingConsumer(channel));
         Binding tmp = new Binding(q, binding.x, binding.k);
         sendUnroutable(tmp);
       }
     }
     waitAtMost(() -> {
-      Channel ch = connection.createChannel();
-      try {
+      try (Channel ch = connection.createChannel()) {
         ch.queueDeclarePassive(binding.q);
       } catch (IOException e) {
         return true;
