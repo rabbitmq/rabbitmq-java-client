@@ -926,7 +926,7 @@ public class ConnectionFactory implements Cloneable {
     return this.useSslProtocol(context, true);
   }
 
-  private ConnectionFactory useSslProtocol(SSLContext context, boolean hostnameVerification) {
+  protected ConnectionFactory useSslProtocol(SSLContext context, boolean hostnameVerification) {
     this.sslContextFactory = name -> context;
     setSocketFactory(context.getSocketFactory());
     if (hostnameVerification) {
