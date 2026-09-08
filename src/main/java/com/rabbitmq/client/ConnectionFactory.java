@@ -882,9 +882,15 @@ public class ConnectionFactory implements Cloneable {
    */
   public void useSslProtocol(String protocol, TrustManager trustManager)
       throws NoSuchAlgorithmException, KeyManagementException {
+    useSslProtocol(protocol, trustManager, true);
+  }
+
+  private void useSslProtocol(
+      String protocol, TrustManager trustManager, boolean hostnameVerification)
+      throws NoSuchAlgorithmException, KeyManagementException {
     SSLContext c = SSLContext.getInstance(protocol);
     c.init(null, new TrustManager[] {trustManager}, null);
-    useSslProtocol(c);
+    useSslProtocol(c, hostnameVerification);
   }
 
   /**
@@ -903,9 +909,15 @@ public class ConnectionFactory implements Cloneable {
    * @see #setSslContextFactory(SslContextFactory)
    */
   public void useSslProtocol(SSLContext context) {
+    this.useSslProtocol(context, true);
+  }
+
+  protected void useSslProtocol(SSLContext context, boolean hostnameVerification) {
     this.sslContextFactory = name -> context;
     setSocketFactory(context.getSocketFactory());
-    this.enableHostnameVerification();
+    if (hostnameVerification) {
+      this.enableHostnameVerification();
+    }
   }
 
   /**
@@ -923,7 +935,8 @@ public class ConnectionFactory implements Cloneable {
     this.useSslProtocol(
         computeDefaultTlsProtocol(
             SSLContext.getDefault().getSupportedSSLParameters().getProtocols()),
-        new TrustEverythingTrustManager());
+        new TrustEverythingTrustManager(),
+        false);
   }
 
   /**
