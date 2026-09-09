@@ -412,7 +412,8 @@ public class ConnectionFactory implements Cloneable {
    *
    * @param uriString is the AMQP URI containing the data
    */
-  public ConnectionFactory setUri(String uriString) throws NoSuchAlgorithmException, KeyManagementException {
+  public ConnectionFactory setUri(String uriString)
+      throws NoSuchAlgorithmException, KeyManagementException {
     URI uri;
     try {
       uri = new URI(uriString);
@@ -895,9 +896,15 @@ public class ConnectionFactory implements Cloneable {
    */
   public ConnectionFactory useSslProtocol(String protocol, TrustManager trustManager)
       throws NoSuchAlgorithmException, KeyManagementException {
+    return this.useSslProtocol(protocol, trustManager, true);
+  }
+
+  private ConnectionFactory useSslProtocol(
+      String protocol, TrustManager trustManager, boolean hostnameVerification)
+      throws NoSuchAlgorithmException, KeyManagementException {
     SSLContext c = SSLContext.getInstance(protocol);
     c.init(null, new TrustManager[] {trustManager}, null);
-    return useSslProtocol(c);
+    return useSslProtocol(c, hostnameVerification);
   }
 
   /**
@@ -916,9 +923,15 @@ public class ConnectionFactory implements Cloneable {
    * @see #setSslContextFactory(SslContextFactory)
    */
   public ConnectionFactory useSslProtocol(SSLContext context) {
+    return this.useSslProtocol(context, true);
+  }
+
+  protected ConnectionFactory useSslProtocol(SSLContext context, boolean hostnameVerification) {
     this.sslContextFactory = name -> context;
     setSocketFactory(context.getSocketFactory());
-    this.enableHostnameVerification();
+    if (hostnameVerification) {
+      this.enableHostnameVerification();
+    }
     return this;
   }
 
@@ -938,7 +951,8 @@ public class ConnectionFactory implements Cloneable {
     return useSslProtocol(
         computeDefaultTlsProtocol(
             SSLContext.getDefault().getSupportedSSLParameters().getProtocols()),
-        new TrustEverythingTrustManager());
+        new TrustEverythingTrustManager(),
+        false);
   }
 
   /**

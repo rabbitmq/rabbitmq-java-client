@@ -252,10 +252,11 @@ public class PropertyFileInitialisationTest {
     public void tlsSslContextSetIfTlsEnabled() {
         AtomicBoolean sslProtocolSet = new AtomicBoolean(false);
         ConnectionFactory connectionFactory = new ConnectionFactory() {
+
             @Override
-            public ConnectionFactory useSslProtocol(SSLContext context) {
+            protected ConnectionFactory useSslProtocol(SSLContext context, boolean hostnameVerification) {
                 sslProtocolSet.set(true);
-                return super.useSslProtocol(context);
+                return super.useSslProtocol(context, hostnameVerification);
             }
         };
         ConnectionFactoryConfigurator.load(
