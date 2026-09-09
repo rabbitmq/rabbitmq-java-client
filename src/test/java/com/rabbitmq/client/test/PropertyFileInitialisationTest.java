@@ -262,9 +262,9 @@ public class PropertyFileInitialisationTest {
         AtomicBoolean sslProtocolSet = new AtomicBoolean(false);
         ConnectionFactory connectionFactory = new ConnectionFactory() {
             @Override
-            public void useSslProtocol(SSLContext context) {
+            protected void useSslProtocol(SSLContext context, boolean hostnameVerification) {
                 sslProtocolSet.set(true);
-                super.useSslProtocol(context);
+                super.useSslProtocol(context, hostnameVerification);
             }
         };
         ConnectionFactoryConfigurator.load(
