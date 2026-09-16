@@ -26,8 +26,10 @@ jobs:
       matrix:
         include:
           - rabbitmq-image: pivotalrabbitmq/rabbitmq:v4.3.x-otp27
+            erlang-version: 27
             rabbitmq-branch: 4.3
           - rabbitmq-image: pivotalrabbitmq/rabbitmq:main-otp27
+            erlang-version: 28
             rabbitmq-branch: 4.4
     name:  Test against ${{ matrix.rabbitmq-image }}
     steps:
@@ -51,6 +53,7 @@ jobs:
         run: ci/start-cluster.sh
         env:
           RABBITMQ_IMAGE: ${{ matrix.rabbitmq-image }}
+          ERLANG_VERSION: ${{ matrix.erlang-version }}
       - name: Get dependencies
         run: make deps
       - name: Test with Netty
@@ -59,6 +62,7 @@ jobs:
             -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
+            -Dclient.key=./tls-gen/basic/result/client_$(hostname)_key.pem \
             -Dmaven.javadoc.skip=true \
             --no-transfer-progress
       - name: Test with blocking IO
@@ -67,6 +71,7 @@ jobs:
             -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
+            -Dclient.key=./tls-gen/basic/result/client_$(hostname)_key.pem \
             -Dmaven.javadoc.skip=true \
             --no-transfer-progress
       - name: Get broker logs

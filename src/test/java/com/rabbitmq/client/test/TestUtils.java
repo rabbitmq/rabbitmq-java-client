@@ -245,6 +245,26 @@ public class TestUtils {
     return currentVersion;
   }
 
+  static Integer erlangMajorVersion(Object platformObj) {
+    if (platformObj == null) {
+      return null;
+    }
+    String platform = platformObj.toString();
+    // platform looks like: Erlang/OTP 27.3.4.14
+    int spaceIndex = platform.lastIndexOf(' ');
+    if (spaceIndex < 0 || spaceIndex == platform.length() - 1) {
+      return null;
+    }
+    String version = platform.substring(spaceIndex + 1);
+    int dotIndex = version.indexOf('.');
+    String majorVersion = dotIndex < 0 ? version : version.substring(0, dotIndex);
+    try {
+      return Integer.valueOf(majorVersion);
+    } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
   public static boolean sendAndConsumeMessage(
       String exchange, String routingKey, String queue, Connection c)
       throws IOException, TimeoutException, InterruptedException {
@@ -452,44 +472,6 @@ public class TestUtils {
     return messageReceived;
   }
 
-  /*
-  public static class DefaultTestSuite extends Suite {
-
-
-      public DefaultTestSuite(Class<?> klass, RunnerBuilder builder)
-          throws InitializationError {
-          super(klass, builder);
-      }
-
-      public DefaultTestSuite(RunnerBuilder builder, Class<?>[] classes)
-          throws InitializationError {
-          super(builder, classes);
-      }
-
-      protected DefaultTestSuite(Class<?> klass, Class<?>[] suiteClasses)
-          throws InitializationError {
-          super(klass, suiteClasses);
-      }
-
-      protected DefaultTestSuite(RunnerBuilder builder, Class<?> klass, Class<?>[] suiteClasses)
-          throws InitializationError {
-          super(builder, klass, suiteClasses);
-      }
-
-      @Override
-      protected void runChild(Runner runner, RunNotifier notifier) {
-          LOGGER.info("Running test {}", runner.getDescription().getDisplayName());
-          super.runChild(runner, notifier);
-      }
-
-      protected DefaultTestSuite(Class<?> klass, List<Runner> runners)
-          throws InitializationError {
-          super(klass, runners);
-      }
-  }
-
-   */
-
   public static void safeDelete(Connection connection, String queue) {
     try {
       Channel ch = connection.createChannel();
@@ -497,6 +479,52 @@ public class TestUtils {
       ch.close();
     } catch (Exception e) {
       // OK
+    }
+  }
+
+  private static class ErlangVersionCondition
+      implements org.junit.jupiter.api.extension.ExecutionCondition {
+
+    @Override
+    public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
+      if (!context.getTestMethod().isPresent()) {
+        return ConditionEvaluationResult.enabled("Apply only to methods");
+      }
+      ErlangVersionAtLeast annotation =
+          context.getElement().get().getAnnotation(ErlangVersionAtLeast.class);
+      int expectedVersion = annotation == null ? 0 : annotation.value();
+      if (expectedVersion == 0) {
+        return ConditionEvaluationResult.enabled("No Erlang version requirement");
+      } else {
+        Integer erlangVersion =
+            context
+                .getRoot()
+                .getStore(Namespace.GLOBAL)
+                .getOrComputeIfAbsent(
+                    "erlangVersion",
+                    k -> {
+                      try (Connection c = TestUtils.connectionFactory().newConnection()) {
+                        return erlangMajorVersion(c.getServerProperties().get("platform"));
+                      } catch (Exception e) {
+                        throw new RuntimeException(e);
+                      }
+                    },
+                    Integer.class);
+
+        if (erlangVersion != null && erlangVersion >= expectedVersion) {
+          return ConditionEvaluationResult.enabled(
+              "Erlang version requirement met, expected "
+                  + expectedVersion
+                  + ", actual "
+                  + erlangVersion);
+        } else {
+          return ConditionEvaluationResult.disabled(
+              "Erlang version requirement not met, expected "
+                  + expectedVersion
+                  + ", actual "
+                  + erlangVersion);
+        }
+      }
     }
   }
 
@@ -619,6 +647,14 @@ public class TestUtils {
     public String toString() {
       return this.value;
     }
+  }
+
+  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Documented
+  @ExtendWith(ErlangVersionCondition.class)
+  public @interface ErlangVersionAtLeast {
+    int value();
   }
 
   static class DisabledIfBrokerRunningOnDockerCondition
