@@ -53,6 +53,7 @@ jobs:
             -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
+            -Dclient.key=./tls-gen/basic/result/client_$(hostname)_key.pem \
             -Dmaven.javadoc.skip=true \
             --no-transfer-progress
       - name: Test with blocking IO
@@ -61,6 +62,7 @@ jobs:
             -Dtest-broker.A.nodename=rabbit@node0 -Dtest-broker.B.nodename=rabbit@node1 \
             -Dca.certificate=./tls-gen/basic/result/ca_certificate.pem \
             -Dclient.certificate=./tls-gen/basic/result/client_$(hostname)_certificate.pem \
+            -Dclient.key=./tls-gen/basic/result/client_$(hostname)_key.pem \
             -Dmaven.javadoc.skip=true \
             --no-transfer-progress
       - name: Get broker logs

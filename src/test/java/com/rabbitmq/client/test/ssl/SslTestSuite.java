@@ -28,7 +28,8 @@ import org.junit.platform.suite.api.Suite;
 	NioTlsUnverifiedConnection.class,
 	HostnameVerification.class,
 	TlsConnectionLogging.class,
-	SslContextFactoryTest.class
+	SslContextFactoryTest.class,
+	Pqc.class
 })
 public class SslTestSuite {
 
