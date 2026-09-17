@@ -120,9 +120,9 @@ public class ConnectionFactory implements Cloneable {
   /** The default timeout for work pool enqueueing: no timeout */
   public static final int DEFAULT_WORK_POOL_TIMEOUT = -1;
 
-  private static final String PREFERRED_TLS_PROTOCOL = "TLSv1.2";
+  private static final String PREFERRED_TLS_PROTOCOL = "TLSv1.3";
 
-  private static final String FALLBACK_TLS_PROTOCOL = "TLSv1";
+  private static final String FALLBACK_TLS_PROTOCOL = "TLSv1.2";
 
   private String virtualHost = DEFAULT_VHOST;
   private String host = DEFAULT_HOST;
