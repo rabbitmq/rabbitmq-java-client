@@ -25,21 +25,33 @@ import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.IdentityCipherSuiteFilter;
 import io.netty.handler.ssl.JdkSslContext;
 import io.netty.handler.ssl.SslContext;
+import io.netty.util.internal.PlatformDependent;
+import java.io.File;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PrivilegedAction;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
@@ -142,6 +154,33 @@ class TlsTestUtils {
     return loadCertificate(caCertificateFile());
   }
 
+  static PrivateKey clientKey() throws Exception {
+    return loadPrivateKey(clientKeyFile());
+  }
+
+  static PrivateKey loadPrivateKey(String filename) throws Exception {
+    File file = new File(filename);
+    String key = new String(Files.readAllBytes(file.toPath()), US_ASCII);
+
+    String privateKeyPEM =
+        key.replace("-----BEGIN PRIVATE KEY-----", "")
+            .replaceAll(System.lineSeparator(), "")
+            .replace("-----END PRIVATE KEY-----", "");
+
+    byte[] decoded = Base64.getDecoder().decode(privateKeyPEM);
+
+    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decoded);
+    PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
+    return privateKey;
+  }
+
+  static String clientKeyFile() {
+    return tlsArtefactPath(
+        System.getProperty(
+            "client.key", "./rabbitmq-configuration/tls/client_" + hostname() + "_key.pem"));
+  }
+
   static String caCertificateFile() {
     return tlsArtefactPath(
         System.getProperty("ca.certificate", "./rabbitmq-configuration/tls/ca_certificate.pem"));
@@ -209,7 +248,7 @@ class TlsTestUtils {
     return in.replace("$(hostname)", hostname()).replace("$(hostname -s)", hostname());
   }
 
-  private static String hostname() {
+  static String hostname() {
     try {
       return InetAddress.getLocalHost().getHostName();
     } catch (UnknownHostException e) {
@@ -234,6 +273,48 @@ class TlsTestUtils {
     @Override
     public X509Certificate[] getAcceptedIssuers() {
       return new X509Certificate[0];
+    }
+  }
+
+  // from Netty's OpenSslParametersUtil
+  private static final MethodHandle SET_NAMED_GROUPS;
+
+  static {
+    MethodHandle setNamedGroups = null;
+    if (PlatformDependent.javaVersion() >= 20) {
+      final MethodHandles.Lookup lookup = MethodHandles.lookup();
+      setNamedGroups =
+          obtainHandle(lookup, "setNamedGroups", MethodType.methodType(void.class, String[].class));
+    }
+    SET_NAMED_GROUPS = setNamedGroups;
+  }
+
+  @SuppressWarnings("removal")
+  private static MethodHandle obtainHandle(
+      final MethodHandles.Lookup lookup, final String methodName, final MethodType type) {
+    return AccessController.doPrivileged(
+        (PrivilegedAction<MethodHandle>)
+            () -> {
+              try {
+                return lookup.findVirtual(SSLParameters.class, methodName, type);
+              } catch (UnsupportedOperationException
+                  | SecurityException
+                  | NoSuchMethodException
+                  | IllegalAccessException e) {
+                // Just ignore it.
+                return null;
+              }
+            });
+  }
+
+  static void setNamesGroups(SSLParameters parameters, String[] names) {
+    if (SET_NAMED_GROUPS == null) {
+      return;
+    }
+    try {
+      SET_NAMED_GROUPS.invoke(parameters, names);
+    } catch (Throwable ignore) {
+      // Ignore
     }
   }
 }

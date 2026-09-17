@@ -24,7 +24,7 @@ public class ConnectionFactoryDefaultTlsVersion {
     @Test public void defaultTlsVersionJdk16ShouldTakeFallback() {
         String [] supportedProtocols = {"SSLv2Hello", "SSLv3", "TLSv1"};
         String tlsProtocol = ConnectionFactory.computeDefaultTlsProtocol(supportedProtocols);
-        Assertions.assertEquals("TLSv1",tlsProtocol);
+        Assertions.assertEquals("TLSv1.2",tlsProtocol);
     }
 
     @Test public void defaultTlsVersionJdk17ShouldTakePrefered() {
