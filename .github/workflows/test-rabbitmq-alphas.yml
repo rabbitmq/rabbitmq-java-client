@@ -28,7 +28,7 @@ jobs:
           - rabbitmq-image: pivotalrabbitmq/rabbitmq:v4.3.x-otp27
             erlang-version: 27
             rabbitmq-branch: 4.3
-          - rabbitmq-image: pivotalrabbitmq/rabbitmq:main-otp27
+          - rabbitmq-image: pivotalrabbitmq/rabbitmq:main-otp28
             erlang-version: 28
             rabbitmq-branch: 4.4
     name:  Test against ${{ matrix.rabbitmq-image }}
