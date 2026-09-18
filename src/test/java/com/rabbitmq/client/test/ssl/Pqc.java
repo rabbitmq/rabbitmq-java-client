@@ -38,15 +38,17 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
 import java.io.IOException;
 import java.security.Security;
-import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jsse.BCSNIHostName;
+import org.bouncycastle.jsse.BCSSLEngine;
+import org.bouncycastle.jsse.BCSSLParameters;
+import org.bouncycastle.jsse.BCSSLSocket;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -110,27 +112,27 @@ class Pqc {
     AtomicReference<SSLSocket> socket = new AtomicReference<>();
     SSLContext sslContext =
         TlsTestUtils.verifiedSslContext(
-            () -> SSLContext.getInstance("TLS", BouncyCastleJsseProvider.PROVIDER_NAME));
+            () -> SSLContext.getInstance(protocol, BouncyCastleJsseProvider.PROVIDER_NAME));
     ConnectionFactory cf = TestUtils.connectionFactory();
     cf.useBlockingIo();
     cf.useSslProtocol(sslContext);
+    cf.setSocketFactory(sslContext.getSocketFactory());
 
     SocketConfigurator sc =
         cf.getSocketConfigurator()
             .andThen(
                 s -> {
-                  if (s instanceof SSLSocket) {
-                    SSLSocket sslSocket = (SSLSocket) s;
-                    SSLParameters sslParameters = sslSocket.getSSLParameters();
-                    sslParameters = sslParameters == null ? new SSLParameters() : sslParameters;
-                    // to compile on Java < 20
-                    TlsTestUtils.setNamesGroups(sslParameters, new String[] {group});
+                  if (s instanceof BCSSLSocket) {
+                    // use BC API, to set named groups with Java < 20
+                    BCSSLSocket sslSocket = (BCSSLSocket) s;
+                    BCSSLParameters sslParameters = sslSocket.getParameters();
+                    sslParameters = sslParameters == null ? new BCSSLParameters() : sslParameters;
                     sslParameters.setCipherSuites(new String[] {cipher});
+                    sslParameters.setNamedGroups(new String[] {group});
                     // Bouncycastle is stricter than JSSE for hostname verification
-                    sslParameters.setServerNames(
-                        Collections.singletonList(new SNIHostName(hostname())));
-                    sslSocket.setSSLParameters(sslParameters);
-                    socket.set(sslSocket);
+                    sslParameters.setServerNames(singletonList(new BCSNIHostName(hostname())));
+                    sslSocket.setParameters(sslParameters);
+                    socket.set((SSLSocket) s);
                   }
                 });
     cf.setSocketConfigurator(sc);
@@ -235,13 +237,14 @@ class Pqc {
         .sslContext(context)
         .channelCustomizer(
             ch -> {
-              channel.set(ch);
               SslHandler sslHandler = ch.pipeline().get(SslHandler.class);
-              if (sslHandler != null) {
-                SSLParameters sslParams = sslHandler.engine().getSSLParameters();
-                // to compile on Java < 20
-                TlsTestUtils.setNamesGroups(sslParams, new String[] {group});
-                sslHandler.engine().setSSLParameters(sslParams);
+              if (sslHandler != null && sslHandler.engine() instanceof BCSSLEngine) {
+                channel.set(ch);
+                // use BC API, to set named groups with Java < 20
+                BCSSLEngine engine = (BCSSLEngine) sslHandler.engine();
+                BCSSLParameters sslParams = engine.getParameters();
+                sslParams.setNamedGroups(new String[] {group});
+                engine.setParameters(sslParams);
               }
             });
 
