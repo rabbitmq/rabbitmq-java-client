@@ -87,7 +87,7 @@ public class JSONReader {
                 next();
             }
             else if (c == '/' && next() == '/') {
-                while (c != '\n') {
+                while (c != '\n' && c != CharacterIterator.DONE) {
                     next();
                 }
             }
@@ -208,6 +208,11 @@ public class JSONReader {
     private Object string(char sep) {
         buf.setLength(0);
         while (c != sep) {
+            if (c == CharacterIterator.DONE) {
+                throw new IllegalStateException(
+                    "Unterminated string while parsing JSON (around character "
+                        + (it.getIndex() - it.getBeginIndex()) + ")");
+            }
             if (c == '\\') {
                 next();
                 if (c == 'u') {

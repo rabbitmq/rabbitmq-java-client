@@ -17,11 +17,13 @@
 package com.rabbitmq.client.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.rabbitmq.tools.json.JSONReader;
 import com.rabbitmq.tools.json.JSONWriter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class JSONReadWriteTest {
 
@@ -107,6 +109,24 @@ public class JSONReadWriteTest {
         }
         catch (IllegalStateException e) {}
 
+    }
+
+    @Test
+    @Timeout(10)
+    public void truncatedInputInsideStringShouldThrow() {
+        for (String json : new String[] {
+            "{\"method\":\"x", "\"", "'abc", "{\"a\":\"b\\\\", "[\"x" }) {
+            assertThrows(IllegalStateException.class, () -> new JSONReader().read(json), json);
+        }
+    }
+
+    @Test
+    @Timeout(10)
+    public void truncatedLineCommentShouldThrow() {
+        assertThrows(IllegalStateException.class, () -> new JSONReader().read("//"));
+        assertThrows(IllegalStateException.class, () -> new JSONReader().read("// no newline"));
+        // a terminated comment is still skipped
+        assertEquals(1, ((java.util.Map<?, ?>) new JSONReader().read("// c\n{\"a\":1}")).get("a"));
     }
 
 }
