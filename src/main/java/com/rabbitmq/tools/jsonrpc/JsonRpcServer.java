@@ -185,8 +185,10 @@ public class JsonRpcServer extends StringRpcServer {
                     }
                 }
             }
-        } catch (ClassCastException cce) {
-            // Bogus request!
+        } catch (RuntimeException e) {
+            // Bogus request! Note this also covers a request body that the mapper
+            // cannot parse at all: such a request must not take the server down.
+            LOGGER.debug("Error while processing JSON RPC request", e);
             response = errorResponse(null, 400, "Bad Request", null);
         }
 
