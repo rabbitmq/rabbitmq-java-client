@@ -70,6 +70,7 @@ public class RecoveryAwareChannelN extends ChannelN {
      * @param channelNumber The channel number to be associated with this channel
      * @param workService   service for managing this channel's consumer callbacks
      * @param metricsCollector service for managing metrics
+     * @param observationCollector service for managing observations
      */
     public RecoveryAwareChannelN(AMQConnection connection, int channelNumber, ConsumerWorkService workService,
                                  MetricsCollector metricsCollector, ObservationCollector observationCollector) {
