@@ -13,13 +13,13 @@
 // If you have any questions regarding licensing, please contact us at
 // info@rabbitmq.com.
 
-package com.rabbitmq.client;
+package com.rabbitmq.client.impl;
 
 /**
  * Capabilities a RabbitMQ node advertises in the <code>capabilities</code> table
  * of the <code>connection.start</code> server properties.
  */
-public enum ServerCapability {
+enum ServerCapability {
 
     PUBLISHER_CONFIRMS("publisher_confirms"),
     EXCHANGE_EXCHANGE_BINDINGS("exchange_exchange_bindings"),
@@ -38,7 +38,7 @@ public enum ServerCapability {
         this.name = name;
     }
 
-    public String getName() {
+    String getName() {
         return name;
     }
 }

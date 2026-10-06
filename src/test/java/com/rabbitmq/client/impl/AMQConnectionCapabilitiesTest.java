@@ -18,7 +18,6 @@ package com.rabbitmq.client.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.rabbitmq.client.ServerCapability;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
