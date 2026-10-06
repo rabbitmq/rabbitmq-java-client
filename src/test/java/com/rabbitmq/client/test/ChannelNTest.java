@@ -166,15 +166,16 @@ public class ChannelNTest {
 
     private ChannelN channelWithConsumer(AMQConnection connection, String consumerTag) throws Exception {
         ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
-        new Thread(() -> {
-            try {
-                Thread.sleep(15);
+        // the RPC is enqueued before the request is written, so replying from the write is race-free
+        TrafficListener trafficListener = connection.getTrafficListener();
+        Mockito.doAnswer(invocation -> {
+            Command command = invocation.getArgument(0);
+            if (command.getMethod() instanceof AMQP.Basic.Consume) {
                 channel.handleCompleteInboundCommand(
                     new AMQCommand(new AMQImpl.Basic.ConsumeOk(consumerTag)));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
             }
-        }).start();
+            return null;
+        }).when(trafficListener).write(Mockito.any(Command.class));
         channel.basicConsume("q", false, consumerTag, new DefaultConsumer(channel));
         return channel;
     }
