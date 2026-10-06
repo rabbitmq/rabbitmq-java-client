@@ -15,7 +15,13 @@
 
 package com.rabbitmq.client.test;
 
+<<<<<<< HEAD
 import com.rabbitmq.client.AMQP;import com.rabbitmq.client.Command;
+=======
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Command;
+import com.rabbitmq.client.DefaultConsumer;
+>>>>>>> 1c9a5c0 (Respond with `basic.cancel-ok` to the servers that support it)
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.TrafficListener;
 import com.rabbitmq.client.impl.*;
@@ -60,7 +66,46 @@ public class ChannelNTest {
     }
 
     @Test
+<<<<<<< HEAD
     public void callingBasicCancelForUnknownConsumerThrowsException() throws Exception {
+=======
+    public void serverBasicCancelIsAnsweredWithCancelOkWhenBrokerAcceptsIt() throws Exception {
+        TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
+        AMQConnection connection = connectionAcceptingConsumerCancelOk(true, trafficListener);
+        ChannelN channel = channelWithConsumer(connection, "ctag");
+
+        channel.processAsync(new AMQCommand(new AMQImpl.Basic.Cancel.Builder().consumerTag("ctag").build()));
+
+        Mockito.verify(trafficListener, Mockito.times(1)).write(
+            Mockito.argThat(c -> c.getMethod() instanceof AMQP.Basic.CancelOk));
+    }
+
+    @Test
+    public void serverBasicCancelIsNotAnsweredWhenBrokerDoesNotAcceptCancelOk() throws Exception {
+        TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
+        AMQConnection connection = connectionAcceptingConsumerCancelOk(false, trafficListener);
+        ChannelN channel = channelWithConsumer(connection, "ctag");
+
+        channel.processAsync(new AMQCommand(new AMQImpl.Basic.Cancel.Builder().consumerTag("ctag").build()));
+
+        Mockito.verify(trafficListener, Mockito.never()).write(
+            Mockito.argThat(c -> c.getMethod() instanceof AMQP.Basic.CancelOk));
+    }
+
+    @Test
+    public void serverBasicCancelForUnknownConsumerIsNotAnsweredWithCancelOk() throws Exception {
+        TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
+        AMQConnection connection = connectionAcceptingConsumerCancelOk(true, trafficListener);
+        ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
+
+        channel.processAsync(new AMQCommand(new AMQImpl.Basic.Cancel.Builder().consumerTag("does-not-exist").build()));
+
+        Mockito.verify(trafficListener, Mockito.never()).write(Mockito.any(Command.class));
+    }
+
+    @Test
+    public void callingBasicCancelForUnknownConsumerDoesNotThrowException() throws Exception {
+>>>>>>> 1c9a5c0 (Respond with `basic.cancel-ok` to the servers that support it)
         AMQConnection connection = Mockito.mock(AMQConnection.class);
         ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
         assertThatThrownBy(() ->  channel.basicCancel("does-not-exist"))
@@ -130,6 +175,29 @@ public class ChannelNTest {
         assertNotNull(channel.confirmSelect());
         assertNotNull(channel.confirmSelect());
         Mockito.verify(trafficListener, Mockito.times(1)).write(Mockito.any(Command.class));
+    }
+
+    private AMQConnection connectionAcceptingConsumerCancelOk(
+        boolean accepts, TrafficListener trafficListener) {
+        AMQConnection connection = Mockito.mock(AMQConnection.class);
+        Mockito.when(connection.getTrafficListener()).thenReturn(trafficListener);
+        Mockito.when(connection.doesBrokerAcceptClientSentBasicCancelOk()).thenReturn(accepts);
+        return connection;
+    }
+
+    private ChannelN channelWithConsumer(AMQConnection connection, String consumerTag) throws Exception {
+        ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
+        new Thread(() -> {
+            try {
+                Thread.sleep(15);
+                channel.handleCompleteInboundCommand(
+                    new AMQCommand(new AMQImpl.Basic.ConsumeOk(consumerTag)));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+        channel.basicConsume("q", false, consumerTag, new DefaultConsumer(channel));
+        return channel;
     }
 
     interface Consumer {
