@@ -15,13 +15,9 @@
 
 package com.rabbitmq.client.test;
 
-<<<<<<< HEAD
-import com.rabbitmq.client.AMQP;import com.rabbitmq.client.Command;
-=======
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.DefaultConsumer;
->>>>>>> 1c9a5c0 (Respond with `basic.cancel-ok` to the servers that support it)
 import com.rabbitmq.client.Method;
 import com.rabbitmq.client.TrafficListener;
 import com.rabbitmq.client.impl.*;
@@ -66,9 +62,6 @@ public class ChannelNTest {
     }
 
     @Test
-<<<<<<< HEAD
-    public void callingBasicCancelForUnknownConsumerThrowsException() throws Exception {
-=======
     public void serverBasicCancelIsAnsweredWithCancelOkWhenBrokerAcceptsIt() throws Exception {
         TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
         AMQConnection connection = connectionAcceptingConsumerCancelOk(true, trafficListener);
@@ -117,7 +110,6 @@ public class ChannelNTest {
 
     @Test
     public void callingBasicCancelForUnknownConsumerDoesNotThrowException() throws Exception {
->>>>>>> 1c9a5c0 (Respond with `basic.cancel-ok` to the servers that support it)
         AMQConnection connection = Mockito.mock(AMQConnection.class);
         ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
         assertThatThrownBy(() ->  channel.basicCancel("does-not-exist"))
