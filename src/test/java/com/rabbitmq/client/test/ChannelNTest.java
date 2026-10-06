@@ -82,9 +82,21 @@ public class ChannelNTest {
     }
 
     @Test
-    public void serverBasicCancelForUnknownConsumerIsNotAnsweredWithCancelOk() throws Exception {
+    public void serverBasicCancelForUnknownConsumerIsAnsweredWithCancelOkWhenBrokerAcceptsIt() throws Exception {
         TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
         AMQConnection connection = connectionAcceptingConsumerCancelOk(true, trafficListener);
+        ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
+
+        channel.processAsync(new AMQCommand(new AMQImpl.Basic.Cancel.Builder().consumerTag("does-not-exist").build()));
+
+        Mockito.verify(trafficListener, Mockito.times(1)).write(
+            Mockito.argThat(c -> c.getMethod() instanceof AMQP.Basic.CancelOk));
+    }
+
+    @Test
+    public void serverBasicCancelForUnknownConsumerIsNotAnsweredWhenBrokerDoesNotAcceptCancelOk() throws Exception {
+        TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
+        AMQConnection connection = connectionAcceptingConsumerCancelOk(false, trafficListener);
         ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
 
         channel.processAsync(new AMQCommand(new AMQImpl.Basic.Cancel.Builder().consumerTag("does-not-exist").build()));
