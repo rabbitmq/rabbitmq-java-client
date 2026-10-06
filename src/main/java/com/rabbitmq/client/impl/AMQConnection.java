@@ -215,6 +215,22 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _serverProperties;
     }
 
+    boolean doesServerHaveCapability(ServerCapability capability) {
+        return doesServerHaveCapability(_serverProperties, capability);
+    }
+
+    public boolean doesBrokerAcceptClientSentBasicCancelOk() {
+        return doesServerHaveCapability(ServerCapability.ACCEPT_CONSUMER_CANCEL_OK);
+    }
+
+    @SuppressWarnings("unchecked")
+    static boolean doesServerHaveCapability(Map<String, Object> serverProperties,
+                                            ServerCapability capability) {
+        Map<String, Object> capabilities = (Map<String, Object>)
+            serverProperties.getOrDefault("capabilities", Collections.emptyMap());
+        return Boolean.TRUE.equals(capabilities.get(capability.getName()));
+    }
+
     public AMQConnection(ConnectionParams params, FrameHandler frameHandler) {
         this(params, frameHandler, new NoOpMetricsCollector(), ObservationCollector.NO_OP);
     }
