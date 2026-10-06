@@ -215,7 +215,7 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
         return _serverProperties;
     }
 
-    public boolean doesServerHaveCapability(ServerCapability capability) {
+    boolean doesServerHaveCapability(ServerCapability capability) {
         return doesServerHaveCapability(_serverProperties, capability);
     }
 
