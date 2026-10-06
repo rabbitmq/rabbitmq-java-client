@@ -226,9 +226,9 @@ public class AMQConnection extends ShutdownNotifierComponent implements Connecti
     @SuppressWarnings("unchecked")
     static boolean doesServerHaveCapability(Map<String, Object> serverProperties,
                                             ServerCapability capability) {
-        Map<String, Boolean> capabilities = (Map<String, Boolean>)
+        Map<String, Object> capabilities = (Map<String, Object>)
             serverProperties.getOrDefault("capabilities", Collections.emptyMap());
-        return capabilities.getOrDefault(capability.getName(), false) == true;
+        return Boolean.TRUE.equals(capabilities.get(capability.getName()));
     }
 
     public AMQConnection(ConnectionParams params, FrameHandler frameHandler) {

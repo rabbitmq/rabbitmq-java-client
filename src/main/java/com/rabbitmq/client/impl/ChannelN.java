@@ -395,6 +395,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 String consumerTag = m.getConsumerTag();
                 Consumer callback = _consumers.remove(consumerTag);
                 if (callback != null && getConnection().doesBrokerAcceptClientSentBasicCancelOk()) {
+                    // The server will remove the consumer after a short timeout in any case
                     transmit(new Basic.CancelOk(consumerTag));
                 }
                 // Not finding any matching consumer isn't necessarily an indication of an issue anywhere.

@@ -19,7 +19,7 @@ package com.rabbitmq.client.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.rabbitmq.client.ServerCapability;
-import java.util.Map;
+import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
 public class AMQConnectionCapabilitiesTest {
@@ -27,27 +27,27 @@ public class AMQConnectionCapabilitiesTest {
     @Test
     void capabilitySetToTrueIsPresent() {
         assertThat(AMQConnection.doesServerHaveCapability(
-            Map.of("capabilities", Map.of("accept_consumer_cancel_ok", true)),
+            Collections.singletonMap("capabilities", Collections.singletonMap("accept_consumer_cancel_ok", true)),
             ServerCapability.ACCEPT_CONSUMER_CANCEL_OK)).isTrue();
     }
 
     @Test
     void capabilitySetToFalseIsAbsent() {
         assertThat(AMQConnection.doesServerHaveCapability(
-            Map.of("capabilities", Map.of("accept_consumer_cancel_ok", false)),
+            Collections.singletonMap("capabilities", Collections.singletonMap("accept_consumer_cancel_ok", false)),
             ServerCapability.ACCEPT_CONSUMER_CANCEL_OK)).isFalse();
     }
 
     @Test
     void missingCapabilityIsAbsent() {
         assertThat(AMQConnection.doesServerHaveCapability(
-            Map.of("capabilities", Map.of("consumer_cancel_notify", true)),
+            Collections.singletonMap("capabilities", Collections.singletonMap("consumer_cancel_notify", true)),
             ServerCapability.ACCEPT_CONSUMER_CANCEL_OK)).isFalse();
     }
 
     @Test
     void capabilityIsAbsentWithoutCapabilitiesTable() {
-        assertThat(AMQConnection.doesServerHaveCapability(Map.of(), ServerCapability.ACCEPT_CONSUMER_CANCEL_OK))
+        assertThat(AMQConnection.doesServerHaveCapability(Collections.<String, Object>emptyMap(), ServerCapability.ACCEPT_CONSUMER_CANCEL_OK))
             .isFalse();
     }
 }
