@@ -328,9 +328,19 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
     
-    /** Cleans RPC channel state after a timeout and wraps the TimeoutException in a ChannelContinuationTimeoutException */
-    ChannelContinuationTimeoutException wrapTimeoutException(final Method m, final TimeoutException e)  {
+    /**
+     * Protected API - called when a RPC times out after its request has been sent.
+     * The default implementation only cleans the RPC channel state.
+     * @param m the request method that timed out
+     * @param e the timeout exception
+     */
+    protected void handleRpcTimeout(Method m, TimeoutException e) {
         cleanRpcChannelState();
+    }
+
+    /** Handles a RPC timeout and wraps the TimeoutException in a ChannelContinuationTimeoutException */
+    ChannelContinuationTimeoutException wrapTimeoutException(final Method m, final TimeoutException e)  {
+        handleRpcTimeout(m, e);
         return new ChannelContinuationTimeoutException(e, this, this._channelNumber, m);
     }
 
@@ -350,7 +360,7 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         try {
             return k.getReply(timeout);
         } catch (TimeoutException e) {
-            cleanRpcChannelState();
+            handleRpcTimeout(m, e);
             throw e;
         }
     }
