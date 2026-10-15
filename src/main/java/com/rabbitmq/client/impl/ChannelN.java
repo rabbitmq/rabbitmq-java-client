@@ -667,6 +667,57 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         }
     }
 
+    /**
+     * Protected API - closes the channel after a RPC timeout.
+     * <p>
+     * AMQP 0-9-1 replies cannot be correlated with their requests, so the late reply
+     * of the timed out request could be handed to a subsequent RPC on this channel.
+     * The channel is closed without waiting for the close-ok: inbound commands are
+     * discarded until the close-ok arrives and the channel number is released then.
+     */
+    @Override
+    protected void handleRpcTimeout(Method m, TimeoutException e) {
+        Channel.Close reason = new Channel.Close(AMQP.PRECONDITION_FAILED,
+                                                 "TIMEOUT WAITING FOR RPC REPLY (" + m.protocolMethodName() + ")",
+                                                 0, 0);
+        ShutdownSignalException signal = new ShutdownSignalException(false, false, reason, this);
+        signal.initCause(e);
+        AtomicBoolean finished = new AtomicBoolean(false);
+        Runnable finishClose = () -> {
+            if (finished.compareAndSet(false, true)) {
+                try {
+                    finishProcessShutdownSignal();
+                } catch (Exception ex) {
+                    LOGGER.info("Error while processing shutdown signal: {}", ex.getMessage());
+                }
+                releaseChannel();
+                notifyListeners();
+            }
+        };
+        BlockingRpcContinuation<AMQCommand> k = new BlockingRpcContinuation<AMQCommand>() {
+            @Override
+            public AMQCommand transformReply(AMQCommand command) {
+                finishClose.run();
+                return command;
+            }
+        };
+        _channelLock.lock();
+        try {
+            if (!isOpen()) {
+                // the channel is already closing, the closing takes care of the clean-up
+                return;
+            }
+            // clears the timed out RPC continuation
+            startProcessShutdownSignal(signal, true, true);
+            quiescingRpc(reason, k);
+        } catch (Exception ex) {
+            LOGGER.warn("Error while closing channel after RPC timeout: {}", ex.getMessage());
+            finishClose.run();
+        } finally {
+            _channelLock.unlock();
+        }
+    }
+
     /** Public API - {@inheritDoc} */
     @Override
     public void basicQos(int prefetchSize, int prefetchCount, boolean global)
