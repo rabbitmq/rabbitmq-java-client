@@ -1910,6 +1910,9 @@ public class ConnectionFactory implements Cloneable {
    * Set the continuation timeout for RPC calls in channels. Default is 10 minutes. 0 means no
    * timeout.
    *
+   * <p>A channel is closed when one of its RPC calls times out, as the late reply could otherwise
+   * be handed to a subsequent RPC call on the channel. A new channel must be created to continue.
+   *
    * @param channelRpcTimeout
    */
   public void setChannelRpcTimeout(int channelRpcTimeout) {
