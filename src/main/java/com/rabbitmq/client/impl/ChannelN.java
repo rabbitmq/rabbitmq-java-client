@@ -682,7 +682,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
     @Override
     protected void handleRpcTimeout(Method m, TimeoutException e) {
         Channel.Close reason = new Channel.Close(AMQP.PRECONDITION_FAILED,
-                                                 "TIMEOUT WAITING FOR RPC REPLY (" + m.protocolMethodName() + ")",
+                                                 "Timed out waiting for an RPC reply (" + m.protocolMethodName() + ")",
                                                  0, 0);
         ShutdownSignalException signal = new ShutdownSignalException(false, false, reason, this);
         signal.initCause(e);
