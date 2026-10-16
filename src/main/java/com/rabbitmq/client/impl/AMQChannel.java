@@ -330,10 +330,6 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
         }
     }
     
-<<<<<<< HEAD
-    /** Cleans RPC channel state after a timeout and wraps the TimeoutException in a ChannelContinuationTimeoutException */
-    protected ChannelContinuationTimeoutException wrapTimeoutException(final Method m, final TimeoutException e)  {
-=======
     /**
      * Protected API - called when a RPC times out after its request has been sent.
      * The default implementation only cleans the RPC channel state.
@@ -341,7 +337,6 @@ public abstract class AMQChannel extends ShutdownNotifierComponent {
      * @param e the timeout exception
      */
     protected void handleRpcTimeout(Method m, TimeoutException e) {
->>>>>>> 6af538a (Close channel on RPC timeout)
         cleanRpcChannelState();
     }
 
