@@ -5,6 +5,8 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Exception thrown when a channel times out on a continuation during a RPC call.
+ * <p>
+ * The channel is closed when this exception is thrown, a new channel must be created to continue.
  * @since 4.1.0
  */
 public class ChannelContinuationTimeoutException extends IOException {
