@@ -157,7 +157,6 @@ public class ConnectionFactory implements Cloneable {
   private ObservationCollector observationCollector = ObservationCollector.NO_OP;
 
   private boolean netty = false;
-  private FrameHandlerFactory frameHandlerFactory;
   // lazily created, so the Netty classes it references are loaded only when Netty is activated
   private NettyConfiguration nettyConf;
 
@@ -1117,25 +1116,21 @@ public class ConnectionFactory implements Cloneable {
 
   protected synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
     if (netty) {
-      if (this.frameHandlerFactory == null) {
-        Predicate<ShutdownSignalException> recoveryCondition =
-            this.connectionRecoveryTriggeringCondition == null
-                ? AutorecoveringConnection.DEFAULT_CONNECTION_RECOVERY_TRIGGERING_CONDITION
-                : this.connectionRecoveryTriggeringCondition;
-        this.frameHandlerFactory =
-            new NettyFrameHandlerFactory(
-                this.nettyConf.eventLoopGroup,
-                this.nettyConf.channelCustomizer,
-                this.nettyConf.bootstrapCustomizer,
-                this.nettyConf.sslContextFactory,
-                this.nettyConf.enqueuingTimeout,
-                connectionTimeout,
-                socketConf,
-                AMQP.FRAME_MIN_SIZE,
-                this.automaticRecovery,
-                recoveryCondition);
-      }
-      return this.frameHandlerFactory;
+      Predicate<ShutdownSignalException> recoveryCondition =
+          this.connectionRecoveryTriggeringCondition == null
+              ? AutorecoveringConnection.DEFAULT_CONNECTION_RECOVERY_TRIGGERING_CONDITION
+              : this.connectionRecoveryTriggeringCondition;
+      return new NettyFrameHandlerFactory(
+          this.nettyConf.eventLoopGroup,
+          this.nettyConf.channelCustomizer,
+          this.nettyConf.bootstrapCustomizer,
+          this.nettyConf.sslContextFactory,
+          this.nettyConf.enqueuingTimeout,
+          connectionTimeout,
+          socketConf,
+          AMQP.FRAME_MIN_SIZE,
+          this.automaticRecovery,
+          recoveryCondition);
     } else {
       return new SocketFrameHandlerFactory(
           connectionTimeout,
@@ -1544,6 +1539,9 @@ public class ConnectionFactory implements Cloneable {
   public ConnectionFactory clone() {
     try {
       ConnectionFactory clone = (ConnectionFactory) super.clone();
+      if (this.nettyConf != null) {
+        clone.nettyConf = this.nettyConf.copy(clone);
+      }
       return clone;
     } catch (CloneNotSupportedException e) {
       throw new RuntimeException(e);
@@ -1906,6 +1904,16 @@ public class ConnectionFactory implements Cloneable {
 
     private NettyConfiguration(ConnectionFactory cf) {
       this.cf = cf;
+    }
+
+    private NettyConfiguration copy(ConnectionFactory cf) {
+      NettyConfiguration copy = new NettyConfiguration(cf);
+      copy.eventLoopGroup = this.eventLoopGroup;
+      copy.channelCustomizer = this.channelCustomizer;
+      copy.bootstrapCustomizer = this.bootstrapCustomizer;
+      copy.sslContextFactory = this.sslContextFactory;
+      copy.enqueuingTimeout = this.enqueuingTimeout;
+      return copy;
     }
 
     /**
