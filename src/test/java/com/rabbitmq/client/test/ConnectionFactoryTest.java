@@ -204,4 +204,49 @@ public class ConnectionFactoryTest {
         assertThatThrownBy(() -> cf.newConnection(new Address[] {}));
     }
 
+    @Test
+    void nettyConfigurationChangesShouldApplyToSubsequentConnections() throws Exception {
+        TestConnectionFactory cf = new TestConnectionFactory();
+        cf.netty();
+        FrameHandlerFactory plainFhf = cf.createFrameHandlerFactory();
+        cf.netty().sslContextFactory(name -> { throw new IllegalStateException("first"); });
+        FrameHandlerFactory firstFhf = cf.createFrameHandlerFactory();
+        cf.netty().sslContextFactory(name -> { throw new IllegalStateException("second"); });
+        FrameHandlerFactory secondFhf = cf.createFrameHandlerFactory();
+
+        assertThat(firstFhf).isNotSameAs(plainFhf);
+        assertThat(secondFhf).isNotSameAs(firstFhf);
+        assertThatThrownBy(() -> firstFhf.create(new Address("localhost"), "c"))
+            .hasMessage("first");
+        assertThatThrownBy(() -> secondFhf.create(new Address("localhost"), "c"))
+            .hasMessage("second");
+    }
+
+    @Test
+    void cloneShouldNotShareNettyConfiguration() throws Exception {
+        TestConnectionFactory cf = new TestConnectionFactory();
+        cf.netty().sslContextFactory(name -> { throw new IllegalStateException("original"); });
+        TestConnectionFactory clone = (TestConnectionFactory) cf.clone();
+
+        assertThat(clone.netty()).isNotSameAs(cf.netty());
+        assertThat(clone.netty().connectionFactory()).isSameAs(clone);
+        assertThat(clone.isSSL()).isTrue();
+        assertThatThrownBy(() -> clone.createFrameHandlerFactory().create(new Address("localhost"), "c"))
+            .hasMessage("original");
+
+        clone.netty().sslContextFactory(name -> { throw new IllegalStateException("clone"); });
+        assertThatThrownBy(() -> cf.createFrameHandlerFactory().create(new Address("localhost"), "c"))
+            .hasMessage("original");
+        assertThatThrownBy(() -> clone.createFrameHandlerFactory().create(new Address("localhost"), "c"))
+            .hasMessage("clone");
+    }
+
+    private static class TestConnectionFactory extends ConnectionFactory {
+
+        @Override
+        public synchronized FrameHandlerFactory createFrameHandlerFactory() throws IOException {
+            return super.createFrameHandlerFactory();
+        }
+    }
+
 }
