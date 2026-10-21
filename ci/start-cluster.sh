@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-RABBITMQ_IMAGE=${RABBITMQ_IMAGE:-rabbitmq:4.3}
+RABBITMQ_IMAGE=${RABBITMQ_IMAGE:-rabbitmq:4.4}
 ERLANG_VERSION=${ERLANG_VERSION:-27}
 
 wait_for_message() {
@@ -27,18 +27,7 @@ chmod g+r rabbitmq-configuration/tls/*
 rm -rf "${PWD}"/ci/cluster/configuration
 mkdir "${PWD}"/ci/cluster/configuration
 
-if [ "$ERLANG_VERSION" -lt 28 ]; then
-
-# Erlang < 28
-cp "${PWD}"/ci/cluster/rabbitmq_pre_erlang_28.conf "${PWD}"/ci/cluster/configuration/rabbitmq.conf
-
-else
-
-# Erlang >= 28
-cp "${PWD}"/ci/cluster/rabbitmq_post_erlang_28.conf "${PWD}"/ci/cluster/configuration/rabbitmq.conf
-cp "${PWD}"/ci/cluster/advanced.config "${PWD}"/ci/cluster/configuration/advanced.config
-
-fi
+cp "${PWD}"/ci/cluster/rabbitmq.conf "${PWD}"/ci/cluster/configuration/rabbitmq.conf
 
 docker compose --file ci/cluster/docker-compose.yml down
 docker compose --file ci/cluster/docker-compose.yml up --detach
