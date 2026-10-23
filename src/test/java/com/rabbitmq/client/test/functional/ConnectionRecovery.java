@@ -644,6 +644,42 @@ public class ConnectionRecovery extends BrokerTestCase {
         }
     }
 
+    @Test public void consumerRecoveryIsSkippedIfTagAlreadyRegisteredByApplication() throws IOException, InterruptedException {
+        String q = channel.queueDeclare(UUID.randomUUID().toString(), true, false, false, null).getQueue();
+        String tag = UUID.randomUUID().toString();
+        try {
+            channel.basicConsume(q, false, tag, new DefaultConsumer(channel));
+            assertConsumerCount(1, q);
+            AtomicReference<Exception> consumeException = new AtomicReference<>();
+            RecoveryListener listener = new RecoveryListener() {
+                @Override
+                public void handleRecovery(Recoverable recoverable) {
+                    // channel recovery listeners are called before topology recovery
+                    try {
+                        channel.basicConsume(q, false, tag, new DefaultConsumer(channel));
+                    } catch (Exception e) {
+                        consumeException.set(e);
+                    }
+                }
+
+                @Override
+                public void handleRecoveryStarted(Recoverable recoverable) { }
+            };
+            ((Recoverable) channel).addRecoveryListener(listener);
+            closeAndWaitForRecovery();
+            ((Recoverable) channel).removeRecoveryListener(listener);
+            assertThat(consumeException.get()).isNull();
+            expectChannelRecovery(channel);
+            assertConsumerCount(1, q);
+
+            closeAndWaitForRecovery();
+            expectChannelRecovery(channel);
+            assertConsumerCount(1, q);
+        } finally {
+            channel.queueDelete(q);
+        }
+    }
+
     @Test public void consumerRecoveryWithManyConsumers() throws IOException, InterruptedException {
         String q = channel.queueDeclare(UUID.randomUUID().toString(), true, false, false, null).getQueue();
         try {
