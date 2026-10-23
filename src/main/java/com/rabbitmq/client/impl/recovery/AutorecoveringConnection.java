@@ -17,6 +17,7 @@ package com.rabbitmq.client.impl.recovery;
 
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.impl.AMQConnection;
+import com.rabbitmq.client.impl.ChannelN;
 import com.rabbitmq.client.impl.ConnectionParams;
 import com.rabbitmq.client.impl.FrameHandlerFactory;
 import com.rabbitmq.client.impl.NetworkConnection;
@@ -884,6 +885,13 @@ public class AutorecoveringConnection implements RecoverableConnection, NetworkC
     
     private void internalRecoverConsumer(final String tag, RecordedConsumer consumer, boolean retry) throws Exception {
         if (this.topologyRecoveryFilter.filterConsumer(consumer)) {
+            Channel delegateChannel = consumer.getDelegateChannel();
+            if (tag != null && delegateChannel instanceof ChannelN
+                && ((ChannelN) delegateChannel).hasConsumer(tag)) {
+                // the application registered a consumer with this tag on the new channel already
+                LOGGER.debug("Not recovering {}, consumer tag already in use on the channel", consumer);
+                return;
+            }
             LOGGER.debug("Recovering {}", consumer);
             String newTag = null;
             if (retry) {
