@@ -1093,6 +1093,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @param callback an interface to the consumer object
      * @return the consumerTag associated with the new consumer
      * @throws java.io.IOException if an error is encountered
+     * @throws IllegalStateException if the client-provided consumer tag is already in use on this channel
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
@@ -1114,6 +1115,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @param cancelCallback callback when the consumer is cancelled
      * @return the consumerTag associated with the new consumer
      * @throws java.io.IOException if an error is encountered
+     * @throws IllegalStateException if the client-provided consumer tag is already in use on this channel
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
@@ -1136,6 +1138,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @param shutdownSignalCallback callback when the channel/connection is shut down
      * @return the consumerTag associated with the new consumer
      * @throws java.io.IOException if an error is encountered
+     * @throws IllegalStateException if the client-provided consumer tag is already in use on this channel
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
@@ -1159,6 +1162,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @param shutdownSignalCallback callback when the channel/connection is shut down
      * @return the consumerTag associated with the new consumer
      * @throws java.io.IOException if an error is encountered
+     * @throws IllegalStateException if the client-provided consumer tag is already in use on this channel
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @see #basicConsume(String, boolean, String, boolean, boolean, Map, Consumer)
@@ -1181,6 +1185,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @param arguments a set of arguments for the consume
      * @return the consumerTag associated with the new consumer
      * @throws java.io.IOException if an error is encountered
+     * @throws IllegalStateException if the client-provided consumer tag is already in use on this channel
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      */
@@ -1206,6 +1211,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @param cancelCallback callback when the consumer is cancelled
      * @return the consumerTag associated with the new consumer
      * @throws java.io.IOException if an error is encountered
+     * @throws IllegalStateException if the client-provided consumer tag is already in use on this channel
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @since 5.0
@@ -1232,6 +1238,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @param shutdownSignalCallback callback when the channel/connection is shut down
      * @return the consumerTag associated with the new consumer
      * @throws java.io.IOException if an error is encountered
+     * @throws IllegalStateException if the client-provided consumer tag is already in use on this channel
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @since 5.0
@@ -1259,6 +1266,7 @@ public interface Channel extends ShutdownNotifier, AutoCloseable {
      * @param shutdownSignalCallback callback when the channel/connection is shut down
      * @return the consumerTag associated with the new consumer
      * @throws java.io.IOException if an error is encountered
+     * @throws IllegalStateException if the client-provided consumer tag is already in use on this channel
      * @see com.rabbitmq.client.AMQP.Basic.Consume
      * @see com.rabbitmq.client.AMQP.Basic.ConsumeOk
      * @since 5.0
