@@ -57,10 +57,17 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
      * from the connection's reader thread. We go to some pains to
      * ensure this is the case - see the use of
      * BlockingRpcContinuation to inject code into the reader thread
-     * in basicConsume and basicCancel.
+     * in basicConsume and basicCancel. It is also read from the caller
+     * thread in basicConsume to detect duplicate consumer tags.
      */
     private final Map<String, Consumer> _consumers =
         Collections.synchronizedMap(new HashMap<String, Consumer>());
+
+    /**
+     * Client-provided consumer tags of in-flight basic.consume calls.
+     * Guarded by the {@link #_consumers} monitor.
+     */
+    private final Set<String> leasedConsumerTags = new HashSet<>();
 
     /* All listeners collections are in CopyOnWriteArrayList objects */
     /** The ReturnListener collection. */
@@ -1445,6 +1452,21 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                                final Consumer callback)
         throws IOException
     {
+        final boolean leased = leaseConsumerTag(consumerTag);
+        try {
+            return doBasicConsume(queue, autoAck, consumerTag, noLocal, exclusive, arguments, callback);
+        } finally {
+            if (leased) {
+                releaseConsumerTag(consumerTag);
+            }
+        }
+    }
+
+    private String doBasicConsume(String queue, final boolean autoAck, String consumerTag,
+                                  boolean noLocal, boolean exclusive, Map<String, Object> arguments,
+                                  final Consumer callback)
+        throws IOException
+    {
         final Method m = new Basic.Consume.Builder()
             .queue(queue)
             .consumerTag(consumerTag)
@@ -1458,7 +1480,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             public String transformReply(AMQCommand replyCommand) {
                 String actualConsumerTag = ((Basic.ConsumeOk) replyCommand.getMethod()).getConsumerTag();
                 Consumer wrappedCallback = observationCollector.basicConsume(queue, consumerTag, callback);
-                _consumers.put(actualConsumerTag, wrappedCallback);
+                synchronized (_consumers) {
+                    _consumers.put(actualConsumerTag, wrappedCallback);
+                    leasedConsumerTags.remove(consumerTag);
+                }
 
                 // need to register consumer in stats before it actually starts consuming
                 metricsCollector.basicConsume(ChannelN.this, actualConsumerTag, autoAck);
@@ -1484,6 +1509,33 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
         } catch(ShutdownSignalException ex) {
             throw wrap(ex);
         }
+    }
+
+    private boolean leaseConsumerTag(String consumerTag) {
+        if (consumerTag == null || consumerTag.isEmpty()) {
+            return false;
+        }
+        synchronized (_consumers) {
+            if (_consumers.containsKey(consumerTag) || leasedConsumerTags.contains(consumerTag)) {
+                throw new IllegalStateException(
+                    "Consumer tag '" + consumerTag + "' is already in use on channel " + getChannelNumber());
+            }
+            leasedConsumerTags.add(consumerTag);
+            return true;
+        }
+    }
+
+    private void releaseConsumerTag(String consumerTag) {
+        synchronized (_consumers) {
+            leasedConsumerTags.remove(consumerTag);
+        }
+    }
+
+    /**
+     * Whether a consumer with this tag is registered (consume-ok received) on this channel.
+     */
+    public boolean hasConsumer(String consumerTag) {
+        return _consumers.containsKey(consumerTag);
     }
 
     private Consumer consumerFromDeliverCancelCallbacks(final DeliverCallback deliverCallback, final CancelCallback cancelCallback) {
