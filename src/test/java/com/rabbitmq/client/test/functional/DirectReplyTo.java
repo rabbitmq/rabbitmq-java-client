@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.*;
 import org.junit.jupiter.api.Test;
@@ -46,13 +47,13 @@ public class DirectReplyTo extends BrokerTestCase {
         assertEquals("response", new String(body));
     }
 
-    @Test public void hack() throws IOException, InterruptedException {
+    @Test public void hack() throws IOException, InterruptedException, TimeoutException {
         QueueMessageConsumer c = new QueueMessageConsumer(channel);
         String replyTo = rpcFirstHalf(c);
         // 5 chars should overwrite part of the key but not the pid; aiming to prove
         // we can't publish using just the pid
         replyTo = replyTo.substring(0, replyTo.length() - 5) + "xxxxx";
-        declare(connection, replyTo, false);
+        expectDoesNotExist(connection, replyTo);
         basicPublishVolatile("response".getBytes(), "", replyTo, MessageProperties.BASIC);
 
         byte[] body = c.nextDelivery(500);
@@ -69,6 +70,26 @@ public class DirectReplyTo extends BrokerTestCase {
             checkShutdownSignal(AMQP.NOT_FOUND, e);
             // Hmmm...
             channel = connection.createChannel();
+        }
+    }
+
+    private void expectDoesNotExist(Connection connection, String q) throws IOException, TimeoutException {
+        // hack after a broker regression introduced in https://github.com/rabbitmq/rabbitmq-server/pull/18034
+        Channel ch = connection.createChannel();
+        try {
+            ch.queueDeclarePassive(q);
+        } catch (IOException e) {
+            Connection c = null;
+            if (connection.isOpen()) {
+                checkShutdownSignal(AMQP.NOT_FOUND, e);
+                c = connection;
+            } else {
+                checkShutdownSignal(AMQP.INTERNAL_ERROR, e);
+                this.connection = null;
+                openConnection();
+                c = this.connection;
+            }
+            channel = c.createChannel();
         }
     }
 
