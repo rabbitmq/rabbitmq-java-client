@@ -92,7 +92,7 @@
     <jshell-maven-plugin.version>1.4</jshell-maven-plugin.version>
     <spotless.version>3.11.0</spotless.version>
     <google-java-format.version>1.36.1</google-java-format.version>
-    <netty-tcnative.version>2.0.84.Final</netty-tcnative.version>
+    <netty-tcnative.version>2.0.85.Final</netty-tcnative.version>
     <!--
     These groovy scripts are used later in this POM file to generate
     source files and resources for the library itself and for the
