@@ -372,6 +372,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
         private String tokenEndpointUri;
         private String clientId;
         private String clientSecret;
+        private boolean urlEncodeClientCredentials;
         private String grantType = "client_credentials";
 
         private Consumer<HttpURLConnection> connectionConfigurator;
@@ -410,6 +411,20 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
          */
         public OAuth2ClientCredentialsGrantCredentialsProviderBuilder clientSecret(String clientSecret) {
             this.clientSecret = clientSecret;
+            return this;
+        }
+
+        /**
+         * Set whether to form-encode the client ID and secret in the HTTP Basic authentication header.
+         * <p>
+         * Disabled by default for compatibility with OAuth 2 servers that expect unencoded credentials.
+         * When enabled, provide unencoded values to {@link #clientId(String)} and {@link #clientSecret(String)}.
+         *
+         * @param urlEncodeClientCredentials whether to apply UTF-8 form encoding before Basic authentication
+         * @return this builder instance
+         */
+        public OAuth2ClientCredentialsGrantCredentialsProviderBuilder urlEncodeClientCredentials(boolean urlEncodeClientCredentials) {
+            this.urlEncodeClientCredentials = urlEncodeClientCredentials;
             return this;
         }
 
@@ -478,6 +493,16 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
          * @return
          */
         public OAuth2ClientCredentialsGrantCredentialsProvider build() {
+            String clientId = this.clientId;
+            String clientSecret = this.clientSecret;
+            if (urlEncodeClientCredentials) {
+                try {
+                    clientId = encode(clientId, UTF_8_CHARSET);
+                    clientSecret = encode(clientSecret, UTF_8_CHARSET);
+                } catch (UnsupportedEncodingException e) {
+                    throw new OAuthTokenManagementException("Error while encoding OAuth 2 client credentials", e);
+                }
+            }
             return new OAuth2ClientCredentialsGrantCredentialsProvider(
                     tokenEndpointUri, clientId, clientSecret, grantType, parameters,
                     tlsConfiguration.hostnameVerifier, tlsConfiguration.sslSocketFactory(),
