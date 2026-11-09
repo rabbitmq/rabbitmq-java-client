@@ -31,6 +31,8 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -81,9 +83,14 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
         }
     }
 
-    @Test
-    public void getToken() throws Exception {
-        Server server = new Server();
+    @ParameterizedTest
+    @CsvSource({
+            ", app:1, s+% é, Basic YXBwOjE6cyslIOk=",
+            "false, app:1, s+% é, Basic YXBwOjE6cyslIOk=",
+            "true, app:1, s+% é, Basic YXBwJTNBMTpzJTJCJTI1KyVDMyVBOQ=="
+    })
+    public void getToken(Boolean urlEncodeClientCredentials, String clientId, String clientSecret, String expectedAuthorization) throws Exception {
+        server = new Server();
         ServerConnector connector = new ServerConnector(server);
         int port = TestUtils.randomNetworkPort();
         connector.setPort(port);
@@ -131,13 +138,17 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
         server.setStopTimeout(1000);
         server.start();
 
-        OAuth2ClientCredentialsGrantCredentialsProvider provider = new OAuth2ClientCredentialsGrantCredentialsProvider.OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
-                .tokenEndpointUri("http://localhost:" + port + "/uaa/oauth/token/")
-                .clientId("rabbit_client").clientSecret("rabbit_secret")
-                .grantType("password")
-                .parameter("username", "rabbit_super")
-                .parameter("password", "rabbit_super")
-                .build();
+        OAuth2ClientCredentialsGrantCredentialsProvider.OAuth2ClientCredentialsGrantCredentialsProviderBuilder builder =
+                new OAuth2ClientCredentialsGrantCredentialsProvider.OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
+                        .tokenEndpointUri("http://localhost:" + port + "/uaa/oauth/token/")
+                        .clientId(clientId).clientSecret(clientSecret)
+                        .grantType("password")
+                        .parameter("username", "rabbit_super")
+                        .parameter("password", "rabbit_super");
+        if (urlEncodeClientCredentials != null) {
+            builder.urlEncodeClientCredentials(urlEncodeClientCredentials);
+        }
+        OAuth2ClientCredentialsGrantCredentialsProvider provider = builder.build();
 
         String password = provider.getPassword();
 
@@ -146,7 +157,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
 
         assertThat(httpMethod).hasValue("POST");
         assertThat(contentType).hasValue("application/x-www-form-urlencoded");
-        assertThat(authorization).hasValue("Basic cmFiYml0X2NsaWVudDpyYWJiaXRfc2VjcmV0");
+        assertThat(authorization).hasValue(expectedAuthorization);
         assertThat(accept).hasValue("application/json");
         Map<String, String[]> parameters = httpParameters.get();
         assertThat(parameters).isNotNull().hasSize(3).containsKeys("grant_type", "username", "password")
