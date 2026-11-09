@@ -58,9 +58,10 @@ import static com.rabbitmq.client.ConnectionFactory.computeDefaultTlsProtocol;
  * If more customization is needed, a {@link #connectionConfigurator} callback can be provided to configure
  * the connection.
  * <p>
- * The client ID and secret are form-encoded before being sent in the HTTP Basic authentication header,
- * as required by <a href="https://tools.ietf.org/html/rfc6749#section-2.3.1">RFC 6749, section 2.3.1</a>.
- * This can be disabled for OAuth 2 servers that do not decode the credentials, see
+ * The client ID and secret are not form-encoded by default before being sent in the HTTP Basic
+ * authentication header. Encoding them is required by
+ * <a href="https://tools.ietf.org/html/rfc6749#section-2.3.1">RFC 6749, section 2.3.1</a>
+ * and is recommended, see
  * {@link OAuth2ClientCredentialsGrantCredentialsProviderBuilder#urlEncodeClientCredentials(boolean)}.
  *
  * @see RefreshProtectedCredentialsProvider
@@ -176,7 +177,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
                                                            HostnameVerifier hostnameVerifier, SSLSocketFactory sslSocketFactory,
                                                            Consumer<HttpURLConnection> connectionConfigurator) {
         this(tokenEndpointUri, clientId, clientSecret, grantType, parameters, hostnameVerifier, sslSocketFactory,
-                connectionConfigurator, true);
+                connectionConfigurator, false);
     }
 
     /**
@@ -197,8 +198,8 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
                                                            Consumer<HttpURLConnection> connectionConfigurator,
                                                            boolean urlEncodeClientCredentials) {
         this.tokenEndpointUri = tokenEndpointUri;
-        this.clientId = nonNull(clientId, "clientId");
-        this.clientSecret = nonNull(clientSecret, "clientSecret");
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
         this.grantType = grantType;
         this.parameters = Collections.unmodifiableMap(new HashMap<>(parameters));
         this.hostnameVerifier = hostnameVerifier;
@@ -228,18 +229,11 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
     private static String basicAuthentication(String username, String password, boolean urlEncode)
             throws UnsupportedEncodingException {
         if (urlEncode) {
-            username = encode(username, UTF_8_CHARSET);
-            password = encode(password, UTF_8_CHARSET);
+            username = encode(String.valueOf(username), UTF_8_CHARSET);
+            password = encode(String.valueOf(password), UTF_8_CHARSET);
         }
         String credentials = username + ":" + password;
-        return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private static <T> T nonNull(T value, String name) {
-        if (value == null) {
-            throw new IllegalArgumentException(name + " must not be null");
-        }
-        return value;
+        return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.ISO_8859_1));
     }
 
     @Override
@@ -410,7 +404,7 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
         private String tokenEndpointUri;
         private String clientId;
         private String clientSecret;
-        private boolean urlEncodeClientCredentials = true;
+        private boolean urlEncodeClientCredentials = false;
         private String grantType = "client_credentials";
 
         private Consumer<HttpURLConnection> connectionConfigurator;
@@ -455,11 +449,11 @@ public class OAuth2ClientCredentialsGrantCredentialsProvider extends RefreshProt
         /**
          * Set whether to form-encode the client ID and secret in the HTTP Basic authentication header.
          * <p>
-         * Enabled by default, as required by
-         * <a href="https://tools.ietf.org/html/rfc6749#section-2.3.1">RFC 6749, section 2.3.1</a>.
-         * Provide unencoded values to {@link #clientId(String)} and {@link #clientSecret(String)}.
+         * Disabled by default for backward compatibility. Enabling it is recommended, as encoding is
+         * required by <a href="https://tools.ietf.org/html/rfc6749#section-2.3.1">RFC 6749, section 2.3.1</a>.
+         * When enabled, provide unencoded values to {@link #clientId(String)} and {@link #clientSecret(String)}.
          * <p>
-         * Disable it only for OAuth 2 servers that do not decode the client credentials.
+         * Encoding is enabled by default in 6.0.
          *
          * @param urlEncodeClientCredentials whether to apply UTF-8 form encoding before Basic authentication
          * @return this builder instance
