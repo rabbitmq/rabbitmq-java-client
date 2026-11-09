@@ -55,6 +55,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
 
@@ -85,10 +86,11 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
 
     @ParameterizedTest
     @CsvSource({
-            "false, app:1, s+% é, Basic YXBwOjE6cyslIOk=",
-            "true, app:1, s+% é, Basic YXBwJTNBMTpzJTJCJTI1KyVDMyVBOQ=="
+            ", app:1, s+% é, Basic YXBwJTNBMTpzJTJCJTI1KyVDMyVBOQ==",
+            "true, app:1, s+% é, Basic YXBwJTNBMTpzJTJCJTI1KyVDMyVBOQ==",
+            "false, app:1, s+% é, Basic YXBwOjE6cyslIMOp"
     })
-    public void getToken(boolean urlEncodeClientCredentials, String clientId, String clientSecret, String expectedAuthorization) throws Exception {
+    public void getToken(Boolean urlEncodeClientCredentials, String clientId, String clientSecret, String expectedAuthorization) throws Exception {
         server = new Server();
         ServerConnector connector = new ServerConnector(server);
         int port = TestUtils.randomNetworkPort();
@@ -144,8 +146,8 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
                         .grantType("password")
                         .parameter("username", "rabbit_super")
                         .parameter("password", "rabbit_super");
-        if (urlEncodeClientCredentials) {
-            builder.urlEncodeClientCredentials(true);
+        if (urlEncodeClientCredentials != null) {
+            builder.urlEncodeClientCredentials(urlEncodeClientCredentials);
         }
         OAuth2ClientCredentialsGrantCredentialsProvider provider = builder.build();
 
@@ -163,6 +165,20 @@ public class OAuth2ClientCredentialsGrantCredentialsProviderTest {
                 .hasEntrySatisfying("grant_type", v -> assertThat(v).hasSize(1).contains("password"))
                 .hasEntrySatisfying("username", v -> assertThat(v).hasSize(1).contains("rabbit_super"))
                 .hasEntrySatisfying("password", v -> assertThat(v).hasSize(1).contains("rabbit_super"));
+    }
+
+    @Test
+    public void nullClientCredentialsShouldBeRejected() {
+        assertThatThrownBy(() -> new OAuth2ClientCredentialsGrantCredentialsProvider.OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
+                .tokenEndpointUri("http://localhost:8080/uaa/oauth/token/")
+                .clientSecret("rabbit_secret")
+                .build())
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new OAuth2ClientCredentialsGrantCredentialsProvider.OAuth2ClientCredentialsGrantCredentialsProviderBuilder()
+                .tokenEndpointUri("http://localhost:8080/uaa/oauth/token/")
+                .clientId("rabbit_client")
+                .build())
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
