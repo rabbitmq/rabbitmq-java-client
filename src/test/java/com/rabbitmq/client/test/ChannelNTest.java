@@ -178,6 +178,11 @@ public class ChannelNTest {
             .isInstanceOf(IllegalStateException.class);
         assertThat(channel.getNextPublishSeqNo()).isEqualTo(1);
 
+        String overlongRoutingKey = String.join("", Collections.nCopies(256, "a"));
+        assertThatThrownBy(() -> channel.basicPublish("", overlongRoutingKey, null, new byte[0]))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThat(channel.getNextPublishSeqNo()).isEqualTo(1);
+
         channel.basicPublish("", "q", null, new byte[0]);
         channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Basic.Ack(1, false)));
         assertThat(channel.waitForConfirms(1000)).isTrue();
