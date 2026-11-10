@@ -152,9 +152,7 @@ public class AMQCommand implements Command {
                     throw new IllegalArgumentException(msg);
                 }
                 Frame methodFrame = m.toFrame(channelNumber);
-                if (onEncoded != null) {
-                    onEncoded.run();
-                }
+                runOnEncoded();
                 connection.writeFrame(methodFrame);
                 connection.writeFrame(headerFrame);
 
@@ -168,13 +166,21 @@ public class AMQCommand implements Command {
                     }
                 }
             } else {
-                connection.writeFrame(m.toFrame(channelNumber));
+                Frame methodFrame = m.toFrame(channelNumber);
+                runOnEncoded();
+                connection.writeFrame(methodFrame);
             }
         } finally {
             assemblerLock.unlock();
         }
 
         connection.flush(this.writeListener);
+    }
+
+    private void runOnEncoded() {
+        if (onEncoded != null) {
+            onEncoded.run();
+        }
     }
 
     @Override public String toString() {
