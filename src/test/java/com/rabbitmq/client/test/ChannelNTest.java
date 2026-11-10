@@ -26,9 +26,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.Collections;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -154,6 +157,38 @@ public class ChannelNTest {
         assertNotNull(channel.confirmSelect());
         assertNotNull(channel.confirmSelect());
         Mockito.verify(trafficListener, Mockito.times(1)).write(Mockito.any(Command.class));
+    }
+
+    @Test
+    public void publishFailingBeforeSendingDoesNotConsumeSequenceNumber() throws Exception {
+        AMQConnection connection = Mockito.mock(AMQConnection.class);
+        TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
+        Mockito.when(connection.getTrafficListener()).thenReturn(trafficListener);
+        ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
+        Mockito.doAnswer(invocation -> {
+            Command command = invocation.getArgument(0);
+            if (command.getMethod() instanceof AMQP.Confirm.Select) {
+                channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Confirm.SelectOk()));
+            }
+            return null;
+        }).when(trafficListener).write(Mockito.any(Command.class));
+        channel.confirmSelect();
+
+        AMQP.BasicProperties unsupportedHeader = new AMQP.BasicProperties.Builder()
+            .headers(Collections.singletonMap("id", UUID.randomUUID()))
+            .build();
+        assertThatThrownBy(() -> channel.basicPublish("", "q", unsupportedHeader, new byte[0]))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThat(channel.getNextPublishSeqNo()).isEqualTo(1);
+        assertThat(channel.waitForConfirms(100)).isTrue();
+
+        assertThatThrownBy(() -> channel.basicPublish("", null, null, new byte[0]))
+            .isInstanceOf(IllegalStateException.class);
+        assertThat(channel.getNextPublishSeqNo()).isEqualTo(1);
+
+        channel.basicPublish("", "q", null, new byte[0]);
+        channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Basic.Ack(1, false)));
+        assertThat(channel.waitForConfirms(1000)).isTrue();
     }
 
     private AMQConnection connectionAcceptingConsumerCancelOk(

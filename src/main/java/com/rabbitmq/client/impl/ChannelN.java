@@ -790,14 +790,6 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                              WriteListener listener)
         throws IOException
     {
-        final long deliveryTag;
-        if (nextPublishSeqNo > 0) {
-            deliveryTag = getNextPublishSeqNo();
-            unconfirmedSet.add(deliveryTag);
-            nextPublishSeqNo++;
-        } else {
-            deliveryTag = 0;
-        }
         if (props == null) {
             props = MessageProperties.MINIMAL_BASIC;
         }
@@ -807,6 +799,14 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 .mandatory(mandatory)
                 .immediate(immediate)
                 .build();
+        final long deliveryTag;
+        if (nextPublishSeqNo > 0) {
+            deliveryTag = getNextPublishSeqNo();
+            unconfirmedSet.add(deliveryTag);
+            nextPublishSeqNo++;
+        } else {
+            deliveryTag = 0;
+        }
         try {
             ObservationCollector.PublishCall publishCall = properties -> {
                 AMQCommand command = new AMQCommand(publish, properties, body, listener);
@@ -815,6 +815,13 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             observationCollector.publish(publishCall, publish, props, body, this.connectionInfo());
         } catch (IOException | AlreadyClosedException e) {
             metricsCollector.basicPublishFailure(this, e);
+            throw e;
+        } catch (IllegalArgumentException e) {
+            // the message failed validation before being sent, so the broker will not count it
+            if (deliveryTag > 0) {
+                unconfirmedSet.remove(deliveryTag);
+                nextPublishSeqNo = deliveryTag;
+            }
             throw e;
         }
         metricsCollector.basicPublish(this, deliveryTag);
