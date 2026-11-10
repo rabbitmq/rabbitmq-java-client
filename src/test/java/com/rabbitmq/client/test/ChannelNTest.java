@@ -19,8 +19,10 @@ import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Command;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Method;
+import com.rabbitmq.client.NoOpMetricsCollector;
 import com.rabbitmq.client.TrafficListener;
 import com.rabbitmq.client.impl.*;
+import com.rabbitmq.client.observation.ObservationCollector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -161,18 +164,7 @@ public class ChannelNTest {
 
     @Test
     public void publishFailingBeforeSendingDoesNotConsumeSequenceNumber() throws Exception {
-        AMQConnection connection = Mockito.mock(AMQConnection.class);
-        TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
-        Mockito.when(connection.getTrafficListener()).thenReturn(trafficListener);
-        ChannelN channel = new ChannelN(connection, 1, consumerWorkService);
-        Mockito.doAnswer(invocation -> {
-            Command command = invocation.getArgument(0);
-            if (command.getMethod() instanceof AMQP.Confirm.Select) {
-                channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Confirm.SelectOk()));
-            }
-            return null;
-        }).when(trafficListener).write(Mockito.any(Command.class));
-        channel.confirmSelect();
+        ChannelN channel = channelInConfirmMode(ObservationCollector.NO_OP);
 
         AMQP.BasicProperties unsupportedHeader = new AMQP.BasicProperties.Builder()
             .headers(Collections.singletonMap("id", UUID.randomUUID()))
@@ -189,6 +181,43 @@ public class ChannelNTest {
         channel.basicPublish("", "q", null, new byte[0]);
         channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Basic.Ack(1, false)));
         assertThat(channel.waitForConfirms(1000)).isTrue();
+    }
+
+    @Test
+    public void publishFailingAfterSendingKeepsSequenceNumber() throws Exception {
+        ObservationCollector observationCollector = Mockito.mock(ObservationCollector.class);
+        Mockito.doAnswer(invocation -> {
+            ObservationCollector.PublishCall call = invocation.getArgument(0);
+            call.publish(invocation.getArgument(2));
+            throw new IllegalArgumentException("failure after the message was sent");
+        }).when(observationCollector).publish(
+            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        ChannelN channel = channelInConfirmMode(observationCollector);
+
+        assertThatThrownBy(() -> channel.basicPublish("", "q", null, new byte[0]))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThat(channel.getNextPublishSeqNo()).isEqualTo(2);
+        assertThatThrownBy(() -> channel.waitForConfirms(100)).isInstanceOf(TimeoutException.class);
+
+        channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Basic.Ack(1, false)));
+        assertThat(channel.waitForConfirms(1000)).isTrue();
+    }
+
+    private ChannelN channelInConfirmMode(ObservationCollector observationCollector) throws Exception {
+        AMQConnection connection = Mockito.mock(AMQConnection.class);
+        TrafficListener trafficListener = Mockito.mock(TrafficListener.class);
+        Mockito.when(connection.getTrafficListener()).thenReturn(trafficListener);
+        ChannelN channel = new ChannelN(connection, 1, consumerWorkService,
+            new NoOpMetricsCollector(), observationCollector);
+        Mockito.doAnswer(invocation -> {
+            Command command = invocation.getArgument(0);
+            if (command.getMethod() instanceof AMQP.Confirm.Select) {
+                channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Confirm.SelectOk()));
+            }
+            return null;
+        }).when(trafficListener).write(Mockito.any(Command.class));
+        channel.confirmSelect();
+        return channel;
     }
 
     private AMQConnection connectionAcceptingConsumerCancelOk(

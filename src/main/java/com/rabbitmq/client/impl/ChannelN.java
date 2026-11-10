@@ -799,32 +799,26 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 .mandatory(mandatory)
                 .immediate(immediate)
                 .build();
-        final long deliveryTag;
-        if (nextPublishSeqNo > 0) {
-            deliveryTag = getNextPublishSeqNo();
-            unconfirmedSet.add(deliveryTag);
-            nextPublishSeqNo++;
-        } else {
-            deliveryTag = 0;
-        }
+        // the number is taken once the message is encoded, as the broker only counts messages it receives
+        final long[] deliveryTag = new long[1];
+        Runnable takeDeliveryTag = () -> {
+            if (nextPublishSeqNo > 0) {
+                deliveryTag[0] = getNextPublishSeqNo();
+                unconfirmedSet.add(deliveryTag[0]);
+                nextPublishSeqNo++;
+            }
+        };
         try {
             ObservationCollector.PublishCall publishCall = properties -> {
-                AMQCommand command = new AMQCommand(publish, properties, body, listener);
+                AMQCommand command = new AMQCommand(publish, properties, body, listener, takeDeliveryTag);
                 transmit(command);
             };
             observationCollector.publish(publishCall, publish, props, body, this.connectionInfo());
         } catch (IOException | AlreadyClosedException e) {
             metricsCollector.basicPublishFailure(this, e);
             throw e;
-        } catch (IllegalArgumentException e) {
-            // the message failed validation before being sent, so the broker will not count it
-            if (deliveryTag > 0) {
-                unconfirmedSet.remove(deliveryTag);
-                nextPublishSeqNo = deliveryTag;
-            }
-            throw e;
         }
-        metricsCollector.basicPublish(this, deliveryTag);
+        metricsCollector.basicPublish(this, deliveryTag[0]);
     }
 
     /** Public API - {@inheritDoc} */
