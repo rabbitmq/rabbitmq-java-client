@@ -189,6 +189,7 @@ public class ChannelNTest {
     @Test
     public void publishFailingBeforeSendingDoesNotConsumeSequenceNumber() throws Exception {
         ChannelN channel = channelInConfirmMode(ObservationCollector.NO_OP);
+        assertThat(channel.getNextPublishSeqNo()).isEqualTo(1);
 
         AMQP.BasicProperties unsupportedHeader = new AMQP.BasicProperties.Builder()
             .headers(Collections.singletonMap("id", UUID.randomUUID()))
@@ -207,7 +208,16 @@ public class ChannelNTest {
             .isInstanceOf(IllegalArgumentException.class);
         assertThat(channel.getNextPublishSeqNo()).isEqualTo(1);
 
+        Mockito.when(channel.getConnection().getFrameMax()).thenReturn(4096);
+        AMQP.BasicProperties headersLargerThanFrameMax = new AMQP.BasicProperties.Builder()
+            .headers(Collections.singletonMap("h", String.join("", Collections.nCopies(5000, "a"))))
+            .build();
+        assertThatThrownBy(() -> channel.basicPublish("", "q", headersLargerThanFrameMax, new byte[0]))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThat(channel.getNextPublishSeqNo()).isEqualTo(1);
+
         channel.basicPublish("", "q", null, new byte[0]);
+        assertThat(channel.getNextPublishSeqNo()).isEqualTo(2);
         channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Basic.Ack(1, false)));
         assertThat(channel.waitForConfirms(1000)).isTrue();
     }
@@ -222,6 +232,7 @@ public class ChannelNTest {
         }).when(observationCollector).publish(
             Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         ChannelN channel = channelInConfirmMode(observationCollector);
+        assertThat(channel.getNextPublishSeqNo()).isEqualTo(1);
 
         assertThatThrownBy(() -> channel.basicPublish("", "q", null, new byte[0]))
             .isInstanceOf(IllegalArgumentException.class);
@@ -230,6 +241,7 @@ public class ChannelNTest {
 
         channel.handleCompleteInboundCommand(new AMQCommand(new AMQImpl.Basic.Ack(1, false)));
         assertThat(channel.waitForConfirms(1000)).isTrue();
+        assertThat(channel.getNextPublishSeqNo()).isEqualTo(2);
     }
 
     private ChannelN channelInConfirmMode(ObservationCollector observationCollector) throws Exception {
