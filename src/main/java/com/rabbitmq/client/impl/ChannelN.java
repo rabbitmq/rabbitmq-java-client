@@ -799,18 +799,10 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
                 .mandatory(mandatory)
                 .immediate(immediate)
                 .build();
-        // the number is taken once the message is encoded, as the broker only counts messages it receives
-        final long[] deliveryTag = new long[1];
-        Runnable takeDeliveryTag = () -> {
-            if (nextPublishSeqNo > 0) {
-                deliveryTag[0] = getNextPublishSeqNo();
-                unconfirmedSet.add(deliveryTag[0]);
-                nextPublishSeqNo++;
-            }
-        };
+        PublishSeqNoAssigner seqNoAssigner = new PublishSeqNoAssigner();
         try {
             ObservationCollector.PublishCall publishCall = properties -> {
-                AMQCommand command = new AMQCommand(publish, properties, body, listener, takeDeliveryTag);
+                AMQCommand command = new AMQCommand(publish, properties, body, listener, seqNoAssigner);
                 transmit(command);
             };
             observationCollector.publish(publishCall, publish, props, body, this.connectionInfo());
@@ -818,7 +810,7 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             metricsCollector.basicPublishFailure(this, e);
             throw e;
         }
-        metricsCollector.basicPublish(this, deliveryTag[0]);
+        metricsCollector.basicPublish(this, seqNoAssigner.seqNo);
     }
 
     /** Public API - {@inheritDoc} */
@@ -1773,6 +1765,23 @@ public class ChannelN extends AMQChannel implements com.rabbitmq.client.Channel 
             onlyAcksReceived = onlyAcksReceived && !nack;
             if (unconfirmedSet.isEmpty())
                 unconfirmedSet.notifyAll();
+        }
+    }
+
+    /**
+     * Takes the publish sequence number once the message is encoded, right before it is written,
+     * as the broker only counts the messages it receives.
+     */
+    private final class PublishSeqNoAssigner implements Runnable {
+
+        private long seqNo = 0;
+
+        @Override
+        public void run() {
+            if (nextPublishSeqNo > 0) {
+                seqNo = nextPublishSeqNo++;
+                unconfirmedSet.add(seqNo);
+            }
         }
     }
 
