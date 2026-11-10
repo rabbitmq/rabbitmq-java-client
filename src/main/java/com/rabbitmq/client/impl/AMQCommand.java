@@ -49,11 +49,13 @@ public class AMQCommand implements Command {
     private final CommandAssembler assembler;
     private final Lock assemblerLock = new ReentrantLock();
     private final WriteListener writeListener;
+    private final Runnable onEncoded;
 
     /** Construct a command for inbound frame assembly with a max body length. */
     AMQCommand(int maxBodyLength) {
         this.assembler = new CommandAssembler(null, null, maxBodyLength);
         this.writeListener = null;
+        this.onEncoded = null;
     }
 
     /** Construct a command ready to fill in by reading frames. */
@@ -68,6 +70,7 @@ public class AMQCommand implements Command {
     public AMQCommand(com.rabbitmq.client.Method method) {
         this.assembler = new CommandAssembler((Method) method, null, Integer.MAX_VALUE);
         this.writeListener = null;
+        this.onEncoded = null;
     }
 
     /**
@@ -89,8 +92,15 @@ public class AMQCommand implements Command {
      */
     public AMQCommand(com.rabbitmq.client.Method method, AMQContentHeader contentHeader, ByteBuffer body,
                       WriteListener writeListener) {
+        this(method, contentHeader, body, writeListener, null);
+    }
+
+    /** Construct a command that runs {@code onEncoded} once it is encoded, right before its first frame is written. */
+    AMQCommand(com.rabbitmq.client.Method method, AMQContentHeader contentHeader, ByteBuffer body,
+               WriteListener writeListener, Runnable onEncoded) {
         this.assembler = new CommandAssembler((Method) method, contentHeader, body);
         this.writeListener = writeListener;
+        this.onEncoded = onEncoded;
     }
 
     /** Public API - {@inheritDoc} */
@@ -141,7 +151,11 @@ public class AMQCommand implements Command {
                     String msg = String.format("Content headers exceeded max frame size: %d > %d", headerFrame.size(), frameMax);
                     throw new IllegalArgumentException(msg);
                 }
-                connection.writeFrame(m.toFrame(channelNumber));
+                Frame methodFrame = m.toFrame(channelNumber);
+                if (onEncoded != null) {
+                    onEncoded.run();
+                }
+                connection.writeFrame(methodFrame);
                 connection.writeFrame(headerFrame);
 
                 if (body != null) {
