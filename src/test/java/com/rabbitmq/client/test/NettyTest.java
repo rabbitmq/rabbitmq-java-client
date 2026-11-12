@@ -112,18 +112,7 @@ public class NettyTest {
     frame.writeTo(new DataOutputStream(expected));
 
     AtomicReference<io.netty.channel.Channel> nettyChannel = new AtomicReference<>();
-    NettyFrameHandlerFactory factory =
-        new NettyFrameHandlerFactory(
-            null,
-            nettyChannel::set,
-            null,
-            null,
-            Duration.ofSeconds(30),
-            10_000,
-            null,
-            AMQP.FRAME_MIN_SIZE,
-            false,
-            sse -> false);
+    NettyFrameHandlerFactory factory = frameHandlerFactory(nettyChannel);
     InetAddress loopback = InetAddress.getLoopbackAddress();
     try (ServerSocket server = new ServerSocket(0, 1, loopback)) {
       FrameHandler frameHandler =
@@ -166,6 +155,61 @@ public class NettyTest {
         frameHandler.close();
       }
     }
+  }
+
+  @Test
+  void frameWriteWaitingForWritabilityFailsWhenChannelIsClosed() throws Exception {
+    Frame frame =
+        new Frame(AMQP.FRAME_BODY, 1, ByteBuffer.wrap("hello".getBytes(StandardCharsets.UTF_8)));
+    AtomicReference<io.netty.channel.Channel> nettyChannel = new AtomicReference<>();
+    NettyFrameHandlerFactory factory = frameHandlerFactory(nettyChannel);
+    InetAddress loopback = InetAddress.getLoopbackAddress();
+    try (ServerSocket server = new ServerSocket(0, 1, loopback)) {
+      FrameHandler frameHandler =
+          factory.create(
+              new Address(loopback.getHostAddress(), server.getLocalPort()), "close-test");
+      try (Socket ignored = server.accept()) {
+        io.netty.channel.Channel ch = nettyChannel.get();
+        setWritable(ch, false);
+
+        CountDownLatch writeDone = new CountDownLatch(1);
+        AtomicReference<Throwable> writeError = new AtomicReference<>();
+        Thread writer =
+            new Thread(
+                () -> {
+                  try {
+                    frameHandler.writeFrame(frame);
+                  } catch (Throwable e) {
+                    writeError.set(e);
+                  }
+                  writeDone.countDown();
+                });
+        writer.start();
+        TestUtils.waitAtMost(() -> writer.getState() == Thread.State.TIMED_WAITING);
+
+        ch.close().get(10, TimeUnit.SECONDS);
+        // the enqueuing timeout is 30 seconds, the writer must be released well before
+        assertThat(writeDone).is(completed());
+        assertThat(writeError.get()).isInstanceOf(IOException.class);
+      } finally {
+        frameHandler.close();
+      }
+    }
+  }
+
+  private static NettyFrameHandlerFactory frameHandlerFactory(
+      AtomicReference<io.netty.channel.Channel> nettyChannel) {
+    return new NettyFrameHandlerFactory(
+        null,
+        nettyChannel::set,
+        null,
+        null,
+        Duration.ofSeconds(30),
+        10_000,
+        null,
+        AMQP.FRAME_MIN_SIZE,
+        false,
+        sse -> false);
   }
 
   private static void setWritable(io.netty.channel.Channel ch, boolean writable) throws Exception {

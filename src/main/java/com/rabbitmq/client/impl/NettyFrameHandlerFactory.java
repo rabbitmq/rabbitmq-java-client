@@ -377,6 +377,9 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
             // so, worst case scenario, we'll enqueue only one frame right away
             boolean canWriteNow = awaitUninterruptibly(latch, enqueuingTimeout);
             if (canWriteNow) {
+              if (!this.channel.isActive()) {
+                throw new IOException("Channel closed while waiting for frame enqueuing");
+              }
               this.doWriteFrame(frame);
             } else {
               throw new IOException("Frame enqueuing failed");
@@ -611,6 +614,8 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
+      // the channel will not become writable again, release the threads waiting to write
+      this.writableLatch.get().countDown();
       if (needToDispatchIoError()) {
         AMQConnection c = this.connection;
         LOGGER.debug("Dispatching shutdown when channel became inactive ({})", this.id);
