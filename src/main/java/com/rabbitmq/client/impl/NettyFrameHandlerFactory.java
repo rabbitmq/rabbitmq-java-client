@@ -16,6 +16,7 @@
 package com.rabbitmq.client.impl;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.rabbitmq.client.AMQP;
@@ -370,21 +371,42 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
             // the channel became  writable
             this.doWriteFrame(frame);
           } else {
-            try {
-              // the channel is still non-writable
-              // in case its writability flipped, we have a reference to a latch that has been
-              // counted down
-              // so, worst case scenario, we'll enqueue only one frame right away
-              boolean canWriteNow = latch.await(enqueuingTimeout.toMillis(), MILLISECONDS);
-              if (canWriteNow) {
-                this.doWriteFrame(frame);
-              } else {
-                throw new IOException("Frame enqueuing failed");
+            // the channel is still non-writable
+            // in case its writability flipped, we have a reference to a latch that has been
+            // counted down
+            // so, worst case scenario, we'll enqueue only one frame right away
+            boolean canWriteNow = awaitUninterruptibly(latch, enqueuingTimeout);
+            if (canWriteNow) {
+              if (!this.channel.isActive()) {
+                throw new IOException("Channel closed while waiting for frame enqueuing");
               }
-            } catch (InterruptedException e) {
-              Thread.currentThread().interrupt();
+              this.doWriteFrame(frame);
+            } else {
+              throw new IOException("Frame enqueuing failed");
             }
           }
+        }
+      }
+    }
+
+    // the other frames of the command may already be enqueued, so dropping this one on interrupt
+    // would leave a partial command on the wire
+    private static boolean awaitUninterruptibly(CountDownLatch latch, Duration timeout) {
+      boolean interrupted = false;
+      try {
+        long remainingNanos = MILLISECONDS.toNanos(timeout.toMillis());
+        long end = System.nanoTime() + remainingNanos;
+        while (true) {
+          try {
+            return latch.await(remainingNanos, NANOSECONDS);
+          } catch (InterruptedException e) {
+            interrupted = true;
+            remainingNanos = end - System.nanoTime();
+          }
+        }
+      } finally {
+        if (interrupted) {
+          Thread.currentThread().interrupt();
         }
       }
     }
@@ -592,6 +614,8 @@ public final class NettyFrameHandlerFactory extends AbstractFrameHandlerFactory 
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
+      // the channel will not become writable again, release the threads waiting to write
+      this.writableLatch.get().countDown();
       if (needToDispatchIoError()) {
         AMQConnection c = this.connection;
         LOGGER.debug("Dispatching shutdown when channel became inactive ({})", this.id);
