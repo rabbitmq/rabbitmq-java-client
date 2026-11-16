@@ -702,10 +702,17 @@ public class ConnectionFactory implements Cloneable {
    * TLS-related settings by passing in a javax.net.ssl.SSLSocketFactory instance. Note this applies
    * only to blocking IO, not to NIO, as the NIO API doesn't use the SocketFactory API.
    *
+   * <p>Server hostname verification is enabled when a javax.net.ssl.SSLSocketFactory instance is
+   * passed in.
+   *
    * @see #useSslProtocol
+   * @see #enableHostnameVerification()
    */
   public void setSocketFactory(SocketFactory factory) {
     this.socketFactory = factory;
+    if (factory instanceof SSLSocketFactory) {
+      enableHostnameVerificationForBlockingIo();
+    }
   }
 
   /**
@@ -914,7 +921,8 @@ public class ConnectionFactory implements Cloneable {
 
   protected void useSslProtocol(SSLContext context, boolean hostnameVerification) {
     this.sslContextFactory = name -> context;
-    setSocketFactory(context.getSocketFactory());
+    // not using setSocketFactory, as it enables hostname verification
+    this.socketFactory = context.getSocketFactory();
     if (hostnameVerification) {
       this.enableHostnameVerification();
     }

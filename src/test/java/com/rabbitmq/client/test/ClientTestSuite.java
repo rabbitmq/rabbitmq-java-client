@@ -15,6 +15,7 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.ConnectionFactoryHostnameVerificationTest;
 import com.rabbitmq.client.JacksonJsonRpcTest;
 import com.rabbitmq.client.DefaultJsonRpcTest;
 import com.rabbitmq.client.impl.DefaultCredentialsRefreshServiceTest;
@@ -56,6 +57,7 @@ import org.junit.platform.suite.api.Suite;
     DnsSrvRecordAddressResolverTest.class,
     JavaNioTest.class,
     ConnectionFactoryTest.class,
+    ConnectionFactoryHostnameVerificationTest.class,
     RecoveryAwareAMQConnectionFactoryTest.class,
     RpcTest.class,
     LambdaCallbackTest.class,
