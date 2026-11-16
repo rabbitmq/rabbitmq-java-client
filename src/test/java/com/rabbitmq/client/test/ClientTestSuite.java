@@ -15,6 +15,7 @@
 
 package com.rabbitmq.client.test;
 
+import com.rabbitmq.client.ConnectionFactoryHostnameVerificationTest;
 import com.rabbitmq.client.JacksonJsonRpcTest;
 import com.rabbitmq.client.impl.*;
 import com.rabbitmq.utility.IntAllocatorTests;
@@ -48,6 +49,7 @@ import org.junit.platform.suite.api.Suite;
     MicrometerMetricsCollectorTest.class,
     DnsSrvRecordAddressResolverTest.class,
     ConnectionFactoryTest.class,
+    ConnectionFactoryHostnameVerificationTest.class,
     RecoveryAwareAMQConnectionFactoryTest.class,
     RpcTest.class,
     LambdaCallbackTest.class,

@@ -139,6 +139,7 @@ public class ConnectionFactory implements Cloneable {
   private ExecutorService shutdownExecutor;
   private ScheduledExecutorService heartbeatExecutor;
   private SocketConfigurator socketConf = SocketConfigurators.defaultConfigurator();
+  private boolean hostnameVerification = false;
   private ExceptionHandler exceptionHandler = new DefaultExceptionHandler();
   private CredentialsProvider credentialsProvider =
       new DefaultCredentialsProvider(DEFAULT_USER, DEFAULT_PASS);
@@ -710,10 +711,17 @@ public class ConnectionFactory implements Cloneable {
    * TLS-related settings by passing in a javax.net.ssl.SSLSocketFactory instance. Note this applies
    * only to blocking IO, not to NIO, as the NIO API doesn't use the SocketFactory API.
    *
+   * <p>Server hostname verification is enabled when a javax.net.ssl.SSLSocketFactory instance is
+   * passed in.
+   *
    * @see #useSslProtocol
+   * @see #enableHostnameVerification()
    */
   public ConnectionFactory setSocketFactory(SocketFactory factory) {
     this.socketFactory = factory;
+    if (factory instanceof SSLSocketFactory) {
+      this.hostnameVerification = true;
+    }
     return this;
   }
 
@@ -731,8 +739,8 @@ public class ConnectionFactory implements Cloneable {
    * opened. The default socket configurator disables Nagle's algorithm.
    *
    * <p>Avoid setting the socket configurator directly with this method, as it can replace an
-   * existing socket configurator that performs important work (like disabling Nagle's algorithm or
-   * using hostname verification with TLS).
+   * existing socket configurator that performs important work (like disabling Nagle's algorithm).
+   * Server hostname verification for TLS is not affected by this method.
    *
    * <p>Prefer <em>adding</em> some behavior by using {@link #getSocketConfigurator()} and calling
    * {@link com.rabbitmq.client.SocketConfigurator#andThen(SocketConfigurator)}.
@@ -927,10 +935,8 @@ public class ConnectionFactory implements Cloneable {
 
   protected ConnectionFactory useSslProtocol(SSLContext context, boolean hostnameVerification) {
     this.sslContextFactory = name -> context;
-    setSocketFactory(context.getSocketFactory());
-    if (hostnameVerification) {
-      this.enableHostnameVerification();
-    }
+    this.socketFactory = context.getSocketFactory();
+    this.hostnameVerification = hostnameVerification;
     return this;
   }
 
@@ -980,11 +986,16 @@ public class ConnectionFactory implements Cloneable {
   }
 
   protected void enableHostnameVerificationForBlockingIo() {
-    if (this.socketConf == null) {
-      this.socketConf =
-          SocketConfigurators.builder().defaultConfigurator().enableHostnameVerification().build();
+    this.hostnameVerification = true;
+  }
+
+  SocketConfigurator effectiveSocketConfigurator() {
+    if (this.hostnameVerification) {
+      // applied first, so that it does not override SSL parameters set by custom configurators
+      SocketConfigurator verification = SocketConfigurators.enableHostnameVerification();
+      return this.socketConf == null ? verification : verification.andThen(this.socketConf);
     } else {
-      this.socketConf = this.socketConf.andThen(SocketConfigurators.enableHostnameVerification());
+      return this.socketConf;
     }
   }
 
@@ -1135,7 +1146,7 @@ public class ConnectionFactory implements Cloneable {
       return new SocketFrameHandlerFactory(
           connectionTimeout,
           socketFactory,
-          socketConf,
+          effectiveSocketConfigurator(),
           isSSL(),
           this.shutdownExecutor,
           sslContextFactory,
