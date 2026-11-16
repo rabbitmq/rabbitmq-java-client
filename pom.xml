@@ -818,6 +818,7 @@
               <include>src/main/java/com/rabbitmq/client/impl/Environment.java</include>
               <include>src/main/java/com/rabbitmq/client/observation/**/*.java</include>
               <include>src/test/java/com/rabbitmq/client/AmqpClientTestExtension.java</include>
+              <include>src/test/java/com/rabbitmq/client/ConnectionFactoryHostnameVerificationTest.java</include>
               <include>src/test/java/com/rabbitmq/client/test/ssl/Pqc.java</include>
               <include>src/test/java/com/rabbitmq/client/test/ssl/TlsTestUtils.java</include>
               <include>src/test/java/com/rabbitmq/client/test/functional/MicrometerObservationCollectorMetrics.java</include>
