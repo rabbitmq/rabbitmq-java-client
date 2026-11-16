@@ -91,6 +91,47 @@ public class ConnectionFactoryHostnameVerificationTest {
   }
 
   @Test
+  void disableHostnameVerificationAfterUseSslProtocol() throws Exception {
+    ConnectionFactory cf = new ConnectionFactory();
+    cf.useSslProtocol(SSLContext.getDefault()).disableHostnameVerification();
+    assertThat(endpointIdentificationAlgorithm(cf)).isNull();
+  }
+
+  @Test
+  void disableHostnameVerificationAfterSetSocketFactory() throws Exception {
+    ConnectionFactory cf = new ConnectionFactory();
+    cf.setSocketFactory(SSLContext.getDefault().getSocketFactory()).disableHostnameVerification();
+    assertThat(endpointIdentificationAlgorithm(cf)).isNull();
+  }
+
+  @Test
+  void disableHostnameVerificationAfterSetSslContextFactory() throws Exception {
+    ConnectionFactory cf = new ConnectionFactory();
+    SSLContext sslContext = SSLContext.getDefault();
+    cf.setSslContextFactory(name -> sslContext).disableHostnameVerification();
+    assertThat(endpointIdentificationAlgorithm(cf)).isNull();
+  }
+
+  @Test
+  void disableHostnameVerificationKeepsCustomConfigurator() throws Exception {
+    ConnectionFactory cf = new ConnectionFactory();
+    AtomicInteger calls = new AtomicInteger();
+    cf.setSocketConfigurator(s -> calls.incrementAndGet());
+    cf.useSslProtocol(SSLContext.getDefault()).disableHostnameVerification();
+    assertThat(endpointIdentificationAlgorithm(cf)).isNull();
+    assertThat(calls).hasValue(1);
+  }
+
+  @Test
+  void enableHostnameVerificationAfterDisable() throws Exception {
+    ConnectionFactory cf = new ConnectionFactory();
+    cf.useSslProtocol(SSLContext.getDefault())
+        .disableHostnameVerification()
+        .enableHostnameVerification();
+    assertThat(endpointIdentificationAlgorithm(cf)).isEqualTo("HTTPS");
+  }
+
+  @Test
   void cloneKeepsHostnameVerification() throws Exception {
     ConnectionFactory cf = new ConnectionFactory();
     cf.setSocketFactory(SSLContext.getDefault().getSocketFactory());

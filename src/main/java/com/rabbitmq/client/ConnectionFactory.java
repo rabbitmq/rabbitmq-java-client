@@ -978,6 +978,7 @@ public class ConnectionFactory implements Cloneable {
    * @see ConnectionFactory#useSslProtocol(SSLContext)
    * @see ConnectionFactory#useSslProtocol()
    * @see ConnectionFactory#useSslProtocol(String, TrustManager)
+   * @see #disableHostnameVerification()
    * @since 5.4.0
    */
   public ConnectionFactory enableHostnameVerification() {
@@ -987,6 +988,34 @@ public class ConnectionFactory implements Cloneable {
 
   protected void enableHostnameVerificationForBlockingIo() {
     this.hostnameVerification = true;
+  }
+
+  /**
+   * Disable server hostname verification for TLS connections.
+   *
+   * <p><strong>Disabling hostname verification is not recommended because it is not safe.</strong>
+   * The server certificate is still validated against the trust store, but the client no longer
+   * checks that the certificate was issued for the host it connects to. An attacker who can
+   * intercept the connection can then impersonate the broker with any trusted certificate, e.g. one
+   * issued for another domain. Prefer using a server certificate that matches the host name used to
+   * connect to the broker.
+   *
+   * <p>Hostname verification is enabled by the TLS setup methods (<code>useSslProtocol</code>
+   * methods, {@link #setSslContextFactory(SslContextFactory)}, {@link
+   * #setSocketFactory(SocketFactory)} with a {@link SSLSocketFactory}), so this method must be
+   * called after them.
+   *
+   * <p>Note this method has NO effect when using Netty, use {@link
+   * com.rabbitmq.client.ConnectionFactory.NettyConfiguration#sslContext(io.netty.handler.ssl.SslContext)}
+   * instead.
+   *
+   * @return this connection factory instance
+   * @see #enableHostnameVerification()
+   * @since 6.0.0
+   */
+  public ConnectionFactory disableHostnameVerification() {
+    this.hostnameVerification = false;
+    return this;
   }
 
   SocketConfigurator effectiveSocketConfigurator() {
