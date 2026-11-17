@@ -61,6 +61,7 @@ import org.junit.platform.suite.api.Suite;
     StrictExceptionHandlerTest.class,
     NoAutoRecoveryWhenTcpWindowIsFullTest.class,
     JacksonJsonRpcTest.class,
+    JsonRpcServerTest.class,
     AddressTest.class,
     DefaultRetryHandlerTest.class,
     GeneratedClassesTest.class,
