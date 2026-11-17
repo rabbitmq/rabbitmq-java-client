@@ -16,6 +16,8 @@
 package com.rabbitmq.client.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -70,6 +72,37 @@ public class JsonRpcServerTest {
       JsonNode error = call(request).get("error");
       assertEquals(400, error.get("code").asInt(), request);
     }
+  }
+
+  @Test
+  void failingProcedureShouldGetErrorResponseWithoutExceptionDetails() throws Exception {
+    // the implementation throws a NullPointerException on a null argument
+    String response = server.doCall(request("increment", "[null]"));
+    JsonNode error = new ObjectMapper().readTree(response).get("error");
+    assertEquals(500, error.get("code").asInt());
+    assertEquals("Internal Server Error", error.get("message").asText());
+    assertTrue(error.get("error").isNull());
+    assertFalse(response.contains("stackTrace"));
+  }
+
+  @Test
+  void errorDetailCanBeOverridden() throws Exception {
+    server =
+        new JsonRpcServer(
+            mock(Channel.class),
+            "q",
+            Calculator.class,
+            (Calculator) i -> i + 1,
+            new JacksonJsonRpcMapper()) {
+          @Override
+          protected Object errorDetail(Throwable t) {
+            return t;
+          }
+        };
+    String response = server.doCall(request("increment", "[null]"));
+    JsonNode error = new ObjectMapper().readTree(response).get("error");
+    assertEquals(500, error.get("code").asInt());
+    assertTrue(error.get("error").get("cause").has("stackTrace"));
   }
 
   private JsonNode call(String request) throws Exception {
