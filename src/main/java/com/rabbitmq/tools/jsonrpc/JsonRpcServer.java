@@ -181,7 +181,7 @@ public class JsonRpcServer extends StringRpcServer {
                         response = resultResponse(id, result);
                     } catch (Throwable t) {
                         LOGGER.info("Error while processing JSON RPC request", t);
-                        response = errorResponse(id, 500, "Internal Server Error", t);
+                        response = errorResponse(id, 500, "Internal Server Error", errorDetail(t));
                     }
                 }
             }
@@ -196,6 +196,28 @@ public class JsonRpcServer extends StringRpcServer {
         }
 
         return response;
+    }
+
+    /**
+     * Returns the detail sent in the <code>error</code> member of the response
+     * when the invocation of a service method fails.
+     * <p>
+     * The default implementation returns <code>null</code>: the exception is logged
+     * and not sent to the caller.
+     * <p>
+     * Subclasses may override this to send some details to callers, e.g. by returning
+     * <code>t</code> to restore the behavior of previous versions. Note the returned
+     * value is serialized with the {@link JsonRpcMapper} and can then contain sensitive
+     * information, like the exception message and stack trace.
+     *
+     * @param t the exception raised by the invocation, usually an
+     *     {@link java.lang.reflect.InvocationTargetException} wrapping the exception
+     *     thrown by the service method
+     * @return the error detail, <code>null</code> for no detail
+     * @since 5.38.0
+     */
+    protected Object errorDetail(Throwable t) {
+        return null;
     }
 
     /**
