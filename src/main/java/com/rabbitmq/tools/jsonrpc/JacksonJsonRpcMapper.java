@@ -149,6 +149,7 @@ public class JacksonJsonRpcMapper implements JsonRpcMapper {
                             result = convert(parser.readValueAsTree(), expectedReturnType);
                         }
                     } else if ("error".equals(name)) {
+                        parser.nextToken();
                         errorMap = (Map<String, Object>) convert(parser.readValueAsTree(), Map.class);
                         exception = new JsonRpcException(
                             errorMap.toString(),
