@@ -17,17 +17,29 @@ package com.rabbitmq.client;
 
 import com.rabbitmq.client.test.TestUtils;
 import com.rabbitmq.tools.jsonrpc.JsonRpcClient;
+import com.rabbitmq.tools.jsonrpc.JsonRpcException;
 import com.rabbitmq.tools.jsonrpc.JsonRpcMapper;
 import com.rabbitmq.tools.jsonrpc.JsonRpcServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public abstract class AbstractJsonRpcTest {
+
+    private static final String EXCEPTION_MESSAGE = "sensitive server-side information";
 
     private static final Set<Class<?>> ALLOWED_RETURN_TYPES = new HashSet<>(Arrays.asList(
         Date.class, Pojo.class
@@ -83,6 +95,19 @@ public abstract class AbstractJsonRpcTest {
         }
         clientConnection.close(10_000);
         serverConnection.close(10_000);
+    }
+
+    @Test
+    public void errorResponseShouldNotContainExceptionDetails() {
+        JsonRpcException e = assertThrows(JsonRpcException.class,
+            () -> client.call("procedureException", new Object[0]));
+        assertEquals(500, e.getCode());
+        assertEquals("Internal Server Error", e.getMessage());
+        assertInstanceOf(Map.class, e.getError());
+        Map<?, ?> error = (Map<?, ?>) e.getError();
+        assertTrue(error.containsKey("error"));
+        assertNull(error.get("error"));
+        assertFalse(error.toString().contains(EXCEPTION_MESSAGE));
     }
 
     public interface RpcService {
@@ -198,7 +223,7 @@ public abstract class AbstractJsonRpcTest {
 
         @Override
         public void procedureException() {
-            throw new RuntimeException();
+            throw new RuntimeException(EXCEPTION_MESSAGE);
         }
 
         @Override
