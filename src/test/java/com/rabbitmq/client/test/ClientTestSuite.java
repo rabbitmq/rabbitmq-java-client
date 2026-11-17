@@ -71,6 +71,7 @@ import org.junit.platform.suite.api.Suite;
     NoAutoRecoveryWhenTcpWindowIsFullTest.class,
     DefaultJsonRpcTest.class,
     JacksonJsonRpcTest.class,
+    JsonRpcServerTest.class,
     AddressTest.class,
     DefaultRetryHandlerTest.class,
     NioDeadlockOnConnectionClosing.class,

@@ -50,6 +50,7 @@ public class DefaultJsonRpcTest extends AbstractJsonRpcTest {
             fail("Remote procedure throwing exception, an exception should have been thrown");
         } catch (UndeclaredThrowableException e) {
             assertTrue(e.getCause() instanceof JsonRpcException);
+            assertEquals(500, ((JsonRpcException) e.getCause()).getCode());
         }
 
         try {

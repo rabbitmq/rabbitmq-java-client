@@ -26,6 +26,7 @@ import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -67,6 +68,17 @@ public class JacksonJsonRpcTest extends AbstractJsonRpcTest {
             fail("Remote procedure throwing exception, an exception should have been thrown");
         } catch (UndeclaredThrowableException e) {
             assertTrue(e.getCause() instanceof JsonRpcException);
+            assertEquals(500, ((JsonRpcException) e.getCause()).getCode());
         }
+    }
+
+    @Test
+    public void requestServerCannotParseShouldGetErrorResponse() {
+        JsonRpcException e = assertThrows(JsonRpcException.class,
+            () -> client.call("procedureInteger", new Object[] {"not a number"}));
+        assertEquals(400, e.getCode());
+        assertEquals("Bad Request", e.getMessage());
+        // the server keeps serving requests
+        assertEquals(2, service.procedureInteger(1).intValue());
     }
 }
