@@ -1,0 +1,36 @@
+name: Library Sanity Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      library_version:
+        description: 'Library version (e.g. 5.38.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Checkout tls-gen
+        uses: actions/checkout@v7
+        with:
+          repository: rabbitmq/tls-gen
+          path: './tls-gen'
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'maven'
+      - name: Start broker
+        run: ci/start-broker.sh
+      - name: Sanity Check
+        run: |
+          curl -Ls https://sh.jbang.dev | bash -s - src/test/java/SanityCheck.java
+        env:
+          RABBITMQ_LIBRARY_VERSION: ${{ inputs.library_version }}
+      - name: Stop broker
+        run: docker stop rabbitmq && docker rm rabbitmq
