@@ -56,6 +56,8 @@ public class JSONReader {
     private static final Object COLON = new Object();
     private static final Object COMMA = new Object();
 
+    private static final int MAX_NESTING_DEPTH = 100;
+
     private static final Map<Character, Character> escapes = new HashMap<Character, Character>();
     static {
         escapes.put(Character.valueOf('"'), Character.valueOf('"'));
@@ -71,6 +73,7 @@ public class JSONReader {
     private CharacterIterator it;
     private char c;
     private Object token;
+    private int depth;
     private final StringBuilder buf = new StringBuilder();
 
     private char next() {
@@ -100,6 +103,7 @@ public class JSONReader {
     public Object read(String string) {
         it = new StringCharacterIterator(string);
         c = it.first();
+        depth = 0;
         return read();
     }
 
@@ -112,8 +116,10 @@ public class JSONReader {
             next();
             ret = string(sep);
         } else if (c == '[') {
+            enterNested();
             next();
             ret = array();
+            depth--;
         } else if (c == ']') {
             ret = ARRAY_END;
             next();
@@ -121,8 +127,10 @@ public class JSONReader {
             ret = COMMA;
             next();
         } else if (c == '{') {
+            enterNested();
             next();
             ret = object();
+            depth--;
         } else if (c == '}') {
             ret = OBJECT_END;
             next();
@@ -146,6 +154,14 @@ public class JSONReader {
 
         token = ret;
         return ret;
+    }
+
+    private void enterNested() {
+        if (++depth > MAX_NESTING_DEPTH) {
+            throw new IllegalStateException(
+                "Maximum nesting depth (" + MAX_NESTING_DEPTH + ") exceeded while parsing JSON (around character "
+                    + (it.getIndex() - it.getBeginIndex()) + ")");
+        }
     }
 
     private Object object() {
