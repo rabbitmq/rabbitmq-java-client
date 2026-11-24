@@ -53,7 +53,7 @@ public class RecoveryAwareAMQConnectionFactoryTest {
                 return connections.poll();
             }
         };
-        doThrow(TimeoutException.class).when(connectionThatThrowsTimeout).start();
+        doThrow(new TimeoutException()).when(connectionThatThrowsTimeout).start();
         doNothing().when(connectionThatSucceeds).start();
         Connection returnedConnection = connectionFactory.newConnection();
         assertSame(connectionThatSucceeds, returnedConnection);

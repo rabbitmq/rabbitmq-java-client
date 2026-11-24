@@ -58,7 +58,7 @@ public class ConnectionFactoryTest {
             }
         };
         connectionFactory.setAutomaticRecoveryEnabled(false);
-        doThrow(TimeoutException.class).when(connectionThatThrowsTimeout).start();
+        doThrow(new TimeoutException()).when(connectionThatThrowsTimeout).start();
         doNothing().when(connectionThatSucceeds).start();
         Connection returnedConnection = connectionFactory.newConnection(
                 new Address[]{new Address("host1"), new Address("host2")}

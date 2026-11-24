@@ -82,7 +82,7 @@ public class ConnectionTest {
     @ParameterizedTest
     @MethodSource("configurators")
     public void openChannelShouldPropagateIoException(TestConfigurator configurator) throws Exception {
-        configurator.mockAndWhenChannel(c).thenThrow(IOException.class);
+        configurator.mockAndWhenChannel(c).thenThrow(new IOException());
         configurator.mockAndWhenOptional(c).thenCallRealMethod();
         Assertions.assertThatThrownBy(() -> configurator.open(c)).isInstanceOf(IOException.class);
     }
