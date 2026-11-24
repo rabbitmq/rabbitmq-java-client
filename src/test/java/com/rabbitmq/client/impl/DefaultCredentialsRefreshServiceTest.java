@@ -161,7 +161,7 @@ public class DefaultCredentialsRefreshServiceTest {
         DefaultCredentialsRefreshService.CredentialsProviderState state = new DefaultCredentialsRefreshService.CredentialsProviderState(
                 credentialsProvider
         );
-        when(refreshAction.call()).thenThrow(RuntimeException.class);
+        when(refreshAction.call()).thenThrow(new RuntimeException());
         state.add(new DefaultCredentialsRefreshService.Registration("1", refreshAction));
 
         int callsCountBeforeCancellation = 5;
@@ -180,7 +180,7 @@ public class DefaultCredentialsRefreshServiceTest {
         DefaultCredentialsRefreshService.CredentialsProviderState state = new DefaultCredentialsRefreshService.CredentialsProviderState(
                 credentialsProvider
         );
-        doThrow(RuntimeException.class).doThrow(RuntimeException.class)
+        doThrow(new RuntimeException()).doThrow(new RuntimeException())
                 .doNothing().when(credentialsProvider).refresh();
 
         when(refreshAction.call()).thenReturn(true);
@@ -198,7 +198,7 @@ public class DefaultCredentialsRefreshServiceTest {
         DefaultCredentialsRefreshService.CredentialsProviderState state = new DefaultCredentialsRefreshService.CredentialsProviderState(
                 credentialsProvider
         );
-        doThrow(RuntimeException.class).when(credentialsProvider).refresh();
+        doThrow(new RuntimeException()).when(credentialsProvider).refresh();
 
         state.add(new DefaultCredentialsRefreshService.Registration("1", refreshAction));
 

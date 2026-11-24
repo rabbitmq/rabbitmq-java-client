@@ -105,7 +105,7 @@ public class TlsUtilsTest {
                 .thenReturn(Arrays.asList("1.3.6.1.5.5.7.3.1", "1.3.6.1.5.5.7.3.2"))
                 .thenReturn(Arrays.asList("1.3.6.1.5.5.7.3.unknown"))
                 .thenReturn(null)
-                .thenThrow(CertificateParsingException.class);
+                .thenThrow(new CertificateParsingException());
 
         assertThat(extensionPrettyPrint("2.5.29.37", DOES_NOT_MATTER, c))
                 .isEqualTo("ExtendedKeyUsage = TLS Web server authentication");
