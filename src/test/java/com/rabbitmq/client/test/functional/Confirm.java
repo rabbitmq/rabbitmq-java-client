@@ -23,19 +23,26 @@ import org.junit.jupiter.api.Test;
 
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.ConfirmationPublisher;
 import com.rabbitmq.client.ConfirmListener;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.PublishException;
 import com.rabbitmq.client.ShutdownSignalException;
 import com.rabbitmq.client.test.BrokerTestCase;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.TestInfo;
 
@@ -315,5 +322,186 @@ public class Confirm extends BrokerTestCase
                              persistent ? MessageProperties.PERSISTENT_BASIC
                                         : MessageProperties.BASIC,
                              "nop".getBytes());
+    }
+
+    @Test public void publisherBasicConfirmation() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+        String queue = channel.queueDeclare().getQueue();
+
+        int messageCount = 100;
+        List<CompletableFuture<Integer>> futures = new ArrayList<CompletableFuture<Integer>>();
+
+        for (int i = 0; i < messageCount; i++) {
+            futures.add(publisher.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), i));
+        }
+
+        for (int i = 0; i < messageCount; i++) {
+            assertEquals(Integer.valueOf(i), futures.get(i).join());
+        }
+
+        assertEquals(messageCount, channel.messageCount(queue));
+        publisher.close();
+    }
+
+    @Test public void publisherMandatoryReturn() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+
+        CompletableFuture<Void> future = publisher.basicPublishAsync(
+            "", "nonexistent-queue", true, null, "test".getBytes(), null);
+
+        try {
+            future.join();
+            fail("Expected PublishException");
+        } catch (CompletionException e) {
+            assertTrue(e.getCause() instanceof PublishException);
+            PublishException pe = (PublishException) e.getCause();
+            assertTrue(pe.isReturn());
+            assertEquals(AMQP.NO_ROUTE, pe.getReturned().getReplyCode());
+        }
+
+        publisher.close();
+    }
+
+    @Test public void publisherMaxOutstanding() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection, 10);
+        String queue = channel.queueDeclare().getQueue();
+
+        List<CompletableFuture<Integer>> futures = new ArrayList<CompletableFuture<Integer>>();
+        for (int i = 0; i < 50; i++) {
+            futures.add(publisher.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), i));
+        }
+
+        for (int i = 0; i < 50; i++) {
+            assertEquals(Integer.valueOf(i), futures.get(i).join());
+        }
+
+        assertEquals(50, channel.messageCount(queue));
+        publisher.close();
+    }
+
+    @Test public void publisherCloseFailsOutstanding() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+        String queue = channel.queueDeclare().getQueue();
+
+        List<CompletableFuture<Void>> futures = new ArrayList<CompletableFuture<Void>>();
+        for (int i = 0; i < 10; i++) {
+            futures.add(publisher.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), null));
+        }
+
+        publisher.close();
+
+        // Every future must settle after close: a graceful close completes
+        // confirmations that already arrived normally, and fails the rest with
+        // a ShutdownSignalException. None may hang.
+        for (CompletableFuture<Void> future : futures) {
+            try {
+                future.get(60, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (java.util.concurrent.ExecutionException e) {
+                assertTrue(e.getCause() instanceof ShutdownSignalException);
+            }
+        }
+    }
+
+    @Test public void publisherContextCorrelation() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+        String queue = channel.queueDeclare().getQueue();
+
+        int messageCount = 10;
+        List<CompletableFuture<String>> futures = new ArrayList<CompletableFuture<String>>();
+
+        for (int i = 0; i < messageCount; i++) {
+            String correlationId = "msg-" + i;
+            futures.add(publisher.basicPublishAsync("", queue, null,
+                ("message" + i).getBytes(), correlationId));
+        }
+
+        for (int i = 0; i < messageCount; i++) {
+            assertEquals("msg-" + i, futures.get(i).join());
+        }
+
+        assertEquals(messageCount, channel.messageCount(queue));
+        publisher.close();
+    }
+
+    @Test public void publisherContextInException() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+
+        String messageId = "unroutable-msg-456";
+        CompletableFuture<String> future = publisher.basicPublishAsync(
+            "", "nonexistent-queue", true, null, "test".getBytes(), messageId);
+
+        try {
+            future.join();
+            fail("Expected PublishException");
+        } catch (CompletionException e) {
+            assertTrue(e.getCause() instanceof PublishException);
+            PublishException pe = (PublishException) e.getCause();
+            assertTrue(pe.isReturn());
+            assertEquals(AMQP.NO_ROUTE, pe.getReturned().getReplyCode());
+            assertEquals(messageId, pe.getContext());
+        }
+
+        publisher.close();
+    }
+
+    @Test public void publisherSurvivesConnectionRecovery() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+        String queue = channel.queueDeclare().getQueue();
+
+        for (int i = 0; i < 10; i++) {
+            publisher.basicPublishAsync("", queue, null, ("before" + i).getBytes(), i).join();
+        }
+
+        com.rabbitmq.client.test.TestUtils.closeAndWaitForRecovery(
+            (com.rabbitmq.client.RecoverableConnection) connection);
+
+        int confirmed = 0;
+        for (int i = 0; i < 10; i++) {
+            publisher.basicPublishAsync("", queue, null, ("after" + i).getBytes(), i).join();
+            confirmed++;
+        }
+
+        assertEquals(10, confirmed);
+        publisher.close();
+    }
+
+    @Test public void publisherCompletesWhenExecutorRejects() throws Exception {
+        // An executor that rejects every task: confirmations must still complete
+        // (inline, on the connection thread) rather than hang forever.
+        java.util.concurrent.Executor rejecting = command -> {
+            throw new java.util.concurrent.RejectedExecutionException("always rejects");
+        };
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection, 100, rejecting);
+        String queue = channel.queueDeclare().getQueue();
+
+        int messageCount = 20;
+        List<CompletableFuture<Integer>> futures = new ArrayList<CompletableFuture<Integer>>();
+        for (int i = 0; i < messageCount; i++) {
+            futures.add(publisher.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), i));
+        }
+
+        for (int i = 0; i < messageCount; i++) {
+            assertEquals(Integer.valueOf(i),
+                futures.get(i).get(60, java.util.concurrent.TimeUnit.SECONDS));
+        }
+
+        publisher.close();
+    }
+
+    @Test public void publisherUnlimited() throws Exception {
+        ConfirmationPublisher publisher = ConfirmationPublisher.create(connection);
+        String queue = channel.queueDeclare().getQueue();
+
+        int messageCount = 1000;
+        List<CompletableFuture<Void>> futures = new ArrayList<CompletableFuture<Void>>();
+
+        for (int i = 0; i < messageCount; i++) {
+            futures.add(publisher.basicPublishAsync("", queue, null, ("msg" + i).getBytes(), null));
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        assertEquals(messageCount, channel.messageCount(queue));
+        publisher.close();
     }
 }
